@@ -112,7 +112,7 @@ class Phase3QaToolsTest(unittest.TestCase):
         self.assertIn("1280x720", rendered)
         self.assertIn("docs/qa/screenshots/phase3/phase3-main-menu-vi-1280x720.png", rendered)
         self.assertIn("Runtime error lines across all captures: 0", rendered)
-        self.assertIn("does not claim subjective", rendered)
+        self.assertIn("subjective visual sign-off", rendered)
 
     def test_cli_writes_deterministic_report(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

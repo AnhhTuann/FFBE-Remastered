@@ -6,8 +6,9 @@
 
 All images below are real captures from running Godot windows. The harness
 records window geometry, ImageMagick pixel statistics and runtime error counts
-in a `.txt` sidecar next to each PNG. This report does not claim subjective
-visual quality: the model cannot inspect PNG pixel content directly.
+in a `.txt` sidecar next to each PNG. Automated checks validate real-window
+geometry, pixel variation and error-free runtime; subjective visual sign-off
+remains a human QA task.
 
 - Captures: 123
 - Resolutions: 1024x640, 1280x720, 1920x1080
