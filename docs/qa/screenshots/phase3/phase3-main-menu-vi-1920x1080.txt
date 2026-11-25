@@ -1,0 +1,16 @@
+name=phase3-main-menu-vi-1920x1080
+scene=res://scenes/menu/main_menu.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+window_id=134217735
+geometry=WINDOW=134217735 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 
+pixels=1920x1080 colors=210 stddev=0.0703716
+runtime_error_lines=0
+log_basename=phase3-main-menu-vi-1920x1080.log

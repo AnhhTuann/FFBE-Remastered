@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored advanced-action fixtures. Mechanic labels state evidence status; no original FFBE ability values are claimed.",
+  "abilities": {
+    "ability:GL:952101@base": {
+      "id": "ability:GL:952101@base", "name": "Synthetic Radiant SLB (Fixture)", "name_key": "ability.slb.vanguard.name", "kind": "physical", "targeting": "enemy",
+      "mp_cost": 0, "modifier": 8.0, "chain_family": "synthetic_lb", "is_limit_burst": true, "is_super_limit_burst": true,
+      "requires_ex": 1, "uses_per_battle": 1,
+      "hits": [{"frame": 6, "weight": 1.0, "element": "light"}],
+      "effects": [], "mechanic_label": "UNVERIFIED_RULE", "verification_status": "SYNTHETIC_FIXTURE"
+    },
+    "ability:GL:952102@base": {
+      "id": "ability:GL:952102@base", "name": "Synthetic Cascade SLB (Fixture)", "name_key": "ability.slb.arcanist.name", "kind": "magical", "targeting": "enemy",
+      "mp_cost": 0, "modifier": 8.5, "chain_family": "synthetic_lb", "is_limit_burst": true, "is_super_limit_burst": true,
+      "requires_ex": 1, "uses_per_battle": 1,
+      "hits": [{"frame": 6, "weight": 1.0, "element": "fire"}],
+      "effects": [], "mechanic_label": "UNVERIFIED_RULE", "verification_status": "SYNTHETIC_FIXTURE"
+    },
+    "ability:GL:941101@base": {
+      "id": "ability:GL:941101@base", "name": "Synthetic Awakened Guard (Fixture)", "name_key": "ability.awakened_guard.name", "kind": "physical", "targeting": "enemy",
+      "mp_cost": 10, "modifier": 2.2, "chain_family": "synthetic_divine",
+      "hits": [{"frame": 8, "weight": 1.0, "element": "non_elemental"}],
+      "effects": [{"type": "lb_fill", "amount": 4, "targeting": "self", "frame": 0}],
+      "mechanic_label": "REMASTERED_DESIGN", "verification_status": "SYNTHETIC_FIXTURE"
+    },
+    "ability:GL:941102@brave_shift": {
+      "id": "ability:GL:941102@brave_shift", "name": "Synthetic Radiant Nova (Fixture)", "name_key": "ability.radiant_nova.name", "kind": "magical", "targeting": "enemy",
+      "mp_cost": 16, "modifier": 2.8, "chain_family": "synthetic_divine",
+      "hits": [{"frame": 6, "weight": 0.4, "element": "light"}, {"frame": 13, "weight": 0.6, "element": "light"}],
+      "effects": [{"type": "lb_fill", "amount": 4, "targeting": "self", "frame": 0}],
+      "mechanic_label": "REMASTERED_DESIGN", "verification_status": "SYNTHETIC_FIXTURE"
+    },
+    "ability:GL:941111@base": {
+      "id": "ability:GL:941111@base", "name": "Synthetic Arcane Cascade+ (Fixture)", "name_key": "ability.arcane_cascade.name", "kind": "magical", "targeting": "enemy",
+      "mp_cost": 18, "modifier": 2.6, "chain_family": "synthetic_divine",
+      "hits": [{"frame": 6, "weight": 0.3, "element": "fire"}, {"frame": 12, "weight": 0.3, "element": "fire"}, {"frame": 18, "weight": 0.4, "element": "fire"}],
+      "effects": [{"type": "lb_fill", "amount": 5, "targeting": "self", "frame": 0}],
+      "mechanic_label": "REMASTERED_DESIGN", "verification_status": "SYNTHETIC_FIXTURE"
+    },
+    "ability:GL:941112@nv": {
+      "id": "ability:GL:941112@nv", "name": "Synthetic Nova Cascade (Fixture)", "name_key": "ability.nova_cascade.name", "kind": "magical", "targeting": "enemy",
+      "mp_cost": 20, "modifier": 3.2, "chain_family": "synthetic_divine",
+      "hits": [{"frame": 5, "weight": 0.25, "element": "fire"}, {"frame": 11, "weight": 0.35, "element": "fire"}, {"frame": 17, "weight": 0.4, "element": "fire"}],
+      "effects": [{"type": "lb_fill", "amount": 5, "targeting": "self", "frame": 0}],
+      "mechanic_label": "REMASTERED_DESIGN", "verification_status": "SYNTHETIC_FIXTURE"
+    },
+    "ability:GL:953101@base": {
+      "id": "ability:GL:953101@base", "name": "Synthetic Overdrive (Fixture)", "name_key": "ability.overdrive.vanguard.name", "kind": "physical", "targeting": "enemy",
+      "mp_cost": 0, "modifier": 6.0, "chain_family": "synthetic_lb", "is_overdrive": true,
+      "requires_ex": 2, "uses_per_battle": 1,
+      "hits": [{"frame": 7, "weight": 1.0, "element": "non_elemental"}],
+      "effects": [], "mechanic_label": "UNVERIFIED_RULE", "verification_status": "SYNTHETIC_FIXTURE"
+    }
+  }
+}

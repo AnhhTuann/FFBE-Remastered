@@ -10,7 +10,11 @@ var _current_unit: UnitRecord = null
 var _current_clip_name: String = "idle"
 var _favorites: Array = []
 var _frame_data: Array = []
+var _diagnostic_entries: Array[Dictionary] = []
 
+@onready var region_label: Label = $Layout/Content/LeftPanel/RegionLabel
+@onready var unit_label: Label = $Layout/Content/LeftPanel/UnitLabel
+@onready var clip_label: Label = $Layout/Content/LeftPanel/ClipLabel
 @onready var region_option: OptionButton = $Layout/Content/LeftPanel/RegionOption
 @onready var unit_option: OptionButton = $Layout/Content/LeftPanel/UnitOption
 @onready var clip_option: OptionButton = $Layout/Content/LeftPanel/ClipOption
@@ -28,12 +32,47 @@ var _frame_data: Array = []
 @onready var title_label: Label = $Layout/Header/TitleLabel
 
 
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
+
+
+## Applies all static copy. No node is left with authored English text after ready.
+func _apply_locale(_locale: String = "") -> void:
+	title_label.text = t("viewer.title")
+	back_button.text = t("viewer.back")
+	region_label.text = t("viewer.region")
+	unit_label.text = t("viewer.unit")
+	clip_label.text = t("viewer.clip")
+	play_button.text = t("viewer.play")
+	restart_button.text = t("viewer.restart")
+	speed_label.text = t("viewer.speed", {"value": "%.2f" % speed_slider.value})
+	for index: int in range(region_option.item_count):
+		var region_key := _region_key(str(region_option.get_item_metadata(index)))
+		if not region_key.is_empty():
+			region_option.set_item_text(index, t(region_key))
+	_update_info()
+	_render_diagnostics()
+
+
+func _region_key(region: String) -> String:
+	match region:
+		"ALL":
+			return "viewer.region_all"
+		"GL":
+			return "viewer.region_gl"
+		"JP":
+			return "viewer.region_jp"
+	return ""
+
+
 func _ready() -> void:
-	region_option.add_item("All regions")
+	_apply_locale()
+	LocaleManager.locale_changed.connect(_apply_locale)
+	region_option.add_item(t("viewer.region_all"))
 	region_option.set_item_metadata(0, "ALL")
-	region_option.add_item("GL only")
+	region_option.add_item(t("viewer.region_gl"))
 	region_option.set_item_metadata(1, "GL")
-	region_option.add_item("JP only")
+	region_option.add_item(t("viewer.region_jp"))
 	region_option.set_item_metadata(2, "JP")
 
 	region_option.item_selected.connect(_on_region_selected)
@@ -53,7 +92,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	play_button.text = "Pause" if sprite.is_playing() else "Play"
+	play_button.text = t("battle.pause") if sprite.is_playing() else t("viewer.play")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -79,7 +118,7 @@ func _populate_units(region_filter: String) -> void:
 	else:
 		_current_unit = null
 		_update_info()
-		_show_diagnostics(["No units found for the selected region"])
+		_show_diagnostic_keys([{"key": "viewer.no_units"}])
 
 
 func _on_region_selected(index: int) -> void:
@@ -90,10 +129,10 @@ func _on_unit_selected(index: int) -> void:
 	var unit_id: String = str(unit_option.get_item_metadata(index))
 	_current_unit = ContentRepository.get_unit(unit_id)
 	if _current_unit == null:
-		_show_diagnostics(["Unknown unit identity: %s" % unit_id])
+		_show_diagnostic_keys([{"key": "viewer.unknown_unit", "args": {"id": unit_id}}])
 		return
 
-	title_label.text = "Character Viewer — %s (%s)" % [_current_unit.display_name, _current_unit.region]
+	title_label.text = "%s — %s (%s)" % [t("viewer.title"), _current_unit.display_name, _current_unit.region]
 	SaveManager.update_settings({
 		"last_region": _current_unit.region,
 		"last_unit_id": _current_unit.id
@@ -112,7 +151,7 @@ func _populate_clips() -> void:
 	var names: Array[String] = ContentRepository.get_clip_names(_current_unit.animation_id)
 	if names.is_empty():
 		var index: int = clip_option.get_item_count()
-		clip_option.add_item("no clips")
+		clip_option.add_item(t("viewer.no_clips"))
 		clip_option.set_item_metadata(index, "")
 		return
 
@@ -129,16 +168,17 @@ func _on_clip_selected(index: int) -> void:
 
 
 func _apply_clip() -> void:
-	_show_diagnostics([])
+	_show_diagnostic_keys([])
 	if _current_unit == null:
 		return
 
 	var animation_id: String = _current_unit.animation_id
 	if _current_clip_name.is_empty() or not ContentRepository.get_clip_names(animation_id).has(_current_clip_name):
 		sprite.stop()
-		_show_diagnostics([
-			"Missing animation metadata: %s / %s" % [animation_id, _current_clip_name]
-		])
+		_show_diagnostic_keys([{
+			"key": "viewer.missing_animation",
+			"args": {"animation": animation_id, "clip": _current_clip_name}
+		}])
 		return
 
 	var clip: Dictionary = ContentRepository.get_animation_clip(animation_id, _current_clip_name)
@@ -148,16 +188,25 @@ func _apply_clip() -> void:
 	var diagnostics: Array[String] = AnimationValidator.validate_clip(clip, atlas_width, atlas_height)
 
 	if not FileAccess.file_exists(_current_unit.atlas_path):
-		diagnostics.append("Missing atlas texture: %s" % _current_unit.atlas_path)
+		sprite.stop()
+		_show_diagnostic_keys([{
+			"key": "viewer.missing_atlas", "args": {"path": _current_unit.atlas_path}
+		}])
+		return
 	if not diagnostics.is_empty():
 		sprite.stop()
-		_show_diagnostics(diagnostics)
+		var messages: Array[Dictionary] = []
+		for message: String in diagnostics:
+			messages.append({"raw": message})
+		_show_diagnostic_keys(messages)
 		return
 
 	var texture: Texture2D = load(_current_unit.atlas_path) as Texture2D
 	if texture == null:
 		sprite.stop()
-		_show_diagnostics(["Atlas texture could not be loaded: %s" % _current_unit.atlas_path])
+		_show_diagnostic_keys([{
+			"key": "viewer.atlas_load_failed", "args": {"path": _current_unit.atlas_path}
+		}])
 		return
 
 	var frames := SpriteFrames.new()
@@ -188,9 +237,9 @@ func _apply_clip() -> void:
 
 func _update_info() -> void:
 	if _current_unit == null:
-		stats_label.text = "Stats\n- none"
-		abilities_label.text = "Abilities\n- none"
-		provenance_label.text = "Provenance\n- none"
+		stats_label.text = "%s\n- %s" % [t("viewer.stats"), t("common.none").to_lower()]
+		abilities_label.text = "%s\n- %s" % [t("viewer.abilities"), t("common.none").to_lower()]
+		provenance_label.text = "%s\n- %s" % [t("viewer.provenance"), t("common.none").to_lower()]
 		return
 
 	var keys: Array = _current_unit.stats.keys()
@@ -198,18 +247,19 @@ func _update_info() -> void:
 	var stat_lines: Array[String] = []
 	for key in keys:
 		stat_lines.append("- %s: %s" % [str(key), str(_current_unit.stats[key])])
-	stats_label.text = "Stats (%s)\n%s" % [_current_unit.display_id(), _join_lines(stat_lines)]
+	stats_label.text = "%s (%s)\n%s" % [t("viewer.stats"), _current_unit.display_id(), _join_lines(stat_lines)]
 
 	var ability_lines: Array[String] = []
 	for ability in _current_unit.abilities:
 		if ability is Dictionary:
-			ability_lines.append("- %s" % str(ability.get("name", "unknown")))
-	abilities_label.text = "Abilities\n%s" % _join_lines(ability_lines)
+			ability_lines.append("- %s" % str(ability.get("name", t("common.none").to_lower())))
+	abilities_label.text = "%s\n%s" % [t("viewer.abilities"), _join_lines(ability_lines)]
 
-	provenance_label.text = "Provenance\n- status: %s\n- source: %s\n- license: %s" % [
-		_current_unit.verification_status,
-		str(_current_unit.provenance.get("source", "unknown")),
-		str(_current_unit.provenance.get("license", "unknown"))
+	provenance_label.text = "%s\n- %s: %s\n- %s: %s\n- %s: %s" % [
+		t("viewer.provenance"),
+		t("menu.status"), _current_unit.verification_status,
+		t("viewer.source"), str(_current_unit.provenance.get("source", t("common.none").to_lower())),
+		t("viewer.license"), str(_current_unit.provenance.get("license", t("common.none").to_lower()))
 	]
 
 
@@ -227,7 +277,7 @@ func _restart_animation() -> void:
 
 func _on_speed_changed(value: float) -> void:
 	sprite.speed_scale = value
-	speed_label.text = "Speed: %.2fx" % value
+	speed_label.text = t("viewer.speed", {"value": "%.2f" % value})
 
 
 func _layout_sprite() -> void:
@@ -253,19 +303,35 @@ func _apply_frame_offset() -> void:
 	)
 
 
+## Retains semantic keys so a locale change can re-render visible diagnostics.
+func _show_diagnostic_keys(entries: Array[Dictionary]) -> void:
+	_diagnostic_entries = entries.duplicate(true)
+	_render_diagnostics()
+
+
 func _show_diagnostics(messages: Array[String]) -> void:
-	if messages.is_empty():
-		diagnostics_label.text = "Diagnostics: none"
-		return
-	var text: String = "Diagnostics:\n"
+	var entries: Array[Dictionary] = []
 	for message: String in messages:
+		entries.append({"raw": message})
+	_show_diagnostic_keys(entries)
+
+
+func _render_diagnostics() -> void:
+	if _diagnostic_entries.is_empty():
+		diagnostics_label.text = t("viewer.diagnostics_none")
+		return
+	var text: String = t("viewer.diagnostics") + "\n"
+	for entry: Dictionary in _diagnostic_entries:
+		var message: String = str(entry.get("raw", ""))
+		if message.is_empty():
+			message = t(str(entry.get("key", "")), entry.get("args", {}))
 		text += "- " + message + "\n"
 	diagnostics_label.text = text
 
 
 func _join_lines(lines: Array[String]) -> String:
 	if lines.is_empty():
-		return "- none"
+		return "- " + t("common.none").to_lower()
 	var text: String = ""
 	for line: String in lines:
 		text += line + "\n"

@@ -1,0 +1,16 @@
+name=phase3-settings-en-1024x640
+scene=res://scenes/settings/settings.tscn
+resolution=1024x640
+fullscreen=0
+locale=en
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=75497479
+geometry=WINDOW=75497479 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 
+pixels=1024x640 colors=213 stddev=0.0531523
+runtime_error_lines=0
+log_basename=phase3-settings-en-1024x640.log

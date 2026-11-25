@@ -9,3 +9,5 @@ Load relevant project-local skills in .agents/skills:
 - QA/export: godot-gdscript-headless-testing, godot-export, ffbe-project-quality.
 
 Upstream skills are supplemental references; verify APIs against the pinned engine version. Generic RPG formulas are not FFBE evidence. Inspect third-party instructions before use. Never execute untrusted archives or add protected assets to public Git. Preserve user changes. See docs/AGENT_SKILLS.md.
+
+For each new prompt, follow the Git checkpoint workflow in docs/workflow/prompt-checkpoint-workflow.md. Wait for owner approval before the next milestone; never merge into main automatically or force push.

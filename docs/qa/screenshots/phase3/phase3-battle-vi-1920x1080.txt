@@ -1,0 +1,16 @@
+name=phase3-battle-vi-1920x1080
+scene=res://scenes/battle/battle_scene.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 
+pixels=1920x1080 colors=3046 stddev=0.138053
+runtime_error_lines=0
+log_basename=phase3-battle-vi-1920x1080.log

@@ -22,7 +22,8 @@ const TESTS := [
 	"test_settings_persistence",
 	"test_missing_animation_fixture",
 	"test_export_presets",
-	"test_battle_engine"
+	"test_battle_engine",
+	"test_phase3_suite"
 ]
 
 const EXPECTED_SAVE_VERSION := 2
@@ -32,19 +33,23 @@ var passed := 0
 var failed := 0
 var _repository: Node = null
 var _saves: Node = null
+var _locale: Node = null
 var _content_id_script: Script = null
 var _validator_script: Script = null
 var _battle_suite_script: Script = null
+var _phase3_suite_script: Script = null
 
 
 func _initialize() -> void:
 	_repository = root.get_node_or_null("ContentRepository")
 	_saves = root.get_node_or_null("SaveManager")
+	_locale = root.get_node_or_null("LocaleManager")
 	_content_id_script = load("res://core/content_id.gd") as Script
 	_validator_script = load("res://core/animation_validator.gd") as Script
 	_battle_suite_script = load("res://tests/battle_test_suite.gd") as Script
+	_phase3_suite_script = load("res://tests/phase3_test_suite.gd") as Script
 
-	if _repository == null or _saves == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null:
+	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null:
 		push_error("FAIL services are unavailable")
 		quit(1)
 		return
@@ -55,6 +60,8 @@ func _initialize() -> void:
 		if call(test_name) != true:
 			failed += 1
 			push_error("FAIL %s: did not finish (runtime error?)" % test_name)
+	if OS.get_environment("FFBE_TEST_NEGATIVE_CONTROL") == "1":
+		assert_true(false, "FFBE_TEST_NEGATIVE_CONTROL deliberate failure")
 	_clean_user_files()
 	print("Results: %d passed, %d failed" % [passed, failed])
 	quit(1 if failed > 0 else 0)
@@ -78,6 +85,14 @@ func assert_eq(actual: Variant, expected: Variant, label: String) -> void:
 	else:
 		failed += 1
 		push_error("FAIL %s: expected %s, got %s" % [label, expected, actual])
+
+
+func test_phase3_suite() -> bool:
+	var suite: RefCounted = _phase3_suite_script.new(self) as RefCounted
+	if suite == null:
+		push_error("FAIL phase3 suite could not be constructed")
+		return false
+	return bool(suite.call("run"))
 
 
 func test_project_config() -> bool:
@@ -170,9 +185,14 @@ func test_animation_validation_allows_holds() -> bool:
 
 
 func test_viewer_scene_behavior() -> bool:
+	# The diagnostic assertion below is a stable English contract; isolate it
+	# from the user's persisted locale without changing that persisted setting.
+	var original_locale: String = str(_locale.get("current_locale"))
+	_locale.call("set_locale", "en", false)
 	var packed: PackedScene = load("res://scenes/viewer/character_viewer.tscn") as PackedScene
 	assert_true(packed != null, "viewer scene loads")
 	if packed == null:
+		_locale.call("set_locale", original_locale, false)
 		return true
 
 	var viewer: Control = packed.instantiate() as Control
@@ -211,12 +231,13 @@ func test_viewer_scene_behavior() -> bool:
 			break
 	assert_true(
 		diagnostics_label.text.contains("Missing animation metadata"),
-		"missing animation is reported visibly"
+		"missing animation is reported visibly: %s" % diagnostics_label.text
 	)
 	assert_false(sprite.is_playing(), "invalid clip stops playback")
 
 	root.remove_child(viewer)
 	viewer.free()
+	_locale.call("set_locale", original_locale, false)
 	return true
 
 

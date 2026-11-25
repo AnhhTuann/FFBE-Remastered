@@ -16,6 +16,15 @@ var _animations: Dictionary = {}
 var _atlas_info: Dictionary = {}
 var _settings_defaults: Dictionary = {}
 var _battles: Dictionary = {}
+var _unit_definitions: Dictionary = {}
+var _progression_rules: Dictionary = {}
+var _equipment: Dictionary = {}
+var _materia: Dictionary = {}
+var _vision_cards: Dictionary = {}
+var _ability_rewards: Dictionary = {}
+var _advanced_abilities: Dictionary = {}
+var _mechanic_labels: Dictionary = {}
+var _imported_manifest: Dictionary = {}
 
 
 func _ready() -> void:
@@ -41,8 +50,30 @@ func load_content() -> Error:
 	var animations_data: Dictionary = _read_json(str(files.get("animations", "")))
 	var settings_data: Dictionary = _read_json(str(files.get("settings_defaults", "")))
 	var battles_data: Dictionary = _read_json(str(files.get("battles", "")))
+	var unit_definitions_data: Dictionary = _read_json(str(files.get("unit_definitions", "")))
+	var progression_rules_data: Dictionary = _read_json(str(files.get("progression_rules", "")))
+	var equipment_data: Dictionary = _read_json(str(files.get("equipment", "")))
+	var advanced_abilities_data: Dictionary = _read_json(str(files.get("advanced_abilities", "")))
+	var mechanic_labels_data: Dictionary = _read_json(str(files.get("mechanic_labels", "")))
+	var imported_manifest_data: Dictionary = _read_json(str(files.get("imported_manifest", "")))
 	if units_data.is_empty() or animations_data.is_empty() or settings_data.is_empty() or battles_data.is_empty():
 		return ERR_FILE_NOT_FOUND
+	if unit_definitions_data.is_empty() or progression_rules_data.is_empty() or equipment_data.is_empty():
+		return ERR_FILE_NOT_FOUND
+	if advanced_abilities_data.is_empty() or mechanic_labels_data.is_empty() or imported_manifest_data.is_empty():
+		return ERR_FILE_NOT_FOUND
+	if str(unit_definitions_data.get("fixture_marker", "")) != "SYNTHETIC_FIXTURE":
+		DebugLog.error("Unit definition package is not marked SYNTHETIC_FIXTURE")
+		return ERR_INVALID_DATA
+	if str(progression_rules_data.get("fixture_marker", "")) != "SYNTHETIC_FIXTURE":
+		DebugLog.error("Progression package is not marked SYNTHETIC_FIXTURE")
+		return ERR_INVALID_DATA
+	if str(equipment_data.get("fixture_marker", "")) != "SYNTHETIC_FIXTURE":
+		DebugLog.error("Equipment package is not marked SYNTHETIC_FIXTURE")
+		return ERR_INVALID_DATA
+	if str(advanced_abilities_data.get("fixture_marker", "")) != "SYNTHETIC_FIXTURE":
+		DebugLog.error("Advanced ability package is not marked SYNTHETIC_FIXTURE")
+		return ERR_INVALID_DATA
 
 	_units.clear()
 	_units_by_id.clear()
@@ -75,6 +106,33 @@ func load_content() -> Error:
 		DebugLog.error("Battle package is not marked SYNTHETIC_FIXTURE")
 		return ERR_INVALID_DATA
 	_battles = battles_data.duplicate(true)
+
+	_unit_definitions.clear()
+	var unit_defs_variant: Variant = unit_definitions_data.get("units", [])
+	if unit_defs_variant is Array:
+		for entry_variant: Variant in unit_defs_variant:
+			if not entry_variant is Dictionary:
+				continue
+			var entry: Dictionary = entry_variant
+			var id: String = str(entry.get("id", ""))
+			if id.is_empty() or _unit_definitions.has(id):
+				DebugLog.warn("Skipping invalid or duplicate unit definition: %s" % id)
+				continue
+			var parsed: ContentId = ContentId.parse(id)
+			if parsed == null or not parsed.is_valid() or parsed.as_text() != id:
+				DebugLog.warn("Skipping malformed unit definition identity: %s" % id)
+				continue
+			_unit_definitions[id] = entry.duplicate(true)
+
+	_progression_rules = progression_rules_data.duplicate(true)
+	_equipment = _copy_section(equipment_data, "equipment")
+	_materia = _copy_section(equipment_data, "materia")
+	_vision_cards = _copy_section(equipment_data, "vision_cards")
+	_ability_rewards = _copy_section(equipment_data, "abilities")
+	_advanced_abilities = _copy_section(advanced_abilities_data, "abilities")
+	var labels_variant: Variant = mechanic_labels_data.get("mechanics", {})
+	_mechanic_labels = labels_variant.duplicate(true) if labels_variant is Dictionary else {}
+	_imported_manifest = imported_manifest_data.duplicate(true)
 
 	loaded = true
 	DebugLog.info("Loaded %d synthetic unit records" % _units.size())
@@ -137,7 +195,14 @@ func get_settings_defaults() -> Dictionary:
 
 
 func get_battle_package() -> Dictionary:
-	return _battles.duplicate(true)
+	var result: Dictionary = _battles.duplicate(true)
+	var abilities_variant: Variant = result.get("abilities", {})
+	var abilities: Dictionary = abilities_variant if abilities_variant is Dictionary else {}
+	for id: String in _advanced_abilities.keys():
+		if not abilities.has(id):
+			abilities[id] = (_advanced_abilities[id] as Dictionary).duplicate(true)
+	result["abilities"] = abilities
+	return result
 
 
 func get_battle_combatant(id: String) -> Dictionary:
@@ -150,10 +215,11 @@ func get_battle_combatant(id: String) -> Dictionary:
 
 func get_ability_definition(id: String) -> Dictionary:
 	var section_variant: Variant = _battles.get("abilities", {})
-	if not section_variant is Dictionary:
-		return {}
-	var value: Variant = (section_variant as Dictionary).get(id, {})
-	return value.duplicate(true) if value is Dictionary else {}
+	if section_variant is Dictionary:
+		var value: Variant = (section_variant as Dictionary).get(id, {})
+		if value is Dictionary:
+			return (value as Dictionary).duplicate(true)
+	return _lookup_definition(_advanced_abilities, id)
 
 
 func get_item_definition(id: String) -> Dictionary:
@@ -182,6 +248,51 @@ func get_encounter_ids() -> Array[String]:
 	return result
 
 
+func parse_composite_id(id: String) -> ContentId:
+	return ContentId.parse(id)
+
+
+func get_unit_definition(id: String) -> Dictionary:
+	var value: Variant = _unit_definitions.get(id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+
+func get_unit_definitions() -> Dictionary:
+	return _unit_definitions.duplicate(true)
+
+
+func get_progression_rules() -> Dictionary:
+	return _progression_rules.duplicate(true)
+
+
+func get_equipment_definition(id: String) -> Dictionary:
+	return _lookup_definition(_equipment, id)
+
+
+func get_materia_definition(id: String) -> Dictionary:
+	return _lookup_definition(_materia, id)
+
+
+func get_vision_card_definition(id: String) -> Dictionary:
+	return _lookup_definition(_vision_cards, id)
+
+
+func get_ability_reward_definition(id: String) -> Dictionary:
+	return _lookup_definition(_ability_rewards, id)
+
+
+func get_advanced_ability(id: String) -> Dictionary:
+	return _lookup_definition(_advanced_abilities, id)
+
+
+func get_mechanic_labels() -> Dictionary:
+	return _mechanic_labels.duplicate(true)
+
+
+func get_imported_manifest() -> Dictionary:
+	return _imported_manifest.duplicate(true)
+
+
 func summary() -> Dictionary:
 	return {
 		"content_version": str(_catalog.get("content_version", "")),
@@ -189,8 +300,24 @@ func summary() -> Dictionary:
 		"unit_count": _units.size(),
 		"animation_group_count": _animations.size(),
 		"encounter_count": (_battles.get("encounters", {}) as Dictionary).size(),
+		"unit_definition_count": _unit_definitions.size(),
+		"equipment_definition_count": _equipment.size(),
+		"materia_definition_count": _materia.size(),
+		"vision_card_definition_count": _vision_cards.size(),
+		"ability_reward_definition_count": _ability_rewards.size(),
+		"advanced_ability_count": _advanced_abilities.size(),
 		"regions": ["GL", "JP"]
 	}
+
+
+func _lookup_definition(section: Dictionary, id: String) -> Dictionary:
+	var value: Variant = section.get(id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+
+func _copy_section(source: Dictionary, key: String) -> Dictionary:
+	var value: Variant = source.get(key, {})
+	return value.duplicate(true) if value is Dictionary else {}
 
 
 func _read_json(path: String) -> Dictionary:

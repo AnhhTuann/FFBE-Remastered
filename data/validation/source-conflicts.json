@@ -1,0 +1,261 @@
+{
+  "access_blockers": [
+    {
+      "detail": "GitHub REST returned 403 for Elvlin; raw/tree/Atom used instead.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "Elvlin raw LICENSE returned 404; no redistribution licence found.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "Elvlin event_encounters.json raw fetch exceeded the 20 MB cap.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "aEnigmatic/ffbe units.json too large to fetch; NV/NV+/EX field claims not independently checked.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "Altema direct access returned 403; article text read through r.jina.ai proxy.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "Official GL and JP pages provide notices and promotional text only, not structured dumps.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "No APK, ZIP, CPK or data pack was downloaded or executed.",
+      "status": "audit_rule"
+    }
+  ],
+  "classification_counts": {
+    "COMMUNITY_MODIFIED": 6,
+    "COMMUNITY_RECOVERED": 8,
+    "ORIGINAL_SOURCE": 5,
+    "REMASTERED_DESIGN": 1,
+    "SYNTHETIC_FIXTURE": 1,
+    "UNVERIFIED": 8
+  },
+  "evidence_date": "2026-11-25",
+  "generated_at": "2026-11-25T00:00:00Z",
+  "known_conflicts": [
+    {
+      "affected_ids": [
+        401008507,
+        401008607,
+        401008707,
+        401014207,
+        401014217,
+        401014307,
+        401014317,
+        401014507,
+        401014517,
+        401014607,
+        401014617
+      ],
+      "classification": "COMMUNITY_RECOVERED",
+      "detail": "11 native form IDs denote different GL and JP units: 401008507 Kaito/Yoshikiri; 401008607 Godrea/Starlight Elena; 401008707 Emperor Foo/Ibara; 401014207/217 Abigail/Duane and Duane/Hyoh & Panthera Ultimus; 401014307/317 Melissa/Eternal Radiance Elena; 401014507/517 Duane/Hyoh & Panthera Ultimus; 401014607/617 Nora/Richt.",
+      "handling": "Composite kind:REGION:id identities; no numeric-only lookup.",
+      "id": "SC-01"
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "detail": "Translated JP payload had 420 GL-only IDs absent from raw JP and omitted 126 raw JP forms.",
+      "handling": "Keep translation layer distinct from raw JP namespace.",
+      "id": "SC-02"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "detail": "Raw tables hold 3932 native IDs: 2891 shared, 420 GL-only, 621 JP-only; 21 asset-only forms unresolved.",
+      "handling": "Preserve series null and do not invent region, rarity or acquisition type.",
+      "id": "SC-03"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "detail": "GL dump carried JP Duane bundles at Abigail IDs, byte-identical to JP unit27.cpk.",
+      "handling": "Cross-regional asset contamination; never fill GL from a JP bundle.",
+      "id": "SC-04"
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "detail": "GL animation CGS 401008507 has a deliberate 63 to 62 oscillation.",
+      "handling": "Strict monotonic frame validation is wrong.",
+      "id": "SC-05"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "detail": "651 Source B missing references were validator type-routing false positives resolving in equip.json and materia.json.",
+      "handling": "Fix validator routing; do not treat as content loss.",
+      "id": "SC-06"
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "detail": "Elvlin build_release_data.py uses original/recovered/overlay precedence; banner_campaigns.json _meta says grouping, class filter and art join are OURS; ffbe_gacha.py says rates are ours.",
+      "handling": "Preserve layer distinctions; no original-rule claim.",
+      "id": "SC-07"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "detail": "aEnigmatic raw units.json was too large to fetch; NV/NV+/EX field claims not independently checked.",
+      "handling": "No final-era progression assertion.",
+      "id": "SC-08"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "detail": "Altema direct access returned 403; proxy-mediated text carries a rights notice and records JP closure at 2025-10-31 12:00 JST.",
+      "handling": "Article reference only; no bulk import or reuse claim.",
+      "id": "SC-09"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "detail": "No licence for Source A, Source B or Elvlin; MIT/GPL/CC labels elsewhere do not cover game content.",
+      "handling": "Rights gate remains not_passed.",
+      "id": "SC-10"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "detail": "Source B is a 2018 snapshot and Source A is a 2026 snapshot; neither establishes current final-era truth after GL 2024-10-30 and JP 2025-10-31 closures.",
+      "handling": "No completeness or current-validity claim.",
+      "id": "SC-11"
+    }
+  ],
+  "not_imported": true,
+  "phase0_unchanged": {
+    "collision_candidates": 5181,
+    "inventoried_files": 148168,
+    "normalized_records": 35928,
+    "regional_unit_form_conflicts": 11,
+    "verified_records": 0
+  },
+  "rights_gate": {
+    "requirements_before_import": [
+      "Documented lawful basis for exact content and revision",
+      "Exact revision, checksum, region and category coverage recorded",
+      "Separation of authored code from game-derived text, art and data",
+      "Import report that does not promote recovered or synthetic data to VERIFIED",
+      "No protected asset in a public commit or distributable build without permission"
+    ],
+    "status": "not_passed"
+  },
+  "schema_version": 1,
+  "source_comparisons": [
+    {
+      "comparison": "Source A exposes GL/JP/shared visual identity and animation metadata but no structured skills, passives, TMR/STMR, leader skills, categories, banners, rates, events, story or dialogue.",
+      "classification": "COMMUNITY_RECOVERED",
+      "id": "CMP-01",
+      "sources": [
+        "DaddyRaegen/ffbe_asset_dump"
+      ]
+    },
+    {
+      "comparison": "Source B supplies structured 2018 records but no vision cards, NV/NV+/EX, Brave Shift, Overdrive, leader skills/categories or visual assets.",
+      "classification": "COMMUNITY_RECOVERED",
+      "id": "CMP-02",
+      "sources": [
+        "DanUgore/ffbe_data"
+      ]
+    },
+    {
+      "comparison": "aEnigmatic revisions are later than Source B and include vision cards, but declare no extraction method or original game revision; MIT metadata is not a content waiver.",
+      "classification": "UNVERIFIED",
+      "id": "CMP-03",
+      "sources": [
+        "aEnigmatic/ffbe",
+        "aEnigmatic/ffbe-jp"
+      ]
+    },
+    {
+      "comparison": "TBMonkey targets GL v9.0.0 with battle/mission/event tables and a contract; ACKNOWLEDGEMENTS.md reserves game content rights to Square Enix and gumi.",
+      "classification": "COMMUNITY_RECOVERED",
+      "id": "CMP-04",
+      "sources": [
+        "TBMonkey/ffbe-gl-server"
+      ]
+    },
+    {
+      "comparison": "Elvlin mixes original-client references, recovered layers and explicitly authored overlay; no APK or pack was downloaded.",
+      "classification": "COMMUNITY_MODIFIED",
+      "id": "CMP-05",
+      "sources": [
+        "Elvlin/exvius-offline"
+      ]
+    },
+    {
+      "comparison": "Fandom and Altema provide article-level categories and JP final-era topics, not bulk verified data; rights notices and proxy access limit reuse.",
+      "classification": "UNVERIFIED",
+      "id": "CMP-06",
+      "sources": [
+        "exvius.fandom.com",
+        "Altema"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2026-10-10",
+      "revision": "f82d603c90ec799f539280267d3af7589c79f117",
+      "source_id": "DaddyRaegen/ffbe_asset_dump",
+      "url": "https://github.com/DaddyRaegen/ffbe_asset_dump"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2018-02-09",
+      "revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "source_id": "DanUgore/ffbe_data",
+      "url": "https://github.com/DanUgore/ffbe_data"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2024-09-02",
+      "revision": "95727376e82d27acc1290b6dc8ad27ce3c89ea71",
+      "source_id": "aEnigmatic/ffbe",
+      "url": "https://github.com/aEnigmatic/ffbe"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2025-10-03",
+      "revision": "ea7d9fa82659e66fed1a0a5dba4616089cc807dc",
+      "source_id": "aEnigmatic/ffbe-jp",
+      "url": "https://github.com/aEnigmatic/ffbe-jp"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2026-11-22",
+      "revision": "2a940d88d9209283f07c801eef067c058735ef4c",
+      "source_id": "TBMonkey/ffbe-gl-server",
+      "url": "https://github.com/TBMonkey/ffbe-gl-server"
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "date": "2026-11-16",
+      "revision": "b520e563cbc4364a07ee40331012340dc8aeb841",
+      "source_id": "Elvlin/exvius-offline",
+      "url": "https://github.com/Elvlin/exvius-offline"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2026-11-25",
+      "revision": null,
+      "source_id": "exvius.fandom.com",
+      "url": "https://exvius.fandom.com/"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "date": "2026-11-01",
+      "revision": null,
+      "source_id": "Altema",
+      "url": "https://altema.jp/"
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "date": null,
+      "revision": null,
+      "source_id": "official GL and JP pages",
+      "url": null
+    }
+  ],
+  "status": "supplemental_evidence_only",
+  "title": "FFBE source conflict register"
+}

@@ -1,0 +1,16 @@
+name=phase3-equipment-vi-1280x720
+scene=res://scenes/phase3/equipment.tscn
+resolution=1280x720
+fullscreen=0
+locale=vi
+scenario=
+instance_id=unit:GL:910101:0001@base
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=684 stddev=0.107778
+runtime_error_lines=0
+log_basename=phase3-equipment-vi-1280x720.log

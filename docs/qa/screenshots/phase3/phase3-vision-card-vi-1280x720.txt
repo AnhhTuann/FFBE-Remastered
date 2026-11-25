@@ -1,0 +1,15 @@
+name=phase3-vision-card-vi-1280x720
+scene=res://scenes/phase3/vision_card.tscn
+resolution=1280x720
+locale=vi
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=134217735
+geometry=WINDOW=134217735 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=874 stddev=0.116961
+runtime_error_lines=0
+log_basename=phase3-vision-card-vi-1280x720.log

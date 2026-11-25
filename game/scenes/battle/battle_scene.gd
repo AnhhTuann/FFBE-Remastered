@@ -62,11 +62,18 @@ var _pause_overlay: PanelContainer
 var _tick_timer: Timer
 var _qa_freeze_frame: int = -1
 var _result_recorded: bool = false
+var _reward_status_key: String = "battle.reward_unavailable"
+var _result_snapshot: Dictionary = {}
+var _title_label: Label
+var _pause_button: Button
+var _menu_button: Button
 
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
+	if not LocaleManager.locale_changed.is_connected(_apply_locale):
+		LocaleManager.locale_changed.connect(_apply_locale)
 	_qa_read_freeze_frame()
 	_start_battle(_preferred_encounter())
 	var scenario: String = OS.get_environment("FFBE_QA_SCENARIO")
@@ -77,6 +84,8 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if _tick_timer != null and is_instance_valid(_tick_timer):
 		_tick_timer.stop()
+	if LocaleManager.locale_changed.is_connected(_apply_locale):
+		LocaleManager.locale_changed.disconnect(_apply_locale)
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +131,7 @@ func _build_ui() -> void:
 	var center_slot := CenterContainer.new()
 	center_slot.custom_minimum_size = Vector2(96, 0)
 	field_row.add_child(center_slot)
-	_center_label = _label("VS", 26, HORIZONTAL_ALIGNMENT_CENTER)
+	_center_label = _label(LocaleManager.t("battle.vs"), 26, HORIZONTAL_ALIGNMENT_CENTER)
 	_center_label.modulate = Color(0.78, 0.86, 1.0)
 	center_slot.add_child(_center_label)
 
@@ -141,35 +150,35 @@ func _build_ui() -> void:
 	_top_bar.add_theme_constant_override("separation", 10)
 	add_child(_top_bar)
 
-	var title := _label("FFBE Remastered · Battle", 18, HORIZONTAL_ALIGNMENT_LEFT)
-	title.custom_minimum_size = Vector2(240, 0)
-	title.modulate = Color(0.95, 0.96, 1.0)
-	_top_bar.add_child(title)
+	_title_label = _label(LocaleManager.t("battle.scene_title"), 18, HORIZONTAL_ALIGNMENT_LEFT)
+	_title_label.custom_minimum_size = Vector2(240, 0)
+	_title_label.modulate = Color(0.95, 0.96, 1.0)
+	_top_bar.add_child(_title_label)
 	_encounter_option = OptionButton.new()
 	_encounter_option.custom_minimum_size = Vector2(230, 30)
 	_encounter_option.item_selected.connect(_on_encounter_selected)
 	_top_bar.add_child(_encounter_option)
-	_turn_label = _label("Turn 1", 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_turn_label = _label(LocaleManager.t("battle.turn", {"turn": 1}), 16, HORIZONTAL_ALIGNMENT_LEFT)
 	_top_bar.add_child(_turn_label)
-	_phase_label = _label("Player phase", 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_phase_label = _label(LocaleManager.t("battle.player_phase"), 16, HORIZONTAL_ALIGNMENT_LEFT)
 	_top_bar.add_child(_phase_label)
-	_chain_label = _label("Chain x0", 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_chain_label = _label(LocaleManager.t("battle.chain_status", {"count": 0, "bonus": 0}), 16, HORIZONTAL_ALIGNMENT_LEFT)
 	_chain_label.modulate = Color(1.0, 0.84, 0.42)
 	_top_bar.add_child(_chain_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_top_bar.add_child(spacer)
-	var speed_button := _button("Speed 1x", 120)
+	var speed_button := _button(LocaleManager.t("battle.speed_button", {"speed": SPEEDS[0]}), 120)
 	speed_button.pressed.connect(_on_speed_pressed)
 	_top_bar.add_child(speed_button)
 	_speed_button = speed_button
-	var pause_button := _button("Pause", 90)
-	pause_button.pressed.connect(_on_pause_pressed)
-	_top_bar.add_child(pause_button)
-	var menu_button := _button("Menu", 80)
-	menu_button.pressed.connect(_on_menu_pressed)
-	_top_bar.add_child(menu_button)
+	_pause_button = _button(LocaleManager.t("battle.pause"), 90)
+	_pause_button.pressed.connect(_on_pause_pressed)
+	_top_bar.add_child(_pause_button)
+	_menu_button = _button(LocaleManager.t("battle.menu"), 80)
+	_menu_button.pressed.connect(_on_menu_pressed)
+	_top_bar.add_child(_menu_button)
 
 	var command_panel := PanelContainer.new()
 	command_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -202,25 +211,25 @@ func _build_ui() -> void:
 	_command_row = HBoxContainer.new()
 	_command_row.add_theme_constant_override("separation", 5)
 	command_vbox.add_child(_command_row)
-	_attack_button = _button("Attack [A]", 110)
+	_attack_button = _button(LocaleManager.t("battle.command_attack"), 110)
 	_attack_button.pressed.connect(_on_attack_pressed)
 	_command_row.add_child(_attack_button)
-	_ability_button = _button("Abilities [S]", 130)
+	_ability_button = _button(LocaleManager.t("battle.command_abilities"), 130)
 	_ability_button.pressed.connect(_on_abilities_pressed)
 	_command_row.add_child(_ability_button)
-	_limit_button = _button("Limit Burst [D]", 145)
+	_limit_button = _button(LocaleManager.t("battle.command_limit"), 145)
 	_limit_button.pressed.connect(_on_limit_pressed)
 	_command_row.add_child(_limit_button)
-	_item_button = _button("Items [F]", 105)
+	_item_button = _button(LocaleManager.t("battle.command_items"), 105)
 	_item_button.pressed.connect(_on_items_pressed)
 	_command_row.add_child(_item_button)
-	_guard_button = _button("Guard [G]", 100)
+	_guard_button = _button(LocaleManager.t("battle.command_guard"), 100)
 	_guard_button.pressed.connect(_on_guard_pressed)
 	_command_row.add_child(_guard_button)
-	_execute_button = _button("EXECUTE [Space]", 150)
+	_execute_button = _button(LocaleManager.t("battle.command_execute"), 150)
 	_execute_button.pressed.connect(_on_execute_pressed)
 	_command_row.add_child(_execute_button)
-	_clear_button = _button("Clear", 80)
+	_clear_button = _button(LocaleManager.t("battle.clear"), 80)
 	_clear_button.pressed.connect(_on_clear_pressed)
 	_command_row.add_child(_clear_button)
 
@@ -232,7 +241,7 @@ func _build_ui() -> void:
 	_ability_grid.columns = 5
 	_ability_scroll.add_child(_ability_grid)
 
-	_hint_label = _label("Select a character, then choose an action.", 14, HORIZONTAL_ALIGNMENT_LEFT)
+	_hint_label = _label(LocaleManager.t("battle.hint_initial"), 14, HORIZONTAL_ALIGNMENT_LEFT)
 	_hint_label.modulate = Color(0.82, 0.88, 0.98)
 	command_vbox.add_child(_hint_label)
 	_log_label = _label("", 12, HORIZONTAL_ALIGNMENT_LEFT)
@@ -245,27 +254,27 @@ func _build_ui() -> void:
 	_damage_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_damage_layer)
 
-	_result_overlay = _make_overlay("RESULT")
+	_result_overlay = _make_overlay(LocaleManager.t("battle.result"))
 	_result_title = _result_overlay.find_child("TitleLabel", true, false) as Label
 	_result_body = _result_overlay.find_child("BodyLabel", true, false) as Label
 	var result_retry := _result_overlay.find_child("PrimaryButton", true, false) as Button
 	var result_menu := _result_overlay.find_child("SecondaryButton", true, false) as Button
-	result_retry.text = "Retry"
-	result_menu.text = "Return to Main Menu"
+	result_retry.text = LocaleManager.t("battle.retry")
+	result_menu.text = LocaleManager.t("battle.return_menu")
 	result_retry.pressed.connect(_on_retry_pressed)
 	result_menu.pressed.connect(_on_menu_pressed)
 	_result_overlay.visible = false
 	add_child(_result_overlay)
 
-	_pause_overlay = _make_overlay("PAUSED")
+	_pause_overlay = _make_overlay(LocaleManager.t("battle.paused"))
 	var pause_title := _pause_overlay.find_child("TitleLabel", true, false) as Label
-	pause_title.text = "PAUSED"
+	pause_title.text = LocaleManager.t("battle.paused")
 	var pause_body := _pause_overlay.find_child("BodyLabel", true, false) as Label
-	pause_body.text = "Speeds change how many logical 60 Hz frames advance per visual tick.\nDamage is never tied to animation completion."
+	pause_body.text = LocaleManager.t("battle.pause_detail")
 	var resume_button := _pause_overlay.find_child("PrimaryButton", true, false) as Button
 	var pause_menu_button := _pause_overlay.find_child("SecondaryButton", true, false) as Button
-	resume_button.text = "Resume"
-	pause_menu_button.text = "Return to Main Menu"
+	resume_button.text = LocaleManager.t("battle.resume")
+	pause_menu_button.text = LocaleManager.t("battle.return_menu")
 	resume_button.pressed.connect(_on_pause_pressed)
 	pause_menu_button.pressed.connect(_on_menu_pressed)
 	_pause_overlay.visible = false
@@ -351,6 +360,7 @@ func _bar(color: Color) -> ProgressBar:
 
 
 func _build_encounter_options() -> void:
+	_encounter_ids.clear()
 	var call_result: Variant = ContentRepository.call("get_encounter_ids")
 	if call_result is Array:
 		for id_variant: Variant in call_result:
@@ -386,15 +396,24 @@ func _start_battle(encounter_id: String) -> void:
 	if script == null:
 		push_error("FAIL battle manager script missing")
 		return
-	var encounter: Dictionary = ContentRepository.call("get_encounter", encounter_id)
+	var encounter: Dictionary = (ContentRepository.call("get_encounter", encounter_id) as Dictionary).duplicate(true)
 	if encounter.is_empty():
-		encounter = ContentRepository.call("get_encounter", DEFAULT_ENCOUNTER)
+		encounter = (ContentRepository.call("get_encounter", DEFAULT_ENCOUNTER) as Dictionary).duplicate(true)
 
 	var combatants: Dictionary = {}
 	var package: Dictionary = ContentRepository.call("get_battle_package")
 	var combatants_variant: Variant = package.get("combatants", {})
 	if combatants_variant is Dictionary:
-		combatants = combatants_variant
+		combatants = (combatants_variant as Dictionary).duplicate(true)
+
+	# The active PlayerState party replaces the synthetic encounter party only
+	# when every slot resolves. Otherwise the original fixture party is kept.
+	var party_id: String = _active_party_id()
+	var resolved_party: Dictionary = _party_combatants(party_id)
+	if not resolved_party.is_empty():
+		encounter["party"] = resolved_party.keys()
+		for instance_id: String in resolved_party.keys():
+			combatants[instance_id] = resolved_party[instance_id]
 	var abilities: Dictionary = {}
 	var abilities_variant: Variant = package.get("abilities", {})
 	if abilities_variant is Dictionary:
@@ -419,6 +438,8 @@ func _start_battle(encounter_id: String) -> void:
 	_command_mode = ""
 	_selected_index = 0
 	_result_recorded = false
+	_reward_status_key = "battle.reward_unavailable"
+	_result_snapshot = {}
 	_result_overlay.visible = false
 	_pause_overlay.visible = false
 	_ability_scroll.visible = false
@@ -446,7 +467,7 @@ func _rebuild_cards() -> void:
 		_enemy_cards.append(_make_card(combatant, false))
 	var companion := PanelContainer.new()
 	companion.custom_minimum_size = Vector2(128, 150)
-	var companion_label := _label("Companion\nslot\n(reserved)", 13, HORIZONTAL_ALIGNMENT_CENTER)
+	var companion_label := _label(LocaleManager.t("battle.companion"), 13, HORIZONTAL_ALIGNMENT_CENTER)
 	companion_label.modulate = Color(0.44, 0.50, 0.60)
 	companion.add_child(companion_label)
 	_enemy_cards.append({"button": null, "combatant": null, "panel": companion})
@@ -473,6 +494,7 @@ func _make_card(combatant: RefCounted, is_party: bool) -> Dictionary:
 	button.custom_minimum_size = Vector2(0, 28)
 	button.flat = true
 	button.text = str(combatant.get("display_name"))
+	button.tooltip_text = _card_tooltip(combatant)
 	button.pressed.connect(_on_card_pressed.bind(combatant.get("id")))
 	vbox.add_child(button)
 
@@ -522,10 +544,13 @@ func _refresh() -> void:
 	if manager == null:
 		return
 	var state: RefCounted = manager.get("state")
-	_turn_label.text = "Turn %d" % int(state.get("turn"))
-	_phase_label.text = str(state.get("phase")).replace("_", " ").capitalize()
-	_chain_label.text = "Chain x%d · +%d%%" % [int(state.get("chain_count")), int(state.get("chain_modifier"))]
-	_center_label.text = "CHAIN x%d" % int(state.get("chain_count")) if int(state.get("chain_count")) > 0 else "VS"
+	_turn_label.text = LocaleManager.t("battle.turn", {"turn": int(state.get("turn"))})
+	_phase_label.text = _phase_text(str(state.get("phase")))
+	_chain_label.text = LocaleManager.t("battle.chain_status", {
+		"count": int(state.get("chain_count")),
+		"bonus": int(state.get("chain_modifier"))
+	})
+	_center_label.text = LocaleManager.t("battle.center_chain", {"count": int(state.get("chain_count"))}) if int(state.get("chain_count")) > 0 else LocaleManager.t("battle.vs")
 
 	for index: int in range(_enemy_cards.size()):
 		var card: Dictionary = _enemy_cards[index]
@@ -548,12 +573,16 @@ func _refresh() -> void:
 			continue
 		var combatant: RefCounted = _party_cards[index].get("combatant")
 		button.visible = true
-		button.text = "%d · %s\nHP %d/%d  MP %d  LB %d/%d%s" % [
-			index + 1, str(combatant.get("display_name")),
-			int(combatant.get("hp")), int(combatant.get("max_hp")),
-			int(combatant.get("mp")), int(combatant.get("lb_gauge")), int(combatant.get("lb_cost")),
-			"  [QUEUED]" if _has_queued(str(combatant.get("id"))) else ""
-		]
+		button.text = LocaleManager.t("battle.character_card", {
+			"slot": index + 1,
+			"name": str(combatant.get("display_name")),
+			"hp": int(combatant.get("hp")),
+			"max_hp": int(combatant.get("max_hp")),
+			"mp": int(combatant.get("mp")),
+			"lb": int(combatant.get("lb_gauge")),
+			"lb_cost": int(combatant.get("lb_cost")),
+			"queued": "  " + LocaleManager.t("battle.queued") if _has_queued(str(combatant.get("id"))) else ""
+		})
 		button.disabled = not bool(combatant.call("is_alive")) or _executing or str(state.get("phase")) != "player"
 		button.modulate = Color(1.0, 0.88, 0.55) if index == _selected_index else Color(1, 1, 1)
 
@@ -579,6 +608,74 @@ func _refresh() -> void:
 	_hint_label.text = _hint_text()
 
 
+func _apply_locale(_locale: String = "") -> void:
+	if _title_label != null:
+		_title_label.text = LocaleManager.t("battle.scene_title")
+	if _speed_button != null:
+		_speed_button.text = LocaleManager.t("battle.speed_button", {"speed": SPEEDS[_speed_index]})
+	if _pause_button != null:
+		_pause_button.text = LocaleManager.t("battle.pause")
+	if _menu_button != null:
+		_menu_button.text = LocaleManager.t("battle.menu")
+	_attack_button.text = LocaleManager.t("battle.command_attack")
+	_ability_button.text = LocaleManager.t("battle.command_abilities")
+	_limit_button.text = LocaleManager.t("battle.command_limit")
+	_item_button.text = LocaleManager.t("battle.command_items")
+	_guard_button.text = LocaleManager.t("battle.command_guard")
+	_execute_button.text = LocaleManager.t("battle.command_execute")
+	_clear_button.text = LocaleManager.t("battle.clear")
+
+	for card: Dictionary in _enemy_cards + _party_cards:
+		var combatant: RefCounted = card.get("combatant")
+		var button: Button = card.get("button") as Button
+		if combatant != null and button != null:
+			button.tooltip_text = _card_tooltip(combatant)
+		elif button == null:
+			var panel: PanelContainer = card.get("panel") as PanelContainer
+			var companion_label: Label = null
+			if panel != null:
+				companion_label = panel.find_child("Label", true, false) as Label
+			if companion_label != null:
+				companion_label.text = LocaleManager.t("battle.companion")
+
+	var result_title: Label = _result_overlay.find_child("TitleLabel", true, false) as Label
+	var result_retry: Button = _result_overlay.find_child("PrimaryButton", true, false) as Button
+	var result_menu: Button = _result_overlay.find_child("SecondaryButton", true, false) as Button
+	if not _result_overlay.visible and result_title != null:
+		result_title.text = LocaleManager.t("battle.result")
+	if result_retry != null:
+		result_retry.text = LocaleManager.t("battle.retry")
+	if result_menu != null:
+		result_menu.text = LocaleManager.t("battle.return_menu")
+	var pause_title: Label = _pause_overlay.find_child("TitleLabel", true, false) as Label
+	var pause_body: Label = _pause_overlay.find_child("BodyLabel", true, false) as Label
+	var resume_button: Button = _pause_overlay.find_child("PrimaryButton", true, false) as Button
+	var pause_menu_button: Button = _pause_overlay.find_child("SecondaryButton", true, false) as Button
+	if pause_title != null:
+		pause_title.text = LocaleManager.t("battle.paused")
+	if pause_body != null:
+		pause_body.text = LocaleManager.t("battle.pause_detail")
+	if resume_button != null:
+		resume_button.text = LocaleManager.t("battle.resume")
+	if pause_menu_button != null:
+		pause_menu_button.text = LocaleManager.t("battle.return_menu")
+
+	if _ability_scroll.visible:
+		if _command_mode == "abilities":
+			_populate_ability_grid()
+		elif _command_mode == "items":
+			_populate_item_grid()
+	_refresh()
+	if _result_overlay.visible:
+		_render_result()
+	if manager != null:
+		var current_id: String = str(manager.get("state").get("encounter_id"))
+		_build_encounter_options()
+		var selected: int = _build_encounter_option_index(current_id)
+		if selected >= 0:
+			_encounter_option.select(selected)
+
+
 func _update_card(card: Dictionary, is_party: bool, index: int) -> void:
 	var combatant: RefCounted = card.get("combatant")
 	var max_hp: int = maxi(int(combatant.get("max_hp")), 1)
@@ -587,7 +684,7 @@ func _update_card(card: Dictionary, is_party: bool, index: int) -> void:
 	var mp: int = int(combatant.get("mp"))
 	card.get("hp_bar").value = float(hp) / float(max_hp)
 	card.get("mp_bar").value = float(mp) / float(max_mp)
-	card.get("hp_text").text = "HP %d/%d" % [hp, max_hp]
+	card.get("hp_text").text = LocaleManager.t("battle.hp", {"hp": hp, "max_hp": max_hp})
 	if is_party:
 		var cost: int = maxi(int(combatant.get("lb_cost")), 1)
 		card.get("lb_bar").value = float(int(combatant.get("lb_gauge"))) / float(cost)
@@ -613,7 +710,13 @@ func _update_card(card: Dictionary, is_party: bool, index: int) -> void:
 func _status_names(statuses: Dictionary) -> Array[String]:
 	var result: Array[String] = []
 	for key: String in statuses.keys():
-		result.append(key.replace("status:", "").replace("buff:", "").replace("break:", ""))
+		match key:
+			"status:disease":
+				result.append(LocaleManager.t("status.disease"))
+			"status:silence":
+				result.append(LocaleManager.t("status.silence"))
+			_:
+				result.append(key.replace("status:", "").replace("buff:", "").replace("break:", ""))
 	return result
 
 
@@ -630,16 +733,79 @@ func _has_queued(actor_id: String) -> bool:
 	return false
 
 
+func _phase_text(phase: String) -> String:
+	match phase:
+		"player":
+			return LocaleManager.t("battle.player_phase")
+		"enemy":
+			return LocaleManager.t("battle.enemy_phase")
+		"player_execution", "enemy_execution":
+			return LocaleManager.t("battle.execution_phase")
+		_:
+			return LocaleManager.t("battle.phase", {"phase": phase})
+
+
+func _target_label(targeting: String) -> String:
+	match targeting:
+		"enemy":
+			return LocaleManager.t("target.enemy")
+		"ally":
+			return LocaleManager.t("target.ally")
+		"self":
+			return LocaleManager.t("target.self")
+		"all_allies":
+			return LocaleManager.t("target.all_allies")
+		"all_enemies":
+			return LocaleManager.t("target.all_enemies")
+		_:
+			return targeting
+
+
+func _localized_token(token: String) -> String:
+	match token:
+		"REMASTERED_DESIGN":
+			return LocaleManager.t("mechanic.remastered_design")
+		"VERIFIED_RULE":
+			return LocaleManager.t("mechanic.verified_rule")
+		"PARTIAL_RULE":
+			return LocaleManager.t("mechanic.partial_rule")
+		"UNVERIFIED_RULE":
+			return LocaleManager.t("mechanic.unverified_rule")
+		"SYNTHETIC_FIXTURE":
+			return LocaleManager.t("verification.synthetic_fixture")
+		_:
+			return token
+
+
+func _card_tooltip(combatant: RefCounted) -> String:
+	var definition_variant: Variant = combatant.get("definition_data")
+	var definition: Dictionary = definition_variant if definition_variant is Dictionary else {}
+	var labels_variant: Variant = definition.get("mechanic_labels", {})
+	var labels: Dictionary = labels_variant if labels_variant is Dictionary else {}
+	var status: String = str(definition.get("verification_status", ""))
+	if labels.is_empty() and status.is_empty():
+		return ""
+	var label_texts: Array[String] = []
+	for key: String in labels.keys():
+		label_texts.append(_localized_token(str(labels[key])))
+	return LocaleManager.t("battle.card_tooltip", {
+		"labels": ", ".join(label_texts),
+		"status": _localized_token(status)
+	})
+
+
 func _hint_text() -> String:
 	if not _pending_target.is_empty():
-		return "Select a highlighted %s target, or press Backspace to cancel." % str(_pending_target.get("targeting", ""))
+		return LocaleManager.t("battle.hint_target", {
+			"targeting": _target_label(str(_pending_target.get("targeting", "")))
+		})
 	if _command_mode == "abilities":
-		return "Choose an ability. Abilities from different characters can be queued to overlap their hit frames."
+		return LocaleManager.t("battle.hint_abilities")
 	if _command_mode == "items":
-		return "Choose an item, then select an ally."
+		return LocaleManager.t("battle.hint_items")
 	if _executing:
-		return "Executing at %dx speed — logical frames are independent of animation speed." % SPEEDS[_speed_index]
-	return "Character %d selected. Mouse or keys 1-5 select, A/S/D/F/G choose actions, Space executes." % (_selected_index + 1)
+		return LocaleManager.t("battle.hint_executing", {"speed": SPEEDS[_speed_index]})
+	return LocaleManager.t("battle.hint_select", {"slot": _selected_index + 1})
 
 
 # ---------------------------------------------------------------------------
@@ -714,7 +880,21 @@ func _populate_ability_grid() -> void:
 	for ability_id_variant: Variant in ability_ids:
 		var ability_id: String = str(ability_id_variant)
 		var definition: Dictionary = manager.call("get_ability_def", ability_id)
-		var button := _button("%s  (%d MP)" % [str(definition.get("name", ability_id)), int(definition.get("mp_cost", 0))], 170)
+		var ability_name: String = str(definition.get("name", ability_id))
+		var name_key: String = str(definition.get("name_key", ""))
+		if not name_key.is_empty() and LocaleManager.has_key(name_key):
+			ability_name = LocaleManager.t(name_key)
+		var button := _button(LocaleManager.t("battle.ability_button", {
+			"name": ability_name,
+			"mp": int(definition.get("mp_cost", 0))
+		}), 170)
+		var mechanic: String = str(definition.get("mechanic_label", ""))
+		var status: String = str(definition.get("verification_status", ""))
+		if not mechanic.is_empty() or not status.is_empty():
+			button.tooltip_text = LocaleManager.t("battle.ability_tooltip", {
+				"label": _localized_token(mechanic),
+				"status": _localized_token(status)
+			})
 		button.pressed.connect(_choose_action.bind(ability_id, "ability"))
 		_ability_grid.add_child(button)
 
@@ -841,7 +1021,10 @@ func _spawn_event_label(event: Dictionary) -> void:
 		"chain":
 			var chain: Dictionary = data.get("chain", {})
 			if int(chain.get("count", 0)) > 0:
-				text = "%s x%d" % [str(chain.get("kind", "chain")), int(chain.get("count", 0))]
+				var kind: String = str(chain.get("kind", ""))
+				if kind.is_empty():
+					kind = LocaleManager.t("battle.chain")
+				text = LocaleManager.t("battle.chain_event", {"kind": kind, "count": int(chain.get("count", 0))})
 				color = Color(1.0, 0.84, 0.35)
 		_:
 			return
@@ -875,7 +1058,14 @@ func _record_result(state: RefCounted) -> void:
 	_result_recorded = true
 	var result_variant: Variant = state.get("result")
 	if result_variant is RefCounted:
-		SaveManager.call("record_battle_result", result_variant.call("to_dict"))
+		var result_dict: Dictionary = result_variant.call("to_dict")
+		_result_snapshot = result_dict.duplicate(true)
+		var player_state: Node = get_node_or_null("/root/PlayerState")
+		var claim: Dictionary = {}
+		if player_state != null and player_state.has_method("claim_battle_reward"):
+			claim = player_state.call("claim_battle_reward", result_dict)
+		_reward_status_key = _claim_status_key(claim)
+		SaveManager.call("record_battle_result", result_dict)
 
 
 func _show_result(state: RefCounted) -> void:
@@ -885,18 +1075,92 @@ func _show_result(state: RefCounted) -> void:
 	var result: RefCounted = result_variant as RefCounted
 	if result == null:
 		return
-	var victory: bool = bool(result.get("victory"))
-	var rewards: Dictionary = result.get("rewards")
-	_result_title.text = "VICTORY" if victory else "DEFEAT"
-	_result_title.modulate = Color(0.55, 1.0, 0.64) if victory else Color(1.0, 0.52, 0.52)
-	_result_body.text = "%s\nTurns: %d · Seed: %d\nGil: %d · Items: %s" % [
-		str(result.get("encounter_name")),
-		int(result.get("turns")),
-		int(result.get("seed")),
-		int(rewards.get("gil", 0)),
-		", ".join(rewards.get("items", []))
-	]
+	if _result_snapshot.is_empty():
+		var snapshot_variant: Variant = result.call("to_dict")
+		if snapshot_variant is Dictionary:
+			_result_snapshot = snapshot_variant
+	_render_result()
 	_result_overlay.visible = true
+
+
+func _render_result() -> void:
+	if _result_snapshot.is_empty():
+		return
+	var victory: bool = bool(_result_snapshot.get("victory", false))
+	var rewards_variant: Variant = _result_snapshot.get("rewards", {})
+	var rewards: Dictionary = rewards_variant if rewards_variant is Dictionary else {}
+	var items_variant: Variant = rewards.get("items", [])
+	var items: Array = items_variant if items_variant is Array else []
+	if victory:
+		_result_title.text = LocaleManager.t("battle.victory")
+	else:
+		_result_title.text = LocaleManager.t("battle.defeat")
+	_result_title.modulate = Color(0.55, 1.0, 0.64) if victory else Color(1.0, 0.52, 0.52)
+	_result_body.text = LocaleManager.t("battle.result_detail", {
+		"name": str(_result_snapshot.get("encounter_name", "")),
+		"turns": int(_result_snapshot.get("turns", 0)),
+		"seed": int(_result_snapshot.get("seed", 0)),
+		"gil": int(rewards.get("gil", 0)),
+		"items": ", ".join(items)
+	}) + "\n" + LocaleManager.t("battle.reward_status", {
+		"status": LocaleManager.t(_reward_status_key)
+	})
+
+
+func _active_party_id() -> String:
+	var qa_party: String = OS.get_environment("FFBE_QA_PARTY_ID")
+	if not qa_party.is_empty():
+		return qa_party
+	var player_state: Node = get_node_or_null("/root/PlayerState")
+	if player_state == null:
+		return "default"
+	var state_variant: Variant = player_state.get("data")
+	if not state_variant is Dictionary:
+		return "default"
+	return str((state_variant as Dictionary).get("active_party", "default"))
+
+
+func _party_combatants(party_id: String) -> Dictionary:
+	var player_state: Node = get_node_or_null("/root/PlayerState")
+	if party_id.is_empty() or player_state == null or player_state.build_resolver == null:
+		return {}
+	var party: Dictionary = player_state.call("get_party", party_id)
+	if party.is_empty():
+		return {}
+	var slots_variant: Variant = party.get("slots", [])
+	if not slots_variant is Array:
+		return {}
+	var slots: Array = slots_variant
+	if slots.is_empty() or slots.size() > 5:
+		return {}
+	var result: Dictionary = {}
+	var seen: Dictionary = {}
+	for slot_variant: Variant in slots:
+		var instance_id: String = str(slot_variant)
+		if instance_id.is_empty() or seen.has(instance_id):
+			return {}
+		seen[instance_id] = true
+		var definition: Dictionary = player_state.build_resolver.call("build_combatant_def", instance_id, party_id)
+		if definition.is_empty():
+			return {}
+		result[instance_id] = definition
+	return result
+
+
+func _claim_status_key(claim: Dictionary) -> String:
+	if claim.is_empty():
+		return "battle.reward_unavailable"
+	match str(claim.get("reason", "")):
+		"already_claimed":
+			return "battle.reward_already_claimed"
+		"not_victory":
+			return "battle.reward_not_victory"
+		"save_failed":
+			return "battle.reward_save_failed"
+	var message_key: String = str(claim.get("message", ""))
+	if not message_key.is_empty() and LocaleManager.has_key(message_key):
+		return message_key
+	return "battle.reward_unavailable"
 
 
 # ---------------------------------------------------------------------------
@@ -905,7 +1169,7 @@ func _show_result(state: RefCounted) -> void:
 
 func _on_speed_pressed() -> void:
 	_speed_index = (_speed_index + 1) % SPEEDS.size()
-	_speed_button.text = "Speed %dx" % SPEEDS[_speed_index]
+	_speed_button.text = LocaleManager.t("battle.speed_button", {"speed": SPEEDS[_speed_index]})
 	_refresh()
 
 
@@ -935,9 +1199,11 @@ func _on_menu_pressed() -> void:
 
 func _on_battle_event(event: Dictionary) -> void:
 	if str(event.get("type", "")) == "phase_changed":
-		_center_label.text = "ENEMY PHASE"
+		_center_label.text = LocaleManager.t("battle.enemy_phase")
 	elif str(event.get("type", "")) == "turn_started":
-		_center_label.text = "TURN %d" % int((event.get("data", {}) as Dictionary).get("turn", 0))
+		_center_label.text = LocaleManager.t("battle.center_turn", {
+			"turn": int((event.get("data", {}) as Dictionary).get("turn", 0))
+		})
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "profile": {
+    "selected_unit_id": "unit:GL:900001@base",
+    "favorites": ["unit:GL:900001@base"],
+    "locale": "vi"
+  },
+  "settings_summary": {
+    "last_region": "GL",
+    "last_unit_id": "unit:GL:900001@base"
+  },
+  "battle_progress": {
+    "attempts": 2,
+    "clears": {"encounter:GL:950001@skirmish": 1},
+    "best_turns": {"encounter:GL:950001@skirmish": 7},
+    "total_gil": 400,
+    "item_counts": {"item:GL:800101@base": 1}
+  }
+}

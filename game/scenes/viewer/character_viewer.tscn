@@ -27,12 +27,12 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 26
-text = "Character Viewer"
+text = ""
 
 [node name="BackButton" type="Button" parent="Layout/Header"]
 layout_mode = 2
 custom_minimum_size = Vector2(140, 40)
-text = "Back"
+text = ""
 
 [node name="Content" type="HBoxContainer" parent="Layout"]
 layout_mode = 2
@@ -46,7 +46,7 @@ size_flags_horizontal = 3
 [node name="RegionLabel" type="Label" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Region filter"
+text = ""
 
 [node name="RegionOption" type="OptionButton" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
@@ -55,7 +55,7 @@ custom_minimum_size = Vector2(0, 36)
 [node name="UnitLabel" type="Label" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Unit (composite identity)"
+text = ""
 
 [node name="UnitOption" type="OptionButton" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
@@ -64,7 +64,7 @@ custom_minimum_size = Vector2(0, 36)
 [node name="ClipLabel" type="Label" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Animation clip"
+text = ""
 
 [node name="ClipOption" type="OptionButton" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
@@ -73,19 +73,19 @@ custom_minimum_size = Vector2(0, 36)
 [node name="StatsLabel" type="Label" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Stats"
+text = ""
 autowrap_mode = 3
 
 [node name="AbilitiesLabel" type="Label" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Abilities"
+text = ""
 autowrap_mode = 3
 
 [node name="ProvenanceLabel" type="Label" parent="Layout/Content/LeftPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "Provenance"
+text = ""
 autowrap_mode = 3
 
 [node name="Controls" type="HBoxContainer" parent="Layout/Content/LeftPanel"]
@@ -95,17 +95,17 @@ custom_minimum_size = Vector2(0, 44)
 [node name="PlayButton" type="Button" parent="Layout/Content/LeftPanel/Controls"]
 layout_mode = 2
 custom_minimum_size = Vector2(90, 40)
-text = "Play"
+text = ""
 
 [node name="RestartButton" type="Button" parent="Layout/Content/LeftPanel/Controls"]
 layout_mode = 2
 custom_minimum_size = Vector2(90, 40)
-text = "Restart"
+text = ""
 
 [node name="SpeedLabel" type="Label" parent="Layout/Content/LeftPanel/Controls"]
 layout_mode = 2
 custom_minimum_size = Vector2(90, 40)
-text = "Speed: 1.00x"
+text = ""
 vertical_alignment = 1
 
 [node name="SpeedSlider" type="HSlider" parent="Layout/Content/LeftPanel/Controls"]
@@ -131,5 +131,5 @@ centered = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 76)
 theme_override_font_sizes/font_size = 14
-text = "Diagnostics"
+text = ""
 autowrap_mode = 3

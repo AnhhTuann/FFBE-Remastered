@@ -9,6 +9,8 @@ config/icon="res://icon.svg"
 
 ContentRepository="*res://core/content_repository.gd"
 SaveManager="*res://core/save_manager.gd"
+LocaleManager="*res://core/locale_manager.gd"
+PlayerState="*res://core/player_state.gd"
 
 [display]
 
@@ -83,6 +85,7 @@ qa/test_viewport_width=1920
 qa/test_viewport_height=1080
 content/schema_version=1
 save/format_version=2
+save/player_format_version=3
 
 [rendering]
 

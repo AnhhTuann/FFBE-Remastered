@@ -1,0 +1,16 @@
+name=phase3-party-en-1280x720
+scene=res://scenes/phase3/party.tscn
+resolution=1280x720
+fullscreen=0
+locale=en
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=719 stddev=0.112555
+runtime_error_lines=0
+log_basename=phase3-party-en-1280x720.log

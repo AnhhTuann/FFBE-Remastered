@@ -1,0 +1,16 @@
+name=phase3-awakening-en-1024x640
+scene=res://scenes/phase3/awakening.tscn
+resolution=1024x640
+fullscreen=0
+locale=en
+scenario=
+instance_id=unit:GL:910101:0001@base
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 
+pixels=1024x640 colors=625 stddev=0.125432
+runtime_error_lines=0
+log_basename=phase3-awakening-en-1024x640.log

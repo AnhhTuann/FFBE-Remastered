@@ -1,0 +1,16 @@
+name=phase3-details-vi-1024x640
+scene=res://scenes/phase3/character_details.tscn
+resolution=1024x640
+fullscreen=0
+locale=vi
+scenario=
+instance_id=unit:GL:910101:0001@base
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 
+pixels=1024x640 colors=555 stddev=0.162576
+runtime_error_lines=0
+log_basename=phase3-details-vi-1024x640.log

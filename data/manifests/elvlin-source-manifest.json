@@ -1,0 +1,382 @@
+{
+  "access_blockers": [
+    {
+      "detail": "GitHub REST metadata returned HTTP 403; raw paths, Git tree listing and Atom feed were used instead.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "Raw LICENSE path returned 404; no repository licence was found.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "event_encounters.json raw fetch exceeded the 20 MB cap; only its structure via battle_content.py was observed.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "Expected repository snapshots/FFBE-Global-v9.0.0-original.apk and signing keys are absent.",
+      "status": "observed_2026-11-25"
+    },
+    {
+      "detail": "No APK, ZIP, CPK or data pack was downloaded or executed.",
+      "status": "audit_rule"
+    }
+  ],
+  "access_method": [
+    "GitHub REST metadata attempt (HTTP 403)",
+    "Pinned raw file paths",
+    "Exact Git tree listing",
+    "Atom feed",
+    "Targeted text reads only; no binary download"
+  ],
+  "classification_counts": {
+    "COMMUNITY_MODIFIED": 10,
+    "COMMUNITY_RECOVERED": 9,
+    "ORIGINAL_SOURCE": 4,
+    "REMASTERED_DESIGN": 0,
+    "SYNTHETIC_FIXTURE": 0,
+    "UNVERIFIED": 5
+  },
+  "decision": "Reference-only supplemental evidence. No Elvlin material is imported, modified, packaged, or treated as a redistribution licence. The project continues to use SYNTHETIC_FIXTURE data for the Godot foundation and combat slice.",
+  "evidence_date": "2026-11-25",
+  "generated_at": "2026-11-25T00:00:00Z",
+  "known_conflicts": [
+    {
+      "classification": "UNVERIFIED",
+      "consequence": "API-derived claims are limited to observed paths.",
+      "id": "ELV-01"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "consequence": "Rights gate remains not_passed.",
+      "id": "ELV-02"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "consequence": "No full-content assertion about event_encounters.json.",
+      "id": "ELV-03"
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "consequence": "Expected original APK hash is a reference only and cannot be rechecked here.",
+      "id": "ELV-04"
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "consequence": "Overlay and OURS layers must never be presented as recovered or original.",
+      "id": "ELV-05"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "consequence": "Historical/direct links mix revisions; do not infer one coherent pack revision.",
+      "id": "ELV-06"
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "consequence": "README caveats prevent claims of faithful or complete restoration.",
+      "id": "ELV-07"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "consequence": "No current validity claim beyond the observed date.",
+      "id": "ELV-08"
+    }
+  ],
+  "layers": {
+    "original": [
+      {
+        "classification": "ORIGINAL_SOURCE",
+        "detail": "source/README.md expects repository snapshots/FFBE-Global-v9.0.0-original.apk with SHA-256 955deacfbe4b3d0cd04e2947eb005e310915ba98132d71216626bfb3554ad246; original client binaries and signing keys are absent."
+      },
+      {
+        "classification": "ORIGINAL_SOURCE",
+        "detail": "FFBE_SERVER_CONTRACT.md cites [FFBEWW] libgame.so ARM64 v9.0.0 and an APK dump; [Community] BraveHaxvius notes; status INVENTORY."
+      },
+      {
+        "classification": "ORIGINAL_SOURCE",
+        "detail": "exvius_actions_expedition.py: original masters define requirements, durations and rewards."
+      },
+      {
+        "classification": "ORIGINAL_SOURCE",
+        "detail": "exvius_colosseum.py original rules: 100 points per win and 50 per loss; exvius_arena.py notes the lowest original ranking tier."
+      }
+    ],
+    "overlay": [
+      {
+        "classification": "COMMUNITY_MODIFIED",
+        "detail": "build_release_data.py uses original, recovered and overlay precedence."
+      },
+      {
+        "classification": "COMMUNITY_MODIFIED",
+        "detail": "banner_campaigns.json _meta says era grouping, class filter and art join are OURS, not recovered."
+      },
+      {
+        "classification": "COMMUNITY_MODIFIED",
+        "detail": "ffbe_gacha.py docstring says the rates are ours."
+      },
+      {
+        "classification": "COMMUNITY_MODIFIED",
+        "detail": "exvius_raid_progress.py shares HP budgets and target solo clears authored as local pacing."
+      },
+      {
+        "classification": "COMMUNITY_MODIFIED",
+        "detail": "exvius_arena.py uses local rivals and a neutral 1.00 ratio."
+      },
+      {
+        "classification": "COMMUNITY_MODIFIED",
+        "detail": "exvius_actions_expedition.py authors offline grade, XP and random policies where backends are unrecoverable."
+      }
+    ],
+    "recovered": [
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "event_archive.json events[] with area, name, group, release, dungeons, missions, source_page, version, source_revision and source_sha256."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "event_battles.json provenance, global_counterparts, local_english_translations, policy and missions."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "event_encounters.json structure from battle_content.py missions[] with bundle and optional clash_scale; full contents blocked."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "event_banner_tree.json roots[] and parents{} with area_id, dungeon_id, label, filename, release, season, source and order."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "equipment_growth.json editions[] and equipment_growth_bonus.json baseline_season_schedules[] keyed by 8-character tokens."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "exvius_rewards.py parse(raw) reads native reward tuples."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "exvius_shop_catalogue.py recovered shop stock, fragment exchanges and VIP stock cited to exvius.fandom.com."
+      },
+      {
+        "classification": "COMMUNITY_RECOVERED",
+        "detail": "FFBE_SERVER_CONTRACT.md request/response schemas partially recovered; tbmonkey_api_calls docs list validated endpoints."
+      }
+    ],
+    "unverified": [
+      {
+        "classification": "UNVERIFIED",
+        "detail": "APK provenance beyond the observed manifest hash; original APK absent."
+      },
+      {
+        "classification": "UNVERIFIED",
+        "detail": "Exact historical banners, rates, guarantees, event, story and dialogue completeness."
+      },
+      {
+        "classification": "UNVERIFIED",
+        "detail": "README caveats: restored text, art and events may contain mistakes; advanced upgrades and event interactions need fixes."
+      },
+      {
+        "classification": "UNVERIFIED",
+        "detail": "No validity claim beyond the observed 2026-11-25 evidence date."
+      }
+    ]
+  },
+  "licensing": {
+    "license_file": false,
+    "raw_license_http_status": 404,
+    "readme_statements": [
+      "Fan project built from the original Global game.",
+      "Unofficial and not affiliated with Square Enix or gumi.",
+      "Credits content owners including Square Enix and gumi."
+    ],
+    "redistribution_permission": false
+  },
+  "not_imported": true,
+  "observed_release_metadata": {
+    "app": {
+      "app_version": "0.1.36",
+      "code": 9076,
+      "offline_version": "9.0.0-offline.36"
+    },
+    "apk": {
+      "sha256": "280cd1bc9abae9ecbc3fcb0ba5d1138dbc08511763166e2b120e2be0f41a42a7",
+      "size_bytes": 41295064
+    },
+    "data_latest": {
+      "download_bytes": 18634180032,
+      "files": 16433,
+      "installed_bytes": 19052071696,
+      "min_app_version_code": 9076,
+      "packs": 23,
+      "revision": 13,
+      "schema": 1,
+      "version": "2026.11.16.13"
+    },
+    "historical_links": [
+      {
+        "path": "data-001",
+        "sha256": "654f5c8ef2b7f1e5659ba04ff126e807aaa7acdd495c72736698da76d5fe97b7",
+        "size_bytes": 1215396487,
+        "tag": "v0.1.35"
+      },
+      {
+        "path": "content-003",
+        "sha256": "a9afb35563310317cdc7cbc56b3998a279fafcb9cdf7e7dd03753fc3f395fb1f",
+        "size_bytes": 942665918,
+        "tag": "v0.1.36"
+      },
+      {
+        "path": "equipment-enhancement",
+        "revision": "r13",
+        "size_bytes": 5523384
+      }
+    ],
+    "update_latest": {
+      "example_client_assets_size_bytes": 103701960,
+      "revision": 13,
+      "schema": 1,
+      "version": "2026.11.16.13"
+    }
+  },
+  "packs_downloaded": false,
+  "phase0_unchanged": {
+    "collision_candidates": 5181,
+    "inventoried_files": 148168,
+    "normalized_records": 35928,
+    "regional_unit_form_conflicts": 11,
+    "verified_records": 0
+  },
+  "python_observations": [
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "file": "battle_content.py",
+      "observation": "JP derivation chain; comments label community break data NOT first-party."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "file": "ffbe_gacha.py",
+      "observation": "Docstring states that the rates are ours."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "file": "exvius_events.py",
+      "observation": "Persistent event selection policy uses DATE_START and DATE_END with atomic save."
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "file": "exvius_rewards.py",
+      "observation": "parse(raw) reads native reward tuples."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "file": "exvius_raid_progress.py",
+      "observation": "Battle stats and personal milestone thresholds are unchanged; shared HP budgets and target solo clears are locally authored pacing."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "file": "exvius_arena.py",
+      "observation": "Local rivals, neutral 1.00 ratio and lowest original ranking tier; original hidden tie-break unavailable."
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "file": "exvius_colosseum.py",
+      "observation": "Original rules are 100 points per win and 50 per loss; local Advanced rounds are explicitly labelled."
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "file": "exvius_actions_expedition.py",
+      "observation": "Original masters define requirements, durations and rewards; offline grade, XP and random policies are authored where backends are unrecoverable."
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "file": "exvius_shop_catalogue.py",
+      "observation": "Recovered shop stock, fragment exchanges and VIP stock cited to exvius.fandom.com, plus content/permanent_shops.json."
+    }
+  ],
+  "release_notes_claims": [
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "claim": "Repeat-cleared-stage Lapis award fixed."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "claim": "Duplicate-unit-to-shard crash and data-loss fixed."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "claim": "Ticket exchange refusal fixed."
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "claim": "Download completes before opening, fixing missing banners, connection errors, old Guard Mog menu and reduced unit limit after v0.1.35."
+    }
+  ],
+  "repository": {
+    "default_branch": "main",
+    "head_commit": "b520e563cbc4364a07ee40331012340dc8aeb841",
+    "head_date": "2026-11-16T09:47:38Z",
+    "release_assets": 5,
+    "release_date": "2026-11-16 09:44 UTC",
+    "release_tag_commit": "65da3ca6b7924774c6c22dfbe397157c4a8966c4",
+    "release_tag_name": "v0.1.36",
+    "url": "https://github.com/Elvlin/exvius-offline"
+  },
+  "rights_gate": {
+    "requirements_before_import": [
+      "Documented lawful basis for the exact content and revision",
+      "Exact revision, checksum, region and category coverage recorded",
+      "Separation of original, recovered and overlay material",
+      "Import report that does not promote supplemental evidence to VERIFIED",
+      "No protected asset in a public commit or distributable build without permission"
+    ],
+    "status": "not_passed"
+  },
+  "schema_version": 1,
+  "source_files": [
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "note": "States no account required, Android 7.0+/64-bit ARM, ~17.8 GB download and ~21 GB free space; lists restoration caveats.",
+      "path": "README.md"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "note": "Raw LICENSE returned 404.",
+      "path": "LICENSE"
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "note": "Expects original APK name and SHA-256; original client binaries and signing keys absent.",
+      "path": "source/README.md"
+    },
+    {
+      "classification": "ORIGINAL_SOURCE",
+      "note": "Sources [FFBEWW] libgame.so ARM64 v9.0.0 and APK dump; [Community] BraveHaxvius notes; status INVENTORY.",
+      "path": "source/docs/analysis/FFBE_SERVER_CONTRACT.md"
+    },
+    {
+      "classification": "COMMUNITY_RECOVERED",
+      "note": "Endpoint discovery, boot-to-home, validated endpoints, arena/colosseum, support/friends, events/unlocks, gacha, towns/maps, missing CDN packs, response tag map; README warns bodies are padded twice.",
+      "path": "source/docs/reference/tbmonkey_api_calls/"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "note": "Schema 1, revision 13, version 2026.11.16.13, 23 packs, mixed v0.1.35/v0.1.36 historical links; metadata only.",
+      "path": "data/latest.json"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "note": "Same schema/revision/version; points packs at v0.1.35, e.g. client-assets 103701960 bytes.",
+      "path": "update/latest.json"
+    },
+    {
+      "classification": "UNVERIFIED",
+      "note": "Repeats APK size and SHA-256 from data/latest.json.",
+      "path": "release/app.json"
+    },
+    {
+      "classification": "COMMUNITY_MODIFIED",
+      "note": "Four fan-project fixes for v0.1.36 recorded in the audit report.",
+      "path": "release/notes-v0.1.36.md"
+    }
+  ],
+  "status": "supplemental_evidence_only",
+  "title": "Elvlin exvius-offline source manifest"
+}

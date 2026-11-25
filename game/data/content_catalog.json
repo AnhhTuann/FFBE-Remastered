@@ -7,6 +7,12 @@
     "units": "res://data/units.json",
     "animations": "res://data/animations.json",
     "settings_defaults": "res://data/settings_defaults.json",
-    "battles": "res://data/battles.json"
+    "battles": "res://data/battles.json",
+    "unit_definitions": "res://data/phase3/unit_definitions.json",
+    "progression_rules": "res://data/phase3/progression_rules.json",
+    "equipment": "res://data/phase3/equipment.json",
+    "advanced_abilities": "res://data/phase3/advanced_abilities.json",
+    "mechanic_labels": "res://data/phase3/mechanic_labels.json",
+    "imported_manifest": "res://data/phase3/imported_manifest.json"
   }
 }
