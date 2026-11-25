@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Runtime-active imported packs. Empty by design: no recovered or protected source data is enabled.",
+  "active_packs": [],
+  "last_import": null,
+  "policy": {
+    "allowed_evidence_classes": ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"],
+    "allow_recovered_without_rights": false,
+    "region_keys_preserved": true
+  }
+}

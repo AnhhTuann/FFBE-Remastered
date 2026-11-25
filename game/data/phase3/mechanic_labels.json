@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Evidence labels for Phase 3 mechanics. VERIFIED_RULE means a cached community/official reference explicitly states it; it does not grant redistribution rights. No DaddyRaegen, DanUgore, Elvlin, Altema or Fandom asset is imported.",
+  "mechanics": {
+    "brave_shift": {"label": "REMASTERED_DESIGN", "note": "Separate synthetic form definitions and a deterministic two-turn cooldown are project-authored. Original shift types and timing were not independently recovered."},
+    "super_limit_burst": {"label": "UNVERIFIED_RULE", "note": "EX-gated synthetic fixture actions; no verified GL/JP cost, gauge or timing table was recovered."},
+    "leader_skill": {"label": "REMASTERED_DESIGN", "note": "Category-filtered additive stat bonus for synthetic categories only."},
+    "unit_categories": {"label": "REMASTERED_DESIGN", "note": "Synthetic category tags; original category rosters were not imported."},
+    "trust_ability": {"label": "REMASTERED_DESIGN", "note": "Trust points and TMR/STMR claims are authored fixture rules."},
+    "equipment_passives": {"label": "REMASTERED_DESIGN", "note": "Stat passives are authored; equipment slot restrictions are synthetic."},
+    "vision_card_bonuses": {"label": "REMASTERED_DESIGN", "note": "Card level scaling and category gates are authored."},
+    "dual_wield": {"label": "VERIFIED_RULE", "note": "Cached community wiki states physical/hybrid actions attack twice and LBs are unaffected; the synthetic second-hit schedule is a desktop approximation."},
+    "multicast": {"label": "PARTIAL_RULE", "note": "Queueing multiple actions is supported; original cast-delay and per-skill unlock rules are not recovered."},
+    "killers": {"label": "PARTIAL_RULE", "note": "A synthetic race-tag damage modifier is modelled; exact original race tables and stacking exceptions are not implemented."},
+    "weapon_imperil": {"label": "PARTIAL_RULE", "note": "Elemental imperil is implemented in the existing engine; weapon-specific imperil values remain a data extension only."},
+    "imbue_amplification": {"label": "PARTIAL_RULE", "note": "Fixture passive fields exist; no verified amplification cap or duration was recovered."},
+    "overdrive": {"label": "UNVERIFIED_RULE", "note": "One synthetic EX-gated action per battle; original activation limits and action economy are unverified."},
+    "nv_awakening": {"label": "UNVERIFIED_RULE", "note": "Synthetic form/cost gate only."},
+    "ex_awakening": {"label": "UNVERIFIED_RULE", "note": "Synthetic fragment costs only."},
+    "nv_plus": {"label": "UNVERIFIED_RULE", "note": "Synthetic EX+3 gate only."}
+  }
+}

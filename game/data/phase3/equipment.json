@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored equipment, materia and vision-card definitions. No FFBE item values are reproduced.",
+  "equipment": {
+    "equip:GL:500001@blade": {
+      "id": "equip:GL:500001@blade", "kind": "equip", "region": "GL", "native_id": "500001", "form": "blade",
+      "name_key": "equip.synthetic_blade.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["weapon"], "rarity": 5, "sell_value": 1000, "unique": true, "stats": {"atk": 80}, "passives": [], "restrictions": {"forms": ["base", "brave_shift", "nv"]}
+    },
+    "equip:GL:500002@staff": {
+      "id": "equip:GL:500002@staff", "kind": "equip", "region": "GL", "native_id": "500002", "form": "staff",
+      "name_key": "equip.synthetic_staff.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["weapon"], "rarity": 5, "sell_value": 1000, "unique": true, "stats": {"mag": 90, "spr": 20}, "passives": [], "restrictions": {}
+    },
+    "equip:GL:500003@shield": {
+      "id": "equip:GL:500003@shield", "kind": "equip", "region": "GL", "native_id": "500003", "form": "shield",
+      "name_key": "equip.synthetic_shield.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["weapon"], "rarity": 5, "sell_value": 1000, "unique": true, "stats": {"def": 70, "hp": 400}, "passives": [], "restrictions": {"roles": ["defensive", "support"]}
+    },
+    "equip:GL:510001@armor": {
+      "id": "equip:GL:510001@armor", "kind": "equip", "region": "GL", "native_id": "510001", "form": "armor",
+      "name_key": "equip.synthetic_armor.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["armor"], "rarity": 5, "sell_value": 800, "unique": true, "stats": {"hp": 900, "def": 45, "spr": 30}, "passives": [], "restrictions": {}
+    },
+    "equip:GL:520001@accessory": {
+      "id": "equip:GL:520001@accessory", "kind": "equip", "region": "GL", "native_id": "520001", "form": "accessory",
+      "name_key": "equip.synthetic_accessory.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["accessory"], "rarity": 5, "sell_value": 600, "unique": true, "stats": {"atk": 30, "mag": 30},
+      "passives": [{"id": "passive:GL:520001@base", "type": "stat", "stat": "atk", "percent": 5, "label": "REMASTERED_DESIGN"}],
+      "restrictions": {}
+    },
+    "equip:JP:520002@accessory": {
+      "id": "equip:JP:520002@accessory", "kind": "equip", "region": "JP", "native_id": "520002", "form": "accessory",
+      "name_key": "equip.synthetic_jp_accessory.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["accessory"], "rarity": 5, "sell_value": 600, "unique": true, "stats": {"def": 25, "spr": 25},
+      "passives": [{"id": "passive:JP:520002@base", "type": "stat", "stat": "spr", "percent": 5, "label": "REMASTERED_DESIGN"}],
+      "restrictions": {}
+    }
+  },
+  "materia": {
+    "materia:GL:600001@base": {
+      "id": "materia:GL:600001@base", "kind": "materia", "region": "GL", "native_id": "600001", "form": "base",
+      "name_key": "materia.attack_up.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["materia"], "rarity": 5, "sell_value": 300, "unique": false, "stack_limit": 1, "stacking_group": "attack_up",
+      "stats": {}, "passives": [{"id": "passive:GL:600001@base", "type": "stat", "stat": "atk", "percent": 10, "label": "REMASTERED_DESIGN"}]
+    },
+    "materia:GL:600002@base": {
+      "id": "materia:GL:600002@base", "kind": "materia", "region": "GL", "native_id": "600002", "form": "base",
+      "name_key": "materia.magic_up.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["materia"], "rarity": 5, "sell_value": 300, "unique": false, "stack_limit": 1, "stacking_group": "magic_up",
+      "stats": {}, "passives": [{"id": "passive:GL:600002@base", "type": "stat", "stat": "mag", "percent": 10, "label": "REMASTERED_DESIGN"}]
+    },
+    "materia:GL:600003@base": {
+      "id": "materia:GL:600003@base", "kind": "materia", "region": "GL", "native_id": "600003", "form": "base",
+      "name_key": "materia.spr_up.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["materia"], "rarity": 4, "sell_value": 150, "unique": false, "stack_limit": 2, "stacking_group": "spr_up",
+      "stats": {}, "passives": [{"id": "passive:GL:600003@base", "type": "stat", "stat": "spr", "percent": 8, "label": "REMASTERED_DESIGN"}]
+    },
+    "materia:JP:600004@base": {
+      "id": "materia:JP:600004@base", "kind": "materia", "region": "JP", "native_id": "600004", "form": "base",
+      "name_key": "materia.def_up.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["materia"], "rarity": 4, "sell_value": 150, "unique": false, "stack_limit": 2, "stacking_group": "def_up",
+      "stats": {}, "passives": [{"id": "passive:JP:600004@base", "type": "stat", "stat": "def", "percent": 8, "label": "REMASTERED_DESIGN"}]
+    },
+    "materia:GL:600005@base": {
+      "id": "materia:GL:600005@base", "kind": "materia", "region": "GL", "native_id": "600005", "form": "base",
+      "name_key": "materia.dual_wield.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["materia"], "rarity": 5, "sell_value": 500, "unique": true, "stack_limit": 1, "stacking_group": "dual_wield",
+      "stats": {}, "passives": [{"id": "passive:GL:600005@base", "type": "dual_wield", "label": "VERIFIED_RULE"}]
+    },
+    "materia:GL:600006@base": {
+      "id": "materia:GL:600006@base", "kind": "materia", "region": "GL", "native_id": "600006", "form": "base",
+      "name_key": "materia.killer.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "slots": ["materia"], "rarity": 5, "sell_value": 300, "unique": false, "stack_limit": 1, "stacking_group": "killer_synthetic",
+      "stats": {}, "passives": [{"id": "passive:GL:600006@base", "type": "killer", "race": "synthetic", "percent": 20, "label": "PARTIAL_RULE"}]
+    }
+  },
+  "vision_cards": {
+    "vision_card:GL:700001@base": {
+      "id": "vision_card:GL:700001@base", "kind": "vision_card", "region": "GL", "native_id": "700001", "form": "base",
+      "name_key": "vision.synthetic_standard.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "max_level": 5, "sell_value": 1200, "stats_per_level": {"atk": 4, "hp": 40},
+      "passives": [{"id": "passive.vc.700001", "type": "stat", "stat": "atk", "percent": 3, "per_level": true, "categories": ["synthetic"], "label": "REMASTERED_DESIGN"}],
+      "upgrade_costs": {"2": {"gil": 10000, "material:GL:900101@base": 2}, "3": {"gil": 20000, "material:GL:900101@base": 4}, "4": {"gil": 40000, "material:GL:900102@base": 4}, "5": {"gil": 80000, "material:GL:900102@base": 8}}
+    },
+    "vision_card:JP:700002@base": {
+      "id": "vision_card:JP:700002@base", "kind": "vision_card", "region": "JP", "native_id": "700002", "form": "base",
+      "name_key": "vision.synthetic_guard.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "max_level": 5, "sell_value": 1200, "stats_per_level": {"def": 4, "spr": 4, "hp": 30},
+      "passives": [{"id": "passive.vc.700002", "type": "stat", "stat": "def", "percent": 3, "per_level": true, "categories": ["synthetic"], "label": "REMASTERED_DESIGN"}],
+      "upgrade_costs": {"2": {"gil": 10000, "material:GL:900101@base": 2}, "3": {"gil": 20000, "material:GL:900101@base": 4}, "4": {"gil": 40000, "material:GL:900102@base": 4}, "5": {"gil": 80000, "material:GL:900102@base": 8}}
+    },
+    "vision_card:GL:700003@base": {
+      "id": "vision_card:GL:700003@base", "kind": "vision_card", "region": "GL", "native_id": "700003", "form": "base",
+      "name_key": "vision.synthetic_arcane.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "max_level": 5, "sell_value": 1200, "stats_per_level": {"mag": 5, "mp": 4},
+      "passives": [{"id": "passive.vc.700003", "type": "stat", "stat": "mag", "percent": 3, "per_level": true, "categories": ["mage"], "label": "REMASTERED_DESIGN"}],
+      "upgrade_costs": {"2": {"gil": 10000, "material:GL:900101@base": 2}, "3": {"gil": 20000, "material:GL:900101@base": 4}, "4": {"gil": 40000, "material:GL:900102@base": 4}, "5": {"gil": 80000, "material:GL:900102@base": 8}}
+    }
+  },
+  "abilities": {
+    "ability:GL:940101@base": {
+      "id": "ability:GL:940101@base", "kind": "ability", "region": "GL", "native_id": "940101", "form": "base",
+      "name_key": "ability.trust_vanguard.name", "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {"origin": "generated", "source": "phase3-synthetic-fixture", "license": "project-authored"},
+      "description": "Project-authored TMR fixture; no original trust ability is reproduced."
+    }
+  }
+}

@@ -5,6 +5,7 @@
     "nearest_neighbor": true,
     "debug_logging": true,
     "last_region": "GL",
-    "last_unit_id": "unit:GL:900001@base"
+    "last_unit_id": "unit:GL:900001@base",
+    "locale": "vi"
   }
 }

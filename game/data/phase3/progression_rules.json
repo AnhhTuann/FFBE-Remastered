@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Data-driven Phase 3 progression parameters. All values are project-authored remaster values, not FFBE cost or cap claims.",
+  "exp_curve": {"base": 120, "multiplier": 1.18, "exponent": 1.55},
+  "trust_moogle": {"id": "item:GL:800001@base", "amount": 5},
+  "max_trust": 300,
+  "stat_pots": {
+    "hp": {"id": "item:GL:810001@base", "amount": 20},
+    "atk": {"id": "item:GL:810002@base", "amount": 5},
+    "def": {"id": "item:GL:810003@base", "amount": 5},
+    "mag": {"id": "item:GL:810004@base", "amount": 5},
+    "spr": {"id": "item:GL:810005@base", "amount": 5}
+  },
+  "passive_stat_cap_percent": 400,
+  "mechanic_labels": {
+    "level_curve": "REMASTERED_DESIGN",
+    "stat_growth": "REMASTERED_DESIGN",
+    "awakening_materials": "REMASTERED_DESIGN",
+    "nv_awakening": "UNVERIFIED_RULE",
+    "ex_awakening": "UNVERIFIED_RULE",
+    "nv_plus": "UNVERIFIED_RULE",
+    "fragments": "REMASTERED_DESIGN",
+    "stat_pots": "REMASTERED_DESIGN",
+    "trust_progression": "REMASTERED_DESIGN",
+    "tmr_claim": "REMASTERED_DESIGN",
+    "stmr_claim": "REMASTERED_DESIGN"
+  }
+}
