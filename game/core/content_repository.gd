@@ -15,6 +15,7 @@ var _units_by_id: Dictionary = {}
 var _animations: Dictionary = {}
 var _atlas_info: Dictionary = {}
 var _settings_defaults: Dictionary = {}
+var _battles: Dictionary = {}
 
 
 func _ready() -> void:
@@ -39,7 +40,8 @@ func load_content() -> Error:
 	var units_data: Dictionary = _read_json(str(files.get("units", "")))
 	var animations_data: Dictionary = _read_json(str(files.get("animations", "")))
 	var settings_data: Dictionary = _read_json(str(files.get("settings_defaults", "")))
-	if units_data.is_empty() or animations_data.is_empty() or settings_data.is_empty():
+	var battles_data: Dictionary = _read_json(str(files.get("battles", "")))
+	if units_data.is_empty() or animations_data.is_empty() or settings_data.is_empty() or battles_data.is_empty():
 		return ERR_FILE_NOT_FOUND
 
 	_units.clear()
@@ -68,6 +70,11 @@ func load_content() -> Error:
 	var defaults_variant: Variant = settings_data.get("settings", {})
 	if defaults_variant is Dictionary:
 		_settings_defaults = defaults_variant.duplicate(true)
+
+	if str(battles_data.get("fixture_marker", "")) != "SYNTHETIC_FIXTURE":
+		DebugLog.error("Battle package is not marked SYNTHETIC_FIXTURE")
+		return ERR_INVALID_DATA
+	_battles = battles_data.duplicate(true)
 
 	loaded = true
 	DebugLog.info("Loaded %d synthetic unit records" % _units.size())
@@ -129,12 +136,59 @@ func get_settings_defaults() -> Dictionary:
 	return _settings_defaults.duplicate(true)
 
 
+func get_battle_package() -> Dictionary:
+	return _battles.duplicate(true)
+
+
+func get_battle_combatant(id: String) -> Dictionary:
+	var section_variant: Variant = _battles.get("combatants", {})
+	if not section_variant is Dictionary:
+		return {}
+	var value: Variant = (section_variant as Dictionary).get(id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+
+func get_ability_definition(id: String) -> Dictionary:
+	var section_variant: Variant = _battles.get("abilities", {})
+	if not section_variant is Dictionary:
+		return {}
+	var value: Variant = (section_variant as Dictionary).get(id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+
+func get_item_definition(id: String) -> Dictionary:
+	var section_variant: Variant = _battles.get("items", {})
+	if not section_variant is Dictionary:
+		return {}
+	var value: Variant = (section_variant as Dictionary).get(id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+
+func get_encounter(id: String) -> Dictionary:
+	var section_variant: Variant = _battles.get("encounters", {})
+	if not section_variant is Dictionary:
+		return {}
+	var value: Variant = (section_variant as Dictionary).get(id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+
+func get_encounter_ids() -> Array[String]:
+	var result: Array[String] = []
+	var encounters_variant: Variant = _battles.get("encounters", {})
+	if encounters_variant is Dictionary:
+		for key in (encounters_variant as Dictionary).keys():
+			result.append(str(key))
+	result.sort()
+	return result
+
+
 func summary() -> Dictionary:
 	return {
 		"content_version": str(_catalog.get("content_version", "")),
 		"fixture_marker": str(_catalog.get("fixture_marker", "")),
 		"unit_count": _units.size(),
 		"animation_group_count": _animations.size(),
+		"encounter_count": (_battles.get("encounters", {}) as Dictionary).size(),
 		"regions": ["GL", "JP"]
 	}
 
