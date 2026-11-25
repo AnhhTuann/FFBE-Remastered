@@ -1,0 +1,86 @@
+{
+  "source_id": "DaddyRaegen/ffbe_asset_dump",
+  "datasets": [
+    {
+      "key": "asset_unit_catalog",
+      "category": "characters",
+      "label": "Unit asset catalog",
+      "entity_type": "unit_asset",
+      "paths": {
+        "SHARED": "catalog/units.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "sprite_sheet",
+        "frame_data",
+        "idle_animation"
+      ],
+      "name_field": "name",
+      "regions": [
+        "SHARED"
+      ]
+    },
+    {
+      "key": "asset_monster_catalog",
+      "category": "enemy",
+      "label": "Monster asset catalog",
+      "entity_type": "monster_asset",
+      "paths": {
+        "SHARED": "catalog/monsters.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "sprite_sheet",
+        "frame_data",
+        "idle_animation"
+      ],
+      "name_field": "name",
+      "regions": [
+        "SHARED"
+      ]
+    },
+    {
+      "key": "asset_vision_cards",
+      "category": "other",
+      "label": "Vision card asset catalog",
+      "entity_type": "vision_card_asset",
+      "paths": {
+        "SHARED": "catalog/vision_cards.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "sprite_sheet",
+        "frame_data",
+        "idle_animation"
+      ],
+      "name_field": "name",
+      "regions": [
+        "SHARED"
+      ]
+    },
+    {
+      "key": "asset_unit_master",
+      "category": "characters",
+      "label": "Region-aware unit master",
+      "entity_type": "unit_master",
+      "paths": {
+        "SHARED": "catalog/unit_master.json"
+      },
+      "record_path": "units",
+      "id_field": "master_id",
+      "required_fields": [
+        "master_id",
+        "identities",
+        "assets"
+      ],
+      "name_field": "name",
+      "regions": [
+        "SHARED"
+      ]
+    }
+  ],
+  "references": []
+}

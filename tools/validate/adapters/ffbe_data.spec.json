@@ -1,0 +1,409 @@
+{
+  "source_id": "DanUgore/ffbe_data",
+  "datasets": [
+    {
+      "key": "units",
+      "category": "characters",
+      "label": "Units",
+      "entity_type": "unit",
+      "paths": {
+        "GL": "gl/unit.json",
+        "JP": "jp/unit.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "abilities",
+      "category": "battle",
+      "label": "Abilities",
+      "entity_type": "ability",
+      "paths": {
+        "GL": "gl/ability.json",
+        "JP": "jp/ability.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "magic",
+      "category": "battle",
+      "label": "Magic",
+      "entity_type": "magic",
+      "paths": {
+        "GL": "gl/magic.json",
+        "JP": "jp/magic.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "limit_bursts",
+      "category": "battle",
+      "label": "Limit Bursts",
+      "entity_type": "limit_burst",
+      "paths": {
+        "GL": "gl/limits.json",
+        "JP": "jp/limits.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name",
+        "levels"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "monster_skills",
+      "category": "battle",
+      "label": "Monster skills",
+      "entity_type": "monster_skill",
+      "paths": {
+        "GL": "gl/monskills.json",
+        "JP": "jp/monskills.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "enemy_ai",
+      "category": "enemy",
+      "label": "Enemy AI",
+      "entity_type": "ai",
+      "paths": {
+        "GL": "gl/ai.json",
+        "JP": "jp/ai.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "items",
+      "category": "equipment",
+      "label": "Items",
+      "entity_type": "item",
+      "paths": {
+        "GL": "gl/item.json",
+        "JP": "jp/item.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "equipment",
+      "category": "equipment",
+      "label": "Equipment",
+      "entity_type": "equipment",
+      "paths": {
+        "GL": "gl/equip.json",
+        "JP": "jp/equip.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "materia",
+      "category": "equipment",
+      "label": "Materia",
+      "entity_type": "materia",
+      "paths": {
+        "GL": "gl/materia.json",
+        "JP": "jp/materia.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "recipes",
+      "category": "equipment",
+      "label": "Recipes",
+      "entity_type": "recipe",
+      "paths": {
+        "GL": "gl/recipe.json",
+        "JP": "jp/recipe.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "learnsets",
+      "category": "characters",
+      "label": "Learnsets",
+      "entity_type": "learnset",
+      "paths": {
+        "GL": "gl/learns.json",
+        "JP": "jp/learns.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id"
+      ],
+      "name_field": "name",
+      "id_from_key": true,
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "beasts",
+      "category": "enemy",
+      "label": "Esper beasts",
+      "entity_type": "beast",
+      "paths": {
+        "GL": "gl/beasts.json",
+        "JP": "jp/beasts.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "boards",
+      "category": "enemy",
+      "label": "Esper boards",
+      "entity_type": "board",
+      "paths": {
+        "JP": "jp/boards.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "pieces"
+      ],
+      "name_field": "name",
+      "id_from_key": true,
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "enhancements",
+      "category": "characters",
+      "label": "Enhancement data",
+      "entity_type": "enhancement",
+      "paths": {
+        "GL": "gl/enhance.json",
+        "JP": "jp/enhance.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id"
+      ],
+      "name_field": "name",
+      "id_from_key": true,
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "important_items",
+      "category": "equipment",
+      "label": "Important items",
+      "entity_type": "important_item",
+      "paths": {
+        "GL": "gl/important.json",
+        "JP": "jp/important.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "colosseum_rewards",
+      "category": "quests",
+      "label": "Colosseum rewards",
+      "entity_type": "colosseum_reward",
+      "paths": {
+        "GL": "gl/colorewards.json",
+        "JP": "jp/colorewards.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "id_from_key": true,
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "quests",
+      "category": "quests",
+      "label": "Quests",
+      "entity_type": "quest",
+      "paths": {
+        "JP": "quests.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    },
+    {
+      "key": "missions",
+      "category": "quests",
+      "label": "Missions",
+      "entity_type": "mission",
+      "paths": {
+        "JP": "jp/missions.json"
+      },
+      "id_field": "id",
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "name_field": "name",
+      "regions": [
+        "GL",
+        "JP"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "from": "units",
+      "field": "lb.id",
+      "to": "limit_bursts",
+      "description": "Unit Limit Burst record"
+    },
+    {
+      "from": "materia",
+      "field": "skills.abilities[].id",
+      "to": "abilities",
+      "description": "Ability granted by materia"
+    },
+    {
+      "from": "materia",
+      "field": "skills.magic[].id",
+      "to": "magic",
+      "description": "Spell granted by materia"
+    },
+    {
+      "from": "recipes",
+      "field": "materials[].id",
+      "to": "items",
+      "description": "Crafting material item"
+    },
+    {
+      "from": "recipes",
+      "field": "crafts.id",
+      "to": "items",
+      "description": "Crafted item"
+    },
+    {
+      "from": "learnsets",
+      "field": "abilities[].id",
+      "to": "abilities",
+      "description": "Learned ability (JP schema)"
+    },
+    {
+      "from": "learnsets",
+      "field": "magic[].id",
+      "to": "magic",
+      "description": "Learned spell (JP schema)"
+    }
+  ]
+}

@@ -1,0 +1,544 @@
+{
+  "audit_metadata": {
+    "available_data_categories": [
+      "units",
+      "abilities",
+      "magic",
+      "limit bursts",
+      "items",
+      "equipment",
+      "materia",
+      "recipes",
+      "learnsets",
+      "monster skills",
+      "enemy AI",
+      "esper beasts and boards",
+      "quests",
+      "missions",
+      "colosseum rewards"
+    ],
+    "branches": [
+      {
+        "branch": "master",
+        "commit_sha": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0"
+      },
+      {
+        "branch": "gh-pages",
+        "commit_sha": "874d08b70a118b57ab6e00a03071adfd5d615980"
+      }
+    ],
+    "commit_date": "2018-02-09T05:14:32Z",
+    "commit_sha": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+    "confidence": "HIGH for structure and record counts at the exact checked-out revision; LOW for present-day game coverage because the last data update is from 2018",
+    "current_branch": "master",
+    "last_update": "HEAD commit 2018-02-09T05:14:32Z 'JP Data Update'; repository pushed_at=2018-02-09T05:15:17Z",
+    "license": "No LICENSE file; GitHub API license=null",
+    "limitations": [
+      "37 JSON/text files / 77,884,391 bytes measured from the exact checked-out tree",
+      "Datasets are a historical snapshot; absence does not prove that content never existed",
+      "Name fields in JP are largely native-language text",
+      "No original game access was used and no access controls were bypassed"
+    ],
+    "missing_or_inaccessible": [
+      "No visual assets",
+      "No vision cards",
+      "GL enhance.json is an empty object",
+      "GL missions/boards and JP counterpart gaps are recorded per dataset in data-coverage.json",
+      "Source extraction method and original game revision are not documented in the repository"
+    ],
+    "name": "FFBE Extracted Game Data",
+    "provenance": "Inspected through authenticated GitHub REST metadata and a full clone at the exact checked-out revision. No original game access was used.",
+    "redistribution_restrictions": "No redistribution permission found. Extracted game data may contain protected text and metadata.",
+    "region_coverage": "GL and JP directories present; README describes the project as JP data",
+    "repository_url": "https://github.com/DanUgore/ffbe_data",
+    "source_id": "DanUgore/ffbe_data",
+    "source_type": "public extracted structured JSON datasets"
+  },
+  "categories": {
+    "global-structured-data": {
+      "bytes": 7876857,
+      "files": 15
+    },
+    "japan-structured-data": {
+      "bytes": 69497574,
+      "files": 18
+    },
+    "root": {
+      "bytes": 509960,
+      "files": 4
+    }
+  },
+  "emitted_file_rows": 37,
+  "extensions": {
+    "json": {
+      "bytes": 77883532,
+      "files": 35
+    },
+    "md": {
+      "bytes": 846,
+      "files": 1
+    },
+    "txt": {
+      "bytes": 13,
+      "files": 1
+    }
+  },
+  "file_count": 37,
+  "files": [
+    {
+      "category": "root",
+      "evidence": "worktree",
+      "extension": "md",
+      "path": "README.md",
+      "sha256": "f8549481a72eaf72ee1207108fdd1a2bd8a271f7efda4b23bccbf8f1369de376",
+      "size_bytes": 846,
+      "status": "HASHED"
+    },
+    {
+      "category": "root",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "boards.json",
+      "sha256": "c2ae993b7f697508d51ba22cfbc027b1aecac5d7391eb235c8eb8ff2436cd0bd",
+      "size_bytes": 398616,
+      "status": "HASHED"
+    },
+    {
+      "category": "root",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "colorewards.json",
+      "sha256": "455914c22ac04c708a585ddf05c1f9687354a56cdfb73480fb3542a16ec2a91d",
+      "size_bytes": 35091,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/ability.json",
+      "sha256": "491e5c3543e35814e63932ff83c478fd548f708cc435bbccef2b6b5ea857259a",
+      "size_bytes": 515524,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/ai.json",
+      "sha256": "0f8378b488089852bbd2c45d82c2c94734507336ceef605e6c4b2b92c17902fa",
+      "size_bytes": 837913,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/beasts.json",
+      "sha256": "fa88ecd5b19708883287d07360ab2a2f41c379a625ee56d3b9d6b0d9c807d8c2",
+      "size_bytes": 27863,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/colorewards.json",
+      "sha256": "d4657656399fe52c33cb87f81f1e9b803e260282547644d8017d695cbe93b0c7",
+      "size_bytes": 51094,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/enhance.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "size_bytes": 2,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/equip.json",
+      "sha256": "a737b1c3562a20e18a8e614c3b9646c7c592ca747f455b1d5141801136589c7a",
+      "size_bytes": 346809,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/important.json",
+      "sha256": "5e8a4dfa20f5d6a2cd3d6905cf0cdb6b9f161cb9861a87c1a4fc03936284ea3a",
+      "size_bytes": 829,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/item.json",
+      "sha256": "21610a3d640eff4f119decdb95f7f619e0ac4de522ae232bf1f3a235dce74b4f",
+      "size_bytes": 165765,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/learns.json",
+      "sha256": "e1cdf8e6a95934822a4df922f86f0574ef1159eb0a322d6f7fea72a655780698",
+      "size_bytes": 256389,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/limits.json",
+      "sha256": "78e61f98da40de23a76ab0f9b96857450064ca154e0fe37199c01572b2984e5a",
+      "size_bytes": 3527911,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/magic.json",
+      "sha256": "def50c1f3cba5c360d07f76cc43f1260ed6aa15ffe8e237ff7a3ee60cbda2aa5",
+      "size_bytes": 89251,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/materia.json",
+      "sha256": "e5c0095b3bfc2935698160a5974f519498dc3f8ad4f39dcde3ed9e3e89159a37",
+      "size_bytes": 82048,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/monskills.json",
+      "sha256": "06b09e5f060c98b5a1b009a7abee6444e689b720331f90fa0b02db47ccd99c6f",
+      "size_bytes": 540339,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/recipe.json",
+      "sha256": "cfd87efc849d9b80c5d025f67d7a46942decb86b5e47f09d11db1032b881fe6a",
+      "size_bytes": 162902,
+      "status": "HASHED"
+    },
+    {
+      "category": "global-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "gl/unit.json",
+      "sha256": "d12c7414f7f8db6e71d55b9263ea339a1f4e521b616b3246e16565788132de05",
+      "size_bytes": 1272218,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/ability.json",
+      "sha256": "dc95c9094774272d0b9fcf2306e61cba371aee9a5ff91a1ab80b03ca58b5e0f2",
+      "size_bytes": 9684269,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/ai.json",
+      "sha256": "e98881caeaccc1ab67ca87586d429a1c0468cb4ed2e757bccb1886a9ebb209ea",
+      "size_bytes": 8791765,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/beasts.json",
+      "sha256": "41180743e9bbbd790624c93f7c4c04d2d394a4fa6665c95d34f0532244922a2b",
+      "size_bytes": 136783,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/boards.json",
+      "sha256": "74739b5fe09264d94d16b537c06870d8f0f0c6d0a24bd4550a136bdeb8f26ccd",
+      "size_bytes": 315528,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/colorewards.json",
+      "sha256": "b956f2b93bfb9e1ddebd2addd2d281aaf6499155cc894dc4942e550e3c35d8cb",
+      "size_bytes": 35071,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/enhance.json",
+      "sha256": "31646bb34195cd7ab285f9cce268fd740c27145f20887942fc88ae7b5a6512e3",
+      "size_bytes": 1030067,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/equip.json",
+      "sha256": "d8254c6c69362062b8cd594322d8efb3af19e89905e167f9f799d4043cd4b57b",
+      "size_bytes": 1363684,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/important.json",
+      "sha256": "234a2dbf7f2cf3fe3079ab13d2e2c1af70bd8dce7bc160a22c8fb1e1065b895f",
+      "size_bytes": 7561,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/item.json",
+      "sha256": "cf316eaf2b14ca9c8f1980887f730beaffb25451117e811387c45eae978af697",
+      "size_bytes": 432768,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "txt",
+      "path": "jp/lastmodified.txt",
+      "sha256": "c936aa7abb3d3b0c6d028ecb0dae7c813726da2e9edc46cb60a6e2a51d7c468d",
+      "size_bytes": 13,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/learns.json",
+      "sha256": "9ff7522dce243d6e9d4b1eae6d9f1c03afa1d2da2a8f583c189245da8d42c6c4",
+      "size_bytes": 1011639,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/limits.json",
+      "sha256": "dd2f56d5ec1bc78f3fefde39a3bcb331725346ae00d490b0e08317b4883e313e",
+      "size_bytes": 27247438,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/magic.json",
+      "sha256": "4dd24d9592945164f342a55c5bec096d0f43a05e1dc3f82a870eb2af0dc32f55",
+      "size_bytes": 280712,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/materia.json",
+      "sha256": "f4328480ed2e80b330c0ab7f47b99193b206f513355e2a63a064efe34b099468",
+      "size_bytes": 360060,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/missions.json",
+      "sha256": "c24e1ed224c76f0fd3e2c9da74bb7802ee5518c4ad757ac89b88c85bdb66856f",
+      "size_bytes": 7297348,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/monskills.json",
+      "sha256": "b44f3b61ad6ec0adc5123d20ca10ca8e5c6898b8f01f7b5ebf2ea2dac20fcb0d",
+      "size_bytes": 4445166,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/recipe.json",
+      "sha256": "2d6e952e7447c699ebe59c97ce7962f3bdd263c6db3bffadde0a6a641fe94438",
+      "size_bytes": 318954,
+      "status": "HASHED"
+    },
+    {
+      "category": "japan-structured-data",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "jp/unit.json",
+      "sha256": "5830c7e204e35734e0e55004bba417ad191ed5a88e46f21a4e523acad1b65497",
+      "size_bytes": 6738748,
+      "status": "HASHED"
+    },
+    {
+      "category": "root",
+      "evidence": "worktree",
+      "extension": "json",
+      "path": "quests.json",
+      "sha256": "5e79e7fa6479a0d524383f86cb50832d7dde6b2eb5185a654b32331f23b235be",
+      "size_bytes": 75407,
+      "status": "HASHED"
+    }
+  ],
+  "git_tree_listing": "b-tree-inventory.txt",
+  "github_metadata": {
+    "allow_forking": true,
+    "archive_url": "https://api.github.com/repos/DanUgore/ffbe_data/{archive_format}{/ref}",
+    "archived": false,
+    "assignees_url": "https://api.github.com/repos/DanUgore/ffbe_data/assignees{/user}",
+    "blobs_url": "https://api.github.com/repos/DanUgore/ffbe_data/git/blobs{/sha}",
+    "branches_url": "https://api.github.com/repos/DanUgore/ffbe_data/branches{/branch}",
+    "clone_url": "https://github.com/DanUgore/ffbe_data.git",
+    "collaborators_url": "https://api.github.com/repos/DanUgore/ffbe_data/collaborators{/collaborator}",
+    "comments_url": "https://api.github.com/repos/DanUgore/ffbe_data/comments{/number}",
+    "commits_url": "https://api.github.com/repos/DanUgore/ffbe_data/commits{/sha}",
+    "compare_url": "https://api.github.com/repos/DanUgore/ffbe_data/compare/{base}...{head}",
+    "contents_url": "https://api.github.com/repos/DanUgore/ffbe_data/contents/{+path}",
+    "contributors_url": "https://api.github.com/repos/DanUgore/ffbe_data/contributors",
+    "created_at": "2016-05-25T17:53:05Z",
+    "default_branch": "master",
+    "deployments_url": "https://api.github.com/repos/DanUgore/ffbe_data/deployments",
+    "description": "Holds extracted data for the game Final Fantasy Brave Exvius (JP)",
+    "disabled": false,
+    "downloads_url": "https://api.github.com/repos/DanUgore/ffbe_data/downloads",
+    "events_url": "https://api.github.com/repos/DanUgore/ffbe_data/events",
+    "fork": false,
+    "forks": 0,
+    "forks_count": 0,
+    "forks_url": "https://api.github.com/repos/DanUgore/ffbe_data/forks",
+    "full_name": "DanUgore/ffbe_data",
+    "git_commits_url": "https://api.github.com/repos/DanUgore/ffbe_data/git/commits{/sha}",
+    "git_refs_url": "https://api.github.com/repos/DanUgore/ffbe_data/git/refs{/sha}",
+    "git_tags_url": "https://api.github.com/repos/DanUgore/ffbe_data/git/tags{/sha}",
+    "git_url": "git://github.com/DanUgore/ffbe_data.git",
+    "has_discussions": false,
+    "has_downloads": false,
+    "has_issues": true,
+    "has_pages": true,
+    "has_projects": true,
+    "has_pull_requests": true,
+    "has_wiki": true,
+    "homepage": null,
+    "hooks_url": "https://api.github.com/repos/DanUgore/ffbe_data/hooks",
+    "html_url": "https://github.com/DanUgore/ffbe_data",
+    "id": 59685342,
+    "is_template": false,
+    "issue_comment_url": "https://api.github.com/repos/DanUgore/ffbe_data/issues/comments{/number}",
+    "issue_events_url": "https://api.github.com/repos/DanUgore/ffbe_data/issues/events{/number}",
+    "issues_url": "https://api.github.com/repos/DanUgore/ffbe_data/issues{/number}",
+    "keys_url": "https://api.github.com/repos/DanUgore/ffbe_data/keys{/key_id}",
+    "labels_url": "https://api.github.com/repos/DanUgore/ffbe_data/labels{/name}",
+    "language": null,
+    "languages_url": "https://api.github.com/repos/DanUgore/ffbe_data/languages",
+    "license": null,
+    "merges_url": "https://api.github.com/repos/DanUgore/ffbe_data/merges",
+    "milestones_url": "https://api.github.com/repos/DanUgore/ffbe_data/milestones{/number}",
+    "mirror_url": null,
+    "name": "ffbe_data",
+    "network_count": 0,
+    "node_id": "MDEwOlJlcG9zaXRvcnk1OTY4NTM0Mg==",
+    "notifications_url": "https://api.github.com/repos/DanUgore/ffbe_data/notifications{?since,all,participating}",
+    "open_issues": 0,
+    "open_issues_count": 0,
+    "owner": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/3052691?v=4",
+      "events_url": "https://api.github.com/users/DanUgore/events{/privacy}",
+      "followers_url": "https://api.github.com/users/DanUgore/followers",
+      "following_url": "https://api.github.com/users/DanUgore/following{/other_user}",
+      "gists_url": "https://api.github.com/users/DanUgore/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/DanUgore",
+      "id": 3052691,
+      "login": "DanUgore",
+      "node_id": "MDQ6VXNlcjMwNTI2OTE=",
+      "organizations_url": "https://api.github.com/users/DanUgore/orgs",
+      "received_events_url": "https://api.github.com/users/DanUgore/received_events",
+      "repos_url": "https://api.github.com/users/DanUgore/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/DanUgore/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/DanUgore/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/DanUgore",
+      "user_view_type": "public"
+    },
+    "permissions": {
+      "admin": false,
+      "maintain": false,
+      "pull": true,
+      "push": false,
+      "triage": false
+    },
+    "private": false,
+    "pull_request_creation_policy": "all",
+    "pulls_url": "https://api.github.com/repos/DanUgore/ffbe_data/pulls{/number}",
+    "pushed_at": "2018-02-09T05:15:17Z",
+    "releases_url": "https://api.github.com/repos/DanUgore/ffbe_data/releases{/id}",
+    "size": 5425,
+    "ssh_url": "git@github.com:DanUgore/ffbe_data.git",
+    "stargazers_count": 4,
+    "stargazers_url": "https://api.github.com/repos/DanUgore/ffbe_data/stargazers",
+    "statuses_url": "https://api.github.com/repos/DanUgore/ffbe_data/statuses/{sha}",
+    "subscribers_count": 3,
+    "subscribers_url": "https://api.github.com/repos/DanUgore/ffbe_data/subscribers",
+    "subscription_url": "https://api.github.com/repos/DanUgore/ffbe_data/subscription",
+    "svn_url": "https://github.com/DanUgore/ffbe_data",
+    "tags_url": "https://api.github.com/repos/DanUgore/ffbe_data/tags",
+    "teams_url": "https://api.github.com/repos/DanUgore/ffbe_data/teams",
+    "temp_clone_token": "",
+    "topics": [],
+    "trees_url": "https://api.github.com/repos/DanUgore/ffbe_data/git/trees{/sha}",
+    "updated_at": "2026-04-02T04:22:37Z",
+    "url": "https://api.github.com/repos/DanUgore/ffbe_data",
+    "visibility": "public",
+    "watchers": 4,
+    "watchers_count": 4,
+    "web_commit_signoff_required": false
+  },
+  "hashed_file_count": 37,
+  "revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+  "root_label": "source-b",
+  "source_id": "DanUgore/ffbe_data",
+  "tool": "inventory_sources.py",
+  "tool_version": "1.0.0",
+  "total_bytes": 77884391,
+  "tree_metadata_only_files": 0
+}

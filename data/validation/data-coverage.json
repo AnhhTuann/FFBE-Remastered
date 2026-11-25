@@ -1,0 +1,2900 @@
+{
+  "classification_policy": {
+    "PARTIAL": "Missing required fields, duplicate identity, or unusable ID.",
+    "RECOVERED": "Parsed record with all required fields; not cross-verified.",
+    "UNAVAILABLE": "No source file exists for the region/category.",
+    "UNVERIFIED": "Parse error or missing identity.",
+    "VERIFIED": "Only assigned when the explicit verified-evidence file matched the composite identity."
+  },
+  "collision_count": 5181,
+  "missing_reference_count": 651,
+  "regions": {
+    "GL": [
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "ability:GL:100010",
+            "name": "HP +10%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:GL:100020",
+            "name": "HP +20%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:GL:100030",
+            "name": "HP +30%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:GL:100040",
+            "name": "MP +10%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:GL:100050",
+            "name": "MP +20%",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "abilities",
+        "label": "Abilities",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/ability.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 451,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 451,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 451
+      },
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "beast:GL:1",
+            "name": "Siren",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:GL:2",
+            "name": "Ifrit",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:GL:3",
+            "name": "Shiva",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:GL:5",
+            "name": "Diablos",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:GL:6",
+            "name": "Golem",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "beasts",
+        "label": "Esper beasts",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/beasts.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 6,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 6,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 6
+      },
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [],
+        "invalid_records": 0,
+        "key": "boards",
+        "label": "Esper boards",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": null,
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 0,
+          "UNAVAILABLE": 1,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 0,
+        "unavailable_records": 1,
+        "unverified_records": 0,
+        "valid_records": 0
+      },
+      {
+        "category": "quests",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "colosseum_reward:GL:1",
+            "name": "初級",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "colosseum_reward:GL:2",
+            "name": "中級",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "colosseum_reward:GL:3",
+            "name": "上級",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "colosseum_rewards",
+        "label": "Colosseum rewards",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/colorewards.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 3,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 3,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 3
+      },
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "ai:GL:1",
+            "name": "攻撃ランダム",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:GL:2",
+            "name": "スキルランダム",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:GL:3",
+            "name": "攻撃高、スキル低、雑魚用",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:GL:4",
+            "name": "スキルのみ使用",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:GL:5",
+            "name": "攻撃低、スキル高、ボス用",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "enemy_ai",
+        "label": "Enemy AI",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/ai.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 309,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 309,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 309
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [],
+        "invalid_records": 0,
+        "key": "enhancements",
+        "label": "Enhancement data",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/enhance.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 0,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 0,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 0
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "equipment:GL:301000200",
+            "name": "ブロンズナイフ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:GL:301000400",
+            "name": "ダガー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:GL:301000500",
+            "name": "ミスリルダガー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:GL:301000600",
+            "name": "スリプルダガー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:GL:301000900",
+            "name": "マインゴーシュ",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "equipment",
+        "label": "Equipment",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/equip.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 261,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 261,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 261
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "important_item:GL:20",
+            "name": "Crest",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:GL:30",
+            "name": "EXP Key",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:GL:40",
+            "name": "Jeweled Key",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:GL:50",
+            "name": "Rare Summon Ticket",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "important_items",
+        "label": "Important items",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/important.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 4,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 4,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 4
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "item:GL:101000100",
+            "name": "Potion",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:GL:101000200",
+            "name": "Hi-Potion",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:GL:101000300",
+            "name": "X-Potion",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:GL:101001100",
+            "name": "Ether",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:GL:101001200",
+            "name": "Turbo Ether",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "items",
+        "label": "Items",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/item.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 247,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 247,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 247
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "learnset:GL:100000102",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:GL:100000202",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:GL:100000302",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:GL:100000503",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:GL:100000901",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "learnsets",
+        "label": "Learnsets",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/learns.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 110,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 110,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 110
+      },
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "limit_burst:GL:100000102",
+            "name": "Flame Sword",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:GL:100000103",
+            "name": "Crimson Slash",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:GL:100000104",
+            "name": "Blazing Storm",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:GL:100000105",
+            "name": "Shining Nova",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:GL:100000202",
+            "name": "Blade Flash",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "limit_bursts",
+        "label": "Limit Bursts",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/limits.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 293,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 293,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 293
+      },
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "magic:GL:10010",
+            "name": "Libra",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:GL:10020",
+            "name": "Cure",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:GL:10030",
+            "name": "Blindna",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:GL:10040",
+            "name": "Vox",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:GL:10050",
+            "name": "Poisona",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "magic",
+        "label": "Magic",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/magic.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 80,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 80,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 80
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "materia:GL:504010010",
+            "name": "Libra",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:GL:504010020",
+            "name": "Cure",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:GL:504010030",
+            "name": "Blindna",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:GL:504010040",
+            "name": "Vox",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:GL:504010050",
+            "name": "Poisona",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "materia",
+        "label": "Materia",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/materia.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 154,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 154,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 154
+      },
+      {
+        "category": "quests",
+        "duplicate_records": 0,
+        "examples": [],
+        "invalid_records": 0,
+        "key": "missions",
+        "label": "Missions",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": null,
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 0,
+          "UNAVAILABLE": 1,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 0,
+        "unavailable_records": 1,
+        "unverified_records": 0,
+        "valid_records": 0
+      },
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "monster_skill:GL:1",
+            "name": "<na>",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:GL:2",
+            "name": "<na>",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:GL:3",
+            "name": "<na>",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:GL:4",
+            "name": "<na>",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:GL:5",
+            "name": "<na>",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "monster_skills",
+        "label": "Monster skills",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/monskills.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 579,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 579,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 579
+      },
+      {
+        "category": "quests",
+        "duplicate_records": 0,
+        "examples": [],
+        "invalid_records": 0,
+        "key": "quests",
+        "label": "Quests",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": null,
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 0,
+          "UNAVAILABLE": 1,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 0,
+        "unavailable_records": 1,
+        "unverified_records": 0,
+        "valid_records": 0
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "recipe:GL:901000010",
+            "name": "Potion",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:GL:901000020",
+            "name": "Hi-Potion",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:GL:901000030",
+            "name": "X-Potion",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:GL:901000040",
+            "name": "Ether",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:GL:901000050",
+            "name": "Turbo Ether",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "recipes",
+        "label": "Recipes",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/recipe.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 252,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 252,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 252
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "unit:GL:100000102",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:GL:100000103",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:GL:100000104",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:GL:100000105",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:GL:100000202",
+            "name": "Lasswell",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "units",
+        "label": "Units",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "gl/unit.json",
+        "region": "GL",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 269,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 269,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 269
+      }
+    ],
+    "JP": [
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "ability:JP:100010",
+            "name": "HP+10%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:JP:100020",
+            "name": "HP+20%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:JP:100021",
+            "name": "HP+20%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:JP:100030",
+            "name": "HP+30%",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ability:JP:100040",
+            "name": "MP+10%",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "abilities",
+        "label": "Abilities",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/ability.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 6062,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 6062,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 6062
+      },
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "beast:JP:1",
+            "name": "セイレーン",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:JP:2",
+            "name": "イフリート",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:JP:3",
+            "name": "シヴァ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:JP:4",
+            "name": "カーバンクル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "beast:JP:5",
+            "name": "ディアボロス",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "beasts",
+        "label": "Esper beasts",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/beasts.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 16,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 16,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 16
+      },
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "board:JP:1",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "board:JP:2",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "board:JP:3",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "board:JP:4",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "board:JP:5",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "boards",
+        "label": "Esper boards",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/boards.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 16,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 16,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 16
+      },
+      {
+        "category": "quests",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "colosseum_reward:JP:1",
+            "name": "初級",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "colosseum_reward:JP:2",
+            "name": "中級",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "colosseum_rewards",
+        "label": "Colosseum rewards",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/colorewards.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 2,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 2,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 2
+      },
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "ai:JP:1",
+            "name": "攻撃ランダム",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:JP:2",
+            "name": "スキルランダム",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:JP:3",
+            "name": "攻撃高、スキル低、雑魚用",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:JP:4",
+            "name": "スキルのみ使用",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "ai:JP:5",
+            "name": "攻撃低、スキル高、ボス用",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "enemy_ai",
+        "label": "Enemy AI",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/ai.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 1461,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 1461,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 1461
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "enhancement:JP:100000102",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "enhancement:JP:100000202",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "enhancement:JP:100000302",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "enhancement:JP:100000315",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "enhancement:JP:100000403",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "enhancements",
+        "label": "Enhancement data",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/enhance.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 151,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 151,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 151
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "equipment:JP:301000200",
+            "name": "ブロンズナイフ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:JP:301000400",
+            "name": "ダガー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:JP:301000500",
+            "name": "ミスリルダガー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:JP:301000600",
+            "name": "スリプルダガー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "equipment:JP:301000900",
+            "name": "マインゴーシュ",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "equipment",
+        "label": "Equipment",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/equip.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 934,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 934,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 934
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "important_item:JP:20",
+            "name": "クレスト",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:JP:30",
+            "name": "経験値キー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:JP:40",
+            "name": "ジュエルキー",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:JP:50",
+            "name": "レア召喚チケット",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "important_item:JP:60",
+            "name": "アリーナ召喚チケット",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "important_items",
+        "label": "Important items",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/important.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 22,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 22,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 22
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "item:JP:101000100",
+            "name": "ポーション",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:JP:101000200",
+            "name": "ハイポーション",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:JP:101000300",
+            "name": "エクスポーション",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:JP:101000400",
+            "name": "やくそう",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "item:JP:101000500",
+            "name": "いやしそう",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "items",
+        "label": "Items",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/item.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 606,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 606,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 606
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "learnset:JP:100000102",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:JP:100000115",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:JP:100000202",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:JP:100000215",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "learnset:JP:100000302",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "learnsets",
+        "label": "Learnsets",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/learns.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 372,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 372,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 372
+      },
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "limit_burst:JP:100000102",
+            "name": "フレイムソード",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:JP:100000103",
+            "name": "クリムゾンスラッシュ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:JP:100000104",
+            "name": "ブレイジングストーム",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:JP:100000105",
+            "name": "シャイニングノヴァ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "limit_burst:JP:100000106",
+            "name": "シャイニングノヴァ",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "limit_bursts",
+        "label": "Limit Bursts",
+        "missing_required_fields": {
+          "levels": 10
+        },
+        "parse_errors": [],
+        "partial_records": 10,
+        "path": "jp/limits.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 10,
+          "RECOVERED": 1106,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 1116,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 1106
+      },
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "magic:JP:10010",
+            "name": "ライブラ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:JP:10020",
+            "name": "ケアル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:JP:10030",
+            "name": "ブラナ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:JP:10040",
+            "name": "ボキャル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "magic:JP:10050",
+            "name": "ポイゾナ",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "magic",
+        "label": "Magic",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/magic.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 210,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 210,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 210
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "materia:JP:504010010",
+            "name": "ライブラ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:JP:504010020",
+            "name": "ケアル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:JP:504010030",
+            "name": "ブラナ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:JP:504010040",
+            "name": "ボキャル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "materia:JP:504010050",
+            "name": "ポイゾナ",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "materia",
+        "label": "Materia",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/materia.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 500,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 500,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 500
+      },
+      {
+        "category": "quests",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "mission:JP:1110100",
+            "name": "飛空艇・甲板",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "mission:JP:1110101",
+            "name": "土の神殿・入口",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "mission:JP:1110103",
+            "name": "土の神殿・最深部",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "mission:JP:1110104",
+            "name": "土の神殿・探索",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "mission:JP:1110105",
+            "name": "上位探索・深淵への探求",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "missions",
+        "label": "Missions",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/missions.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 3440,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 3440,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 3440
+      },
+      {
+        "category": "battle",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "monster_skill:JP:78",
+            "name": "仲間を呼ぶ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:JP:110010",
+            "name": "ライブラ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:JP:110020",
+            "name": "ケアル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:JP:110030",
+            "name": "ブラナ",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_skill:JP:110040",
+            "name": "ボキャル",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "monster_skills",
+        "label": "Monster skills",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/monskills.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 4452,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 4452,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 4452
+      },
+      {
+        "category": "quests",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "quest:JP:1001001",
+            "name": "目薬がほしい",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "quest:JP:1001002",
+            "name": "ヒミツの本を探して",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "quest:JP:1001003",
+            "name": "防具の素材がほしい",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "quest:JP:1001004",
+            "name": "ウルフ討伐作戦",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "quest:JP:1001005",
+            "name": "秘密の手帳",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "quests",
+        "label": "Quests",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "quests.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 74,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 74,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 74
+      },
+      {
+        "category": "equipment",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "recipe:JP:901000010",
+            "name": "ポーション",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:JP:901000020",
+            "name": "ハイポーション",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:JP:901000030",
+            "name": "エクスポーション",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:JP:901000040",
+            "name": "エーテル",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "recipe:JP:901000050",
+            "name": "エーテルターボ",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "recipes",
+        "label": "Recipes",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/recipe.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 456,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 456,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 456
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "unit:JP:100000102",
+            "name": "レイン",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:JP:100000103",
+            "name": "レイン",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:JP:100000104",
+            "name": "レイン",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:JP:100000105",
+            "name": "レイン",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit:JP:100000106",
+            "name": "レイン",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "units",
+        "label": "Units",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "jp/unit.json",
+        "region": "JP",
+        "source_id": "DanUgore/ffbe_data",
+        "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 1115,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 1115,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 1115
+      }
+    ],
+    "SHARED": [
+      {
+        "category": "enemy",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "monster_asset:SHARED:10000000",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_asset:SHARED:10000001",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_asset:SHARED:10000002",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_asset:SHARED:10000003",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "monster_asset:SHARED:10000004",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "asset_monster_catalog",
+        "label": "Monster asset catalog",
+        "missing_required_fields": {
+          "frame_data": 1,
+          "idle_animation": 1
+        },
+        "parse_errors": [],
+        "partial_records": 1,
+        "path": "catalog/monsters.json",
+        "region": "SHARED",
+        "source_id": "DaddyRaegen/ffbe_asset_dump",
+        "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+        "status_counts": {
+          "PARTIAL": 1,
+          "RECOVERED": 3627,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 3628,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 3627
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "unit_asset:SHARED:100000102",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_asset:SHARED:100000103",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_asset:SHARED:100000104",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_asset:SHARED:100000105",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_asset:SHARED:100000106",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "asset_unit_catalog",
+        "label": "Unit asset catalog",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "catalog/units.json",
+        "region": "SHARED",
+        "source_id": "DaddyRaegen/ffbe_asset_dump",
+        "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 3953,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 3953,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 3953
+      },
+      {
+        "category": "characters",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "unit_master:SHARED:9990196",
+            "name": "None",
+            "status": "PARTIAL"
+          },
+          {
+            "identity": "unit_master:SHARED:100000102",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_master:SHARED:100000103",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_master:SHARED:100000104",
+            "name": "Rain",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "unit_master:SHARED:100000105",
+            "name": "Rain",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "asset_unit_master",
+        "label": "Region-aware unit master",
+        "missing_required_fields": {
+          "identities": 21
+        },
+        "parse_errors": [],
+        "partial_records": 21,
+        "path": "catalog/unit_master.json",
+        "region": "SHARED",
+        "source_id": "DaddyRaegen/ffbe_asset_dump",
+        "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+        "status_counts": {
+          "PARTIAL": 21,
+          "RECOVERED": 3943,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 3964,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 3943
+      },
+      {
+        "category": "other",
+        "duplicate_records": 0,
+        "examples": [
+          {
+            "identity": "vision_card_asset:SHARED:100000101",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "vision_card_asset:SHARED:100000201",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "vision_card_asset:SHARED:100000301",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "vision_card_asset:SHARED:100000401",
+            "name": "",
+            "status": "RECOVERED"
+          },
+          {
+            "identity": "vision_card_asset:SHARED:100000501",
+            "name": "",
+            "status": "RECOVERED"
+          }
+        ],
+        "invalid_records": 0,
+        "key": "asset_vision_cards",
+        "label": "Vision card asset catalog",
+        "missing_required_fields": {},
+        "parse_errors": [],
+        "partial_records": 0,
+        "path": "catalog/vision_cards.json",
+        "region": "SHARED",
+        "source_id": "DaddyRaegen/ffbe_asset_dump",
+        "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+        "status_counts": {
+          "PARTIAL": 0,
+          "RECOVERED": 360,
+          "UNAVAILABLE": 0,
+          "UNVERIFIED": 0,
+          "VERIFIED": 0
+        },
+        "total_records": 360,
+        "unavailable_records": 0,
+        "unverified_records": 0,
+        "valid_records": 360
+      }
+    ]
+  },
+  "rows": [
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "units",
+      "label": "Units",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/unit.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 269,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 269,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 269
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "abilities",
+      "label": "Abilities",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/ability.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 451,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 451,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 451
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "magic",
+      "label": "Magic",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/magic.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 80,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 80,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 80
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "limit_bursts",
+      "label": "Limit Bursts",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/limits.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 293,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 293,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 293
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "monster_skills",
+      "label": "Monster skills",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/monskills.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 579,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 579,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 579
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "enemy_ai",
+      "label": "Enemy AI",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/ai.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 309,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 309,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 309
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "items",
+      "label": "Items",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/item.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 247,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 247,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 247
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "equipment",
+      "label": "Equipment",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/equip.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 261,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 261,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 261
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "materia",
+      "label": "Materia",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/materia.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 154,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 154,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 154
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "recipes",
+      "label": "Recipes",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/recipe.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 252,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 252,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 252
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "learnsets",
+      "label": "Learnsets",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/learns.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 110,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 110,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 110
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "beasts",
+      "label": "Esper beasts",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/beasts.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 6,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 6,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 6
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "boards",
+      "label": "Esper boards",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": null,
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 0,
+      "status_UNAVAILABLE": 1,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 0,
+      "unavailable_records": 1,
+      "unverified_records": 0,
+      "valid_records": 0
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "enhancements",
+      "label": "Enhancement data",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/enhance.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 0,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 0,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 0
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "important_items",
+      "label": "Important items",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/important.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 4,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 4,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 4
+    },
+    {
+      "category": "quests",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "colosseum_rewards",
+      "label": "Colosseum rewards",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "gl/colorewards.json",
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 3,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 3,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 3
+    },
+    {
+      "category": "quests",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "quests",
+      "label": "Quests",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": null,
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 0,
+      "status_UNAVAILABLE": 1,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 0,
+      "unavailable_records": 1,
+      "unverified_records": 0,
+      "valid_records": 0
+    },
+    {
+      "category": "quests",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "missions",
+      "label": "Missions",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": null,
+      "region": "GL",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 0,
+      "status_UNAVAILABLE": 1,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 0,
+      "unavailable_records": 1,
+      "unverified_records": 0,
+      "valid_records": 0
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "units",
+      "label": "Units",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/unit.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 1115,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 1115,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 1115
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "abilities",
+      "label": "Abilities",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/ability.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 6062,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 6062,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 6062
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "magic",
+      "label": "Magic",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/magic.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 210,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 210,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 210
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "limit_bursts",
+      "label": "Limit Bursts",
+      "missing_required_field_names": "levels",
+      "parse_error_count": 0,
+      "partial_records": 10,
+      "path": "jp/limits.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 10,
+      "status_RECOVERED": 1106,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 1116,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 1106
+    },
+    {
+      "category": "battle",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "monster_skills",
+      "label": "Monster skills",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/monskills.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 4452,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 4452,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 4452
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "enemy_ai",
+      "label": "Enemy AI",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/ai.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 1461,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 1461,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 1461
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "items",
+      "label": "Items",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/item.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 606,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 606,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 606
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "equipment",
+      "label": "Equipment",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/equip.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 934,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 934,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 934
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "materia",
+      "label": "Materia",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/materia.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 500,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 500,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 500
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "recipes",
+      "label": "Recipes",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/recipe.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 456,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 456,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 456
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "learnsets",
+      "label": "Learnsets",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/learns.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 372,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 372,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 372
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "beasts",
+      "label": "Esper beasts",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/beasts.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 16,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 16,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 16
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "boards",
+      "label": "Esper boards",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/boards.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 16,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 16,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 16
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "enhancements",
+      "label": "Enhancement data",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/enhance.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 151,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 151,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 151
+    },
+    {
+      "category": "equipment",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "important_items",
+      "label": "Important items",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/important.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 22,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 22,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 22
+    },
+    {
+      "category": "quests",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "colosseum_rewards",
+      "label": "Colosseum rewards",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/colorewards.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 2,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 2,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 2
+    },
+    {
+      "category": "quests",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "quests",
+      "label": "Quests",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "quests.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 74,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 74,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 74
+    },
+    {
+      "category": "quests",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "missions",
+      "label": "Missions",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "jp/missions.json",
+      "region": "JP",
+      "source_id": "DanUgore/ffbe_data",
+      "source_revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 3440,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 3440,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 3440
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "asset_unit_catalog",
+      "label": "Unit asset catalog",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "catalog/units.json",
+      "region": "SHARED",
+      "source_id": "DaddyRaegen/ffbe_asset_dump",
+      "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 3953,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 3953,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 3953
+    },
+    {
+      "category": "enemy",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "asset_monster_catalog",
+      "label": "Monster asset catalog",
+      "missing_required_field_names": "frame_data,idle_animation",
+      "parse_error_count": 0,
+      "partial_records": 1,
+      "path": "catalog/monsters.json",
+      "region": "SHARED",
+      "source_id": "DaddyRaegen/ffbe_asset_dump",
+      "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+      "status_PARTIAL": 1,
+      "status_RECOVERED": 3627,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 3628,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 3627
+    },
+    {
+      "category": "other",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "asset_vision_cards",
+      "label": "Vision card asset catalog",
+      "missing_required_field_names": "",
+      "parse_error_count": 0,
+      "partial_records": 0,
+      "path": "catalog/vision_cards.json",
+      "region": "SHARED",
+      "source_id": "DaddyRaegen/ffbe_asset_dump",
+      "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+      "status_PARTIAL": 0,
+      "status_RECOVERED": 360,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 360,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 360
+    },
+    {
+      "category": "characters",
+      "duplicate_records": 0,
+      "invalid_records": 0,
+      "key": "asset_unit_master",
+      "label": "Region-aware unit master",
+      "missing_required_field_names": "identities",
+      "parse_error_count": 0,
+      "partial_records": 21,
+      "path": "catalog/unit_master.json",
+      "region": "SHARED",
+      "source_id": "DaddyRaegen/ffbe_asset_dump",
+      "source_revision": "f82d603c90ec799f539280267d3af7589c79f117",
+      "status_PARTIAL": 21,
+      "status_RECOVERED": 3943,
+      "status_UNAVAILABLE": 0,
+      "status_UNVERIFIED": 0,
+      "status_VERIFIED": 0,
+      "total_records": 3964,
+      "unavailable_records": 0,
+      "unverified_records": 0,
+      "valid_records": 3943
+    }
+  ],
+  "source_revisions": {
+    "DaddyRaegen/ffbe_asset_dump": "f82d603c90ec799f539280267d3af7589c79f117",
+    "DanUgore/ffbe_data": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0"
+  },
+  "tool": "validate_data.py",
+  "tool_version": "1.0.0"
+}

@@ -1,0 +1,32 @@
+# Temporary source inspection and local caches
+.audit-cache/
+.cache/
+*.tmp
+*.log
+
+# Python audit tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Generated source downloads and restricted third-party assets
+# Raw game data must never be committed to this public repository.
+data/raw/global/*
+data/raw/japan/*
+!data/raw/global/.gitkeep
+!data/raw/japan/.gitkeep
+*.cpk
+*.apk
+*.zip
+*.dat
+*.bmb
+*.m3r
+*.ssbp
+
+# Godot / build outputs when the engine work begins
+.godot/imported/
+builds/
+export/
