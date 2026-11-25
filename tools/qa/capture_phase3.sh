@@ -16,8 +16,21 @@ set -euo pipefail
 : "${RES:?RES is required}"
 : "${LOCALE:?LOCALE is required}"
 
+if [[ ! "$NAME" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || [[ "$NAME" == *".."* ]]; then
+  echo "Invalid NAME; use a simple basename without path separators" >&2
+  exit 2
+fi
+if [[ ! "$RES" =~ ^[0-9]+x[0-9]+$ ]]; then
+  echo "Invalid RES; expected WxH" >&2
+  exit 2
+fi
+case "$LOCALE" in
+  vi|en|ja) ;;
+  *) echo "Invalid LOCALE; expected vi, en or ja" >&2; exit 2 ;;
+esac
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SHOT_DIR="$ROOT/docs/qa/screenshots/phase3"
+SHOT_DIR="${QA_SHOT_DIR:-$ROOT/docs/qa/screenshots/phase3}"
 LOG_DIR="${QA_LOG_DIR:-${TMPDIR:-/tmp}/ffbe-phase3-qa}"
 mkdir -p "$SHOT_DIR" "$LOG_DIR"
 
