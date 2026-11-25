@@ -1,16 +1,19 @@
 extends Node
 
-## Versioned local persistence for settings and viewer profile state.
-## No gameplay progression, inventory, or battle state is stored in M2/M3.
+## Versioned local persistence for settings, viewer profile state and synthetic
+## battle completion records. Live battle state, inventory and equipment are not saved.
 
 signal settings_changed(settings: Dictionary)
 signal slot_saved(slot: int, path: String)
 signal slot_loaded(slot: int, data: Dictionary)
 signal save_failed(slot: int, message: String)
+signal battle_progress_saved(data: Dictionary)
 
 const SAVE_VERSION := 2
 const SLOT_COUNT := 3
 const SETTINGS_PATH := "user://settings.json"
+const BATTLE_PROGRESS_PATH := "user://battle_progress.json"
+const BATTLE_PROGRESS_VERSION := 2
 
 var _settings: Dictionary = {}
 
@@ -51,6 +54,125 @@ func load_settings() -> Dictionary:
 
 	DebugLog.enabled = bool(defaults.get("debug_logging", true))
 	return defaults
+
+
+func default_battle_progress() -> Dictionary:
+	return {
+		"version": BATTLE_PROGRESS_VERSION,
+		"progress": {
+			"attempts": 0,
+			"clears": {},
+			"best_turns": {},
+			"total_gil": 0,
+			"item_counts": {},
+			"last_result": {}
+		}
+	}
+
+
+func build_battle_progress(records: Array) -> Dictionary:
+	var data: Dictionary = default_battle_progress()
+	var clears: Dictionary = {}
+	var best_turns: Dictionary = {}
+	for record_variant: Variant in records:
+		if not record_variant is Dictionary:
+			continue
+		var record: Dictionary = record_variant
+		if not bool(record.get("victory", false)):
+			continue
+		var encounter_id: String = str(record.get("encounter_id", ""))
+		if encounter_id.is_empty():
+			continue
+		clears[encounter_id] = int(clears.get(encounter_id, 0)) + 1
+		var turns: int = int(record.get("turns", 0))
+		if not best_turns.has(encounter_id) or turns < int(best_turns[encounter_id]):
+			best_turns[encounter_id] = turns
+	data["progress"]["clears"] = clears
+	data["progress"]["best_turns"] = best_turns
+	return data
+
+
+func validate_battle_progress(data: Dictionary) -> bool:
+	if int(data.get("version", 0)) != BATTLE_PROGRESS_VERSION:
+		return false
+	var progress_variant: Variant = data.get("progress", {})
+	if not progress_variant is Dictionary:
+		return false
+	var progress: Dictionary = progress_variant
+	for key: String in ["clears", "best_turns", "item_counts"]:
+		var field_variant: Variant = progress.get(key, {})
+		if not field_variant is Dictionary:
+			return false
+	return int(progress.get("attempts", -1)) >= 0 and int(progress.get("total_gil", -1)) >= 0
+
+
+func migrate_battle_progress(data: Dictionary) -> Dictionary:
+	if data.is_empty():
+		return default_battle_progress()
+	var version: int = int(data.get("version", 1))
+	if version > BATTLE_PROGRESS_VERSION:
+		return {}
+	var result: Dictionary = default_battle_progress()
+	if version == 1:
+		var completed_variant: Variant = data.get("completed", [])
+		if completed_variant is Array:
+			for encounter_id_variant: Variant in completed_variant:
+				var encounter_id: String = str(encounter_id_variant)
+				if encounter_id.is_empty():
+					continue
+				result["progress"]["clears"][encounter_id] = 1
+		return result
+	return data.duplicate(true)
+
+
+func load_battle_progress() -> Dictionary:
+	var result: Dictionary = _read_json_with_fallback(BATTLE_PROGRESS_PATH)
+	if not bool(result.get("ok", false)):
+		return default_battle_progress()
+	var migrated: Dictionary = migrate_battle_progress(result.get("data", {}))
+	if not validate_battle_progress(migrated):
+		return default_battle_progress()
+	return migrated
+
+
+func record_battle_result(result_data: Dictionary) -> Dictionary:
+	var encounter_id: String = str(result_data.get("encounter_id", ""))
+	if encounter_id.is_empty():
+		return {}
+	var progress_data: Dictionary = load_battle_progress()
+	var progress: Dictionary = progress_data["progress"]
+	progress["attempts"] = int(progress.get("attempts", 0)) + 1
+	progress["last_result"] = result_data.duplicate(true)
+
+	if bool(result_data.get("victory", false)):
+		var clears: Dictionary = progress.get("clears", {})
+		clears[encounter_id] = int(clears.get(encounter_id, 0)) + 1
+		progress["clears"] = clears
+		var turns: int = int(result_data.get("turns", 0))
+		var best: Dictionary = progress.get("best_turns", {})
+		if not best.has(encounter_id) or turns < int(best[encounter_id]):
+			best[encounter_id] = turns
+		progress["best_turns"] = best
+
+		var rewards_variant: Variant = result_data.get("rewards", {})
+		if rewards_variant is Dictionary:
+			var rewards: Dictionary = rewards_variant
+			progress["total_gil"] = int(progress.get("total_gil", 0)) + maxi(int(rewards.get("gil", 0)), 0)
+			var counts: Dictionary = progress.get("item_counts", {})
+			var items_variant: Variant = rewards.get("items", [])
+			if items_variant is Array:
+				for item_id_variant: Variant in items_variant:
+					var item_id: String = str(item_id_variant)
+					counts[item_id] = int(counts.get(item_id, 0)) + 1
+			progress["item_counts"] = counts
+
+	progress_data["progress"] = progress
+	var error: Error = atomic_write(BATTLE_PROGRESS_PATH, progress_data)
+	if error != OK:
+		DebugLog.error("Battle progress write failed with error %d" % error)
+		return {}
+	battle_progress_saved.emit(progress_data.duplicate(true))
+	return progress_data
 
 
 func slot_path(slot: int) -> String:

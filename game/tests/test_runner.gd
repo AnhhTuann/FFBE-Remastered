@@ -21,7 +21,8 @@ const TESTS := [
 	"test_newer_save_refused",
 	"test_settings_persistence",
 	"test_missing_animation_fixture",
-	"test_export_presets"
+	"test_export_presets",
+	"test_battle_engine"
 ]
 
 const EXPECTED_SAVE_VERSION := 2
@@ -33,6 +34,7 @@ var _repository: Node = null
 var _saves: Node = null
 var _content_id_script: Script = null
 var _validator_script: Script = null
+var _battle_suite_script: Script = null
 
 
 func _initialize() -> void:
@@ -40,8 +42,9 @@ func _initialize() -> void:
 	_saves = root.get_node_or_null("SaveManager")
 	_content_id_script = load("res://core/content_id.gd") as Script
 	_validator_script = load("res://core/animation_validator.gd") as Script
+	_battle_suite_script = load("res://tests/battle_test_suite.gd") as Script
 
-	if _repository == null or _saves == null or _content_id_script == null or _validator_script == null:
+	if _repository == null or _saves == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null:
 		push_error("FAIL services are unavailable")
 		quit(1)
 		return
@@ -88,7 +91,8 @@ func test_project_config() -> bool:
 		"res://scenes/boot/boot.tscn",
 		"res://scenes/menu/main_menu.tscn",
 		"res://scenes/settings/settings.tscn",
-		"res://scenes/viewer/character_viewer.tscn"
+		"res://scenes/viewer/character_viewer.tscn",
+		"res://scenes/battle/battle_scene.tscn"
 	]:
 		assert_true(FileAccess.file_exists(path), "scene exists: %s" % path)
 	return true
@@ -303,6 +307,11 @@ func test_export_presets() -> bool:
 	return true
 
 
+func test_battle_engine() -> bool:
+	var suite: RefCounted = _battle_suite_script.new(self) as RefCounted
+	return bool(suite.call("run"))
+
+
 func _read_json_dict(path: String) -> Dictionary:
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
@@ -318,6 +327,7 @@ func _read_json_dict(path: String) -> Dictionary:
 func _clean_user_files() -> void:
 	for suffix: String in ["", ".bak", ".tmp"]:
 		_remove_absolute_if_exists("user://settings.json" + suffix)
+		_remove_absolute_if_exists("user://battle_progress.json" + suffix)
 		for slot: int in range(EXPECTED_SLOT_COUNT):
 			_remove_absolute_if_exists("user://save_slot_%d.json%s" % [slot, suffix])
 
