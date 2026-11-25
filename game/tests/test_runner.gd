@@ -23,7 +23,10 @@ const TESTS := [
 	"test_missing_animation_fixture",
 	"test_export_presets",
 	"test_battle_engine",
-	"test_phase3_suite"
+	"test_phase3_suite",
+	"test_hardening_layout_suite",
+	"test_hardening_ui_flow_suite",
+	"test_negative_control"
 ]
 
 const EXPECTED_SAVE_VERSION := 2
@@ -38,6 +41,8 @@ var _content_id_script: Script = null
 var _validator_script: Script = null
 var _battle_suite_script: Script = null
 var _phase3_suite_script: Script = null
+var _hardening_layout_suite_script: Script = null
+var _hardening_ui_flow_suite_script: Script = null
 
 
 func _initialize() -> void:
@@ -48,8 +53,10 @@ func _initialize() -> void:
 	_validator_script = load("res://core/animation_validator.gd") as Script
 	_battle_suite_script = load("res://tests/battle_test_suite.gd") as Script
 	_phase3_suite_script = load("res://tests/phase3_test_suite.gd") as Script
+	_hardening_layout_suite_script = load("res://tests/hardening_layout_test_suite.gd") as Script
+	_hardening_ui_flow_suite_script = load("res://tests/hardening_ui_flow_test_suite.gd") as Script
 
-	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null:
+	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null or _hardening_layout_suite_script == null or _hardening_ui_flow_suite_script == null:
 		push_error("FAIL services are unavailable")
 		quit(1)
 		return
@@ -57,11 +64,14 @@ func _initialize() -> void:
 	_clean_user_files()
 	_repository.call("load_content")
 	for test_name: String in TESTS:
-		if call(test_name) != true:
+		var result: Variant = null
+		if test_name == "test_hardening_ui_flow_suite":
+			result = await call(test_name)
+		else:
+			result = call(test_name)
+		if result != true:
 			failed += 1
 			push_error("FAIL %s: did not finish (runtime error?)" % test_name)
-	if OS.get_environment("FFBE_TEST_NEGATIVE_CONTROL") == "1":
-		assert_true(false, "FFBE_TEST_NEGATIVE_CONTROL deliberate failure")
 	_clean_user_files()
 	print("Results: %d passed, %d failed" % [passed, failed])
 	quit(1 if failed > 0 else 0)
@@ -93,6 +103,29 @@ func test_phase3_suite() -> bool:
 		push_error("FAIL phase3 suite could not be constructed")
 		return false
 	return bool(suite.call("run"))
+
+
+func test_hardening_layout_suite() -> bool:
+	var suite: RefCounted = _hardening_layout_suite_script.new(self) as RefCounted
+	if suite == null:
+		push_error("FAIL hardening layout suite could not be constructed")
+		return false
+	return bool(suite.call("run"))
+
+
+func test_hardening_ui_flow_suite() -> bool:
+	var suite: RefCounted = _hardening_ui_flow_suite_script.new(self) as RefCounted
+	if suite == null:
+		push_error("FAIL hardening UI flow suite could not be constructed")
+		return false
+	var result: Variant = await suite.call("run")
+	return result == true
+
+
+func test_negative_control() -> bool:
+	if OS.get_environment("FFBE_TEST_NEGATIVE_CONTROL") == "1":
+		assert_true(false, "FFBE_TEST_NEGATIVE_CONTROL deliberate failure")
+	return true
 
 
 func test_project_config() -> bool:
@@ -349,6 +382,7 @@ func _clean_user_files() -> void:
 	for suffix: String in ["", ".bak", ".tmp"]:
 		_remove_absolute_if_exists("user://settings.json" + suffix)
 		_remove_absolute_if_exists("user://battle_progress.json" + suffix)
+		_remove_absolute_if_exists("user://player_state_v3.json" + suffix)
 		for slot: int in range(EXPECTED_SLOT_COUNT):
 			_remove_absolute_if_exists("user://save_slot_%d.json%s" % [slot, suffix])
 

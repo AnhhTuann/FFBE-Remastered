@@ -36,7 +36,12 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Iterator
 
-TOOL_VERSION = "1.0.0"
+try:  # package import (tests and toolchain)
+    from . import approval_registry as registry
+except ImportError:  # direct CLI execution: tools/importer is sys.path[0]
+    import approval_registry as registry  # type: ignore[no-redef]
+
+TOOL_VERSION = "1.1.0"
 SCHEMA_VERSION = 1
 
 MAX_FILE_BYTES = 20 * 1024 * 1024
@@ -47,12 +52,15 @@ RESTRICTED_EXTENSIONS = {
     ".py", ".sh", ".exe", ".dll", ".so", ".bat", ".cmd", ".apk", ".jar",
 }
 REGIONS = {"GL", "JP"}
-EVIDENCE_CLASSES = {
-    "ORIGINAL_SOURCE", "COMMUNITY_RECOVERED", "COMMUNITY_MODIFIED",
-    "UNVERIFIED", "SYNTHETIC_FIXTURE", "REMASTERED_DESIGN",
-}
-SAFE_EVIDENCE_CLASSES = {"SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"}
-CLEARED_RIGHTS_STATUS = "cleared_for_specified_use"
+EVIDENCE_CLASSES = registry.EVIDENCE_CLASSES
+SAFE_EVIDENCE_CLASSES = registry.SAFE_EVIDENCE_CLASSES
+RIGHTS_STATUSES = registry.RIGHTS_STATUSES
+VERIFICATION_STATUSES = registry.VERIFICATION_STATUSES
+SAFE_VERIFICATION_STATUSES = registry.SAFE_VERIFICATION_STATUSES
+PROVENANCE_ORIGINS = registry.PROVENANCE_ORIGINS
+SYNTHETIC_PROVENANCE_ORIGINS = registry.SYNTHETIC_PROVENANCE_ORIGINS
+THIRD_PARTY_PROVENANCE_ORIGINS = registry.THIRD_PARTY_PROVENANCE_ORIGINS
+CLEARED_RIGHTS_STATUS = registry.CLEARED_RIGHTS_STATUS
 
 KINDS = (
     "unit", "ability", "equip", "materia", "vision_card", "item",
@@ -200,10 +208,7 @@ def _json_loads(data: bytes, *, label: str = "JSON") -> Any:
 
 
 def _canonical_sha256(value: Any) -> str:
-    payload = json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+    return registry.canonical_json_sha256(value)
 
 
 def _file_sha256(path: Path) -> tuple[str, int]:
@@ -257,6 +262,21 @@ def _root(root: Path | str | None) -> Path:
 def _rooted(root: Path, value: Path | str) -> Path:
     path = Path(value).expanduser()
     return path if path.is_absolute() else (root / path)
+
+
+def _default_registry_path() -> Path:
+    """Trusted registry location, derived from the tool's repository, never from a pack."""
+    return (
+        Path(__file__).resolve().parents[2]
+        / registry.DEFAULT_REGISTRY_DIR / registry.DEFAULT_REGISTRY_FILENAME
+    )
+
+
+def _registry_label(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.name
 
 
 def _content_paths(root: Path) -> dict[str, Path]:
@@ -501,6 +521,24 @@ def _validate_manifest_shape(manifest: dict[str, Any]) -> list[dict[str, Any]]:
         problems.append(_issue("invalid_region", f"region must be GL or JP, got {manifest['region']!r}", field="region"))
     if "evidence_class" in manifest and manifest["evidence_class"] not in EVIDENCE_CLASSES:
         problems.append(_issue("invalid_evidence_class", f"unknown evidence_class {manifest['evidence_class']!r}", field="evidence_class"))
+    if "rights_status" in manifest and manifest["rights_status"] not in RIGHTS_STATUSES:
+        problems.append(_issue("invalid_rights_status", f"unknown rights_status {manifest['rights_status']!r}", field="rights_status"))
+    if "verification_status" in manifest and manifest["verification_status"] not in VERIFICATION_STATUSES:
+        problems.append(_issue("invalid_verification_status", f"unknown verification_status {manifest['verification_status']!r}", field="verification_status"))
+    if "source_id" in manifest:
+        source_id = manifest["source_id"]
+        if not isinstance(source_id, str) or not source_id.strip() or ".." in source_id:
+            problems.append(_issue("invalid_source_id", f"invalid source_id {source_id!r}", field="source_id"))
+    if "content_hashes" in manifest:
+        hashes = manifest["content_hashes"]
+        if not isinstance(hashes, dict):
+            problems.append(_issue("invalid_content_hashes", "content_hashes must be an object", field="content_hashes"))
+        else:
+            for name, digest in sorted(hashes.items()):
+                if not isinstance(name, str) or not registry.RELATIVE_NAME_RE.fullmatch(name) or ".." in name:
+                    problems.append(_issue("unsafe_content_hash_path", f"unsafe content_hashes path {name!r}", field="content_hashes"))
+                if not isinstance(digest, str) or not registry.SHA256_RE.fullmatch(digest):
+                    problems.append(_issue("invalid_content_hash", f"content_hashes[{name!r}] must be a sha256 hex string", field="content_hashes"))
     if "records" in manifest and not isinstance(manifest["records"], list):
         problems.append(_issue("invalid_records", "records must be an array", field="records"))
     if "asset_refs" in manifest and not isinstance(manifest["asset_refs"], (dict, list, str)):
@@ -508,10 +546,171 @@ def _validate_manifest_shape(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     return problems
 
 
-def _rights_allowed(manifest: dict[str, Any]) -> bool:
-    evidence = manifest.get("evidence_class")
-    rights = manifest.get("rights_status")
-    return evidence in SAFE_EVIDENCE_CLASSES or rights == CLEARED_RIGHTS_STATUS
+def _build_authorization(*, manifest: dict[str, Any], sources: list[SourceFile],
+                         mode: str, root: Path,
+                         registry_path: Path | str | None,
+                         today: str | None) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Decide whether a pack is admissible and record the exact rules used."""
+    path = _rooted(root, registry_path) if registry_path is not None else _default_registry_path()
+    loaded = registry.load_registry(path)
+    label = (
+        f"{registry.DEFAULT_REGISTRY_DIR}/{registry.DEFAULT_REGISTRY_FILENAME}"
+        if registry_path is None else _registry_label(path, root)
+    )
+    provenance = manifest.get("provenance")
+    provenance_origin = provenance.get("origin", "") if isinstance(provenance, dict) else ""
+    source_id = manifest.get("source_id", "") if isinstance(manifest.get("source_id"), str) else ""
+    revision = manifest.get("source_revision", "") if isinstance(manifest.get("source_revision"), str) else ""
+    evidence = manifest.get("evidence_class", "") if isinstance(manifest.get("evidence_class"), str) else ""
+    rights = manifest.get("rights_status", "") if isinstance(manifest.get("rights_status"), str) else ""
+    manifest_verification = manifest.get("verification_status")
+    restricted = registry.is_restricted_source(
+        source_id, revision, manifest.get("namespace", ""), provenance_origin
+    )
+    authorization: dict[str, Any] = {
+        "registry": label,
+        "mode": mode,
+        "source_id": source_id,
+        "source_revision": revision,
+        "evidence_class": evidence,
+        "rights_status": rights,
+        "restricted_source": restricted,
+        "content_hashes": {
+            "manifest_sha256": _canonical_sha256(manifest),
+            "files": {source.name: hashlib.sha256(source.data).hexdigest() for source in sources},
+        },
+        "rules": [],
+        "attempts": [],
+        "decision": "pending",
+        "approval_id": "",
+        "verified_allowed": False,
+        "reason": "",
+    }
+    issues: list[dict[str, Any]] = []
+    for item in loaded.issues:
+        issues.append(_issue(
+            item["code"], item["message"], level=item.get("level", "error"), field="registry",
+        ))
+
+    def rule(name: str, ok: bool, detail: str) -> None:
+        authorization["rules"].append({
+            "rule": name, "result": "pass" if ok else "fail", "detail": detail,
+        })
+
+    if loaded.blocking_issues:
+        issues.append(_issue(
+            "registry_invalid", "trusted approval registry failed structural validation; failing closed",
+            field="registry",
+        ))
+        authorization["decision"] = "deny_registry_invalid"
+        authorization["reason"] = "trusted approval registry is invalid; failing closed"
+        rule("registry.structurally_valid", False, authorization["reason"])
+        return authorization, issues
+
+    rule("registry.structurally_valid", True, f"registry {authorization['registry']} parsed without structural errors")
+
+    needs_registry = (
+        rights == CLEARED_RIGHTS_STATUS
+        or evidence not in SAFE_EVIDENCE_CLASSES
+        or restricted
+    )
+    if not needs_registry:
+        authorization["decision"] = "allow_synthetic_fixture"
+        authorization["reason"] = (
+            f"evidence_class {evidence!r} is an explicitly authored/synthetic class; "
+            "no third-party rights clearance is implied"
+        )
+        rule("evidence.synthetic_allowlist", True, authorization["reason"])
+        rule("source.not_restricted", True, "source identity does not name FFBE or Elvlin")
+        return authorization, issues
+
+    approval, details = registry.find_approval(
+        registry=loaded, manifest=manifest, sources=sources, mode=mode, today=today,
+    )
+    authorization["attempts"] = details["attempts"]
+    if approval is not None:
+        authorization["decision"] = "allow_registry_approval"
+        authorization["approval_id"] = str(approval.get("approval_id", ""))
+        authorization["verified_allowed"] = (
+            approval.get("verification_status") == "VERIFIED"
+            and bool(approval.get("verification_evidence"))
+        )
+        authorization["reason"] = (
+            f"approval {authorization['approval_id']} matched source, revision, hashes, "
+            "permitted use and status rules"
+        )
+        rule("registry.matching_entry", True, authorization["reason"])
+        return authorization, issues
+
+    for attempt in details["attempts"]:
+        for item in attempt.get("issues", []):
+            issues.append(dict(item, approval_id=attempt.get("approval_id", "")))
+    failed = [
+        item for item in details["attempts"]
+        if item.get("source_id") == source_id and item.get("source_revision") == revision
+    ] or details["attempts"]
+    failure_detail = ""
+    if failed:
+        first_fail = next(
+            (issue for issue in failed[0].get("issues", []) if issue.get("rule")), None
+        )
+        if first_fail is not None:
+            failure_detail = f"{first_fail['rule']}: {first_fail['message']}"
+    if not failure_detail:
+        failure_detail = (
+            f"no active registry approval for source_id={source_id!r}, "
+            f"source_revision={revision!r}, evidence_class={evidence!r}"
+        )
+
+    self_declared = rights == CLEARED_RIGHTS_STATUS
+    authorization["decision"] = (
+        "deny_self_declared_clearance" if self_declared else "deny_no_registry_approval"
+    )
+    authorization["reason"] = failure_detail
+    rule("registry.matching_entry", False, failure_detail)
+    if self_declared:
+        reason = (
+            "a self-declared cleared_for_specified_use status requires an independent "
+            f"registry approval; {failure_detail}"
+        )
+        rule("registry.clearance_not_self_declared", False, reason)
+        issues.append(_issue(
+            "self_declared_clearance_rejected", reason, field="rights_status",
+        ))
+    if restricted:
+        issues.append(_issue(
+            "restricted_source_blocked",
+            "FFBE/Elvlin identities require explicit registry authorization",
+            field="source_id",
+        ))
+    issues.append(_issue(
+        "rights_blocked", f"import blocked by registry rule: {failure_detail}",
+        field="rights_status",
+    ))
+    return authorization, issues
+
+
+def _check_declared_content_hashes(manifest: dict[str, Any],
+                                   authorization: dict[str, Any]) -> list[dict[str, Any]]:
+    """A pack may declare hashes for integrity only; they never grant permission."""
+    declared = manifest.get("content_hashes")
+    if not isinstance(declared, dict) or not declared:
+        return []
+    actual = authorization["content_hashes"]["files"]
+    issues: list[dict[str, Any]] = []
+    missing = sorted(set(declared) - set(actual))
+    if missing:
+        issues.append(_issue(
+            "content_hash_missing", f"declared content_hashes files not found in pack: {missing}",
+            field="content_hashes",
+        ))
+    for name in sorted(set(declared) & set(actual)):
+        if declared[name] != actual[name]:
+            issues.append(_issue(
+                "content_hash_mismatch", f"content hash mismatch for {name!r}",
+                field="content_hashes",
+            ))
+    return issues
 
 
 def _build_report(*, mode: str, input_label: str, manifest: dict[str, Any] | None,
@@ -547,10 +746,11 @@ def _build_report(*, mode: str, input_label: str, manifest: dict[str, Any] | Non
 
 def _empty_analysis_report(mode: str, input_label: str, manifest: dict[str, Any] | None,
                            counts: dict[str, int], issues: list[dict[str, Any]],
-                           result: str = "blocked") -> dict[str, Any]:
+                           result: str = "blocked", **extra: Any) -> dict[str, Any]:
     return _build_report(
         mode=mode, input_label=input_label, manifest=manifest, counts=counts,
         issues=issues, records=[], unresolved=[], asset_refs=[], result=result,
+        **extra,
     )
 
 
@@ -683,7 +883,8 @@ def _index_record_map(index: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def analyze_input(input_path: Path | str, root: Path | str | None = None,
-                  *, mode: str = "preview") -> Analysis:
+                  *, mode: str = "preview", registry_path: Path | str | None = None,
+                  today: str | None = None) -> Analysis:
     """Load, safety-check and validate an input without changing content state."""
     resolved_root = _root(root)
     sources = load_input(input_path, resolved_root)
@@ -705,18 +906,21 @@ def analyze_input(input_path: Path | str, root: Path | str | None = None,
         report["manifest"] = manifest_name
         return Analysis(report, manifest, sources, True)
 
-    if not _rights_allowed(manifest):
-        issues.append(_issue(
-            "rights_blocked",
-            "import blocked: evidence_class is not synthetic/designed and rights_status is not "
-            f"{CLEARED_RIGHTS_STATUS!r}",
-            field="rights_status", evidence_class=manifest.get("evidence_class"),
-        ))
+    authorization, authorization_issues = _build_authorization(
+        manifest=manifest, sources=sources, mode=mode, root=resolved_root,
+        registry_path=registry_path, today=today,
+    )
+    issues.extend(authorization_issues)
+    content_hash_issues = _check_declared_content_hashes(manifest, authorization)
+    issues.extend(content_hash_issues)
+    if authorization["decision"].startswith("deny") or content_hash_issues:
         counts["blocked"] = len(records_in)
         report = _empty_analysis_report(
-            mode, input_label, manifest, counts, issues, "blocked"
+            mode, input_label, manifest, counts, issues, "blocked",
+            authorization=authorization,
+            content_hashes=authorization["content_hashes"],
+            manifest_name=manifest_name,
         )
-        report["manifest"] = manifest_name
         return Analysis(report, manifest, sources, True)
 
     paths = _content_paths(resolved_root)
@@ -777,6 +981,66 @@ def analyze_input(input_path: Path | str, root: Path | str | None = None,
                     "invalid_record_field", f"{key} must be a non-empty string",
                     record_index=index_number, record_id=str(record.get("id", "")), field=key,
                 ))
+
+        verification = record.get("verification_status")
+        if isinstance(verification, str):
+            if verification not in VERIFICATION_STATUSES:
+                local_issues.append(_issue(
+                    "invalid_verification_status",
+                    f"unknown verification_status {verification!r}",
+                    record_index=index_number, record_id=str(record.get("id", "")),
+                    field="verification_status",
+                ))
+            elif verification == "VERIFIED":
+                if not authorization["verified_allowed"]:
+                    local_issues.append(_issue(
+                        "verification_status_unauthorized",
+                        "VERIFIED requires an explicit registry approval with documented evidence; "
+                        "this project has no VERIFIED recovered records",
+                        record_index=index_number, record_id=str(record.get("id", "")),
+                        field="verification_status",
+                    ))
+                elif manifest["evidence_class"] in SAFE_EVIDENCE_CLASSES:
+                    local_issues.append(_issue(
+                        "verification_status_inconsistent",
+                        "synthetic/remastered fixtures cannot claim recovered VERIFIED status",
+                        record_index=index_number, record_id=str(record.get("id", "")),
+                        field="verification_status",
+                    ))
+            elif manifest["evidence_class"] in SAFE_EVIDENCE_CLASSES and verification not in {
+                "SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"
+            }:
+                local_issues.append(_issue(
+                    "verification_status_inconsistent",
+                    "synthetic/remastered fixtures must use SYNTHETIC_FIXTURE or REMASTERED_DESIGN",
+                    record_index=index_number, record_id=str(record.get("id", "")),
+                    field="verification_status",
+                ))
+
+        provenance = record.get("provenance")
+        if isinstance(provenance, dict):
+            origin = provenance.get("origin")
+            if isinstance(origin, str):
+                if origin not in PROVENANCE_ORIGINS:
+                    local_issues.append(_issue(
+                        "invalid_provenance_origin", f"unknown provenance origin {origin!r}",
+                        record_index=index_number, record_id=str(record.get("id", "")),
+                        field="provenance.origin",
+                    ))
+                elif manifest["evidence_class"] in SAFE_EVIDENCE_CLASSES and origin not in SYNTHETIC_PROVENANCE_ORIGINS:
+                    local_issues.append(_issue(
+                        "provenance_evidence_mismatch",
+                        f"synthetic evidence requires a synthetic origin, got {origin!r}",
+                        record_index=index_number, record_id=str(record.get("id", "")),
+                        field="provenance.origin",
+                    ))
+                elif manifest["evidence_class"] not in SAFE_EVIDENCE_CLASSES and origin in SYNTHETIC_PROVENANCE_ORIGINS:
+                    local_issues.append(_issue(
+                        "provenance_evidence_mismatch",
+                        f"third-party evidence cannot use synthetic origin {origin!r}",
+                        record_index=index_number, record_id=str(record.get("id", "")),
+                        field="provenance.origin",
+                    ))
 
         record_id = record.get("id") if isinstance(record.get("id"), str) else ""
         kind = record.get("kind") if isinstance(record.get("kind"), str) else ""
@@ -991,6 +1255,14 @@ def analyze_input(input_path: Path | str, root: Path | str | None = None,
             "source_version": manifest["source_version"],
             "evidence_class": manifest["evidence_class"],
             "rights_status": manifest["rights_status"],
+            "source_id": manifest.get("source_id", ""),
+            "authorization": {
+                "decision": authorization["decision"],
+                "approval_id": authorization["approval_id"],
+                "registry": authorization["registry"],
+                "rules": authorization["rules"],
+            },
+            "content_hashes": authorization["content_hashes"],
             "importer_version": TOOL_VERSION,
             "records": sorted(importable, key=lambda record: str(record.get("id", ""))),
             "record_sha256": {
@@ -1005,6 +1277,8 @@ def analyze_input(input_path: Path | str, root: Path | str | None = None,
         unresolved=list(unresolved_seen.values()), asset_refs=list(asset_seen.values()),
         result="ok" if not blocking else "blocked",
         manifest_name=manifest_name,
+        authorization=authorization,
+        content_hashes=authorization["content_hashes"],
         pack_sha256=_canonical_sha256(pack_payload) if pack_payload else "",
     )
     return Analysis(
@@ -1032,11 +1306,15 @@ def _log_entry(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def preview_import(input_path: Path | str, root: Path | str | None = None,
-                   *, report_path: Path | str | None = None) -> dict[str, Any]:
+                   *, report_path: Path | str | None = None,
+                   registry_path: Path | str | None = None,
+                   today: str | None = None) -> dict[str, Any]:
     """Dry-run: validate and write a deterministic report, changing no content state."""
     resolved_root = _root(root)
     target = _rooted(resolved_root, report_path) if report_path is not None else None
-    analysis = analyze_input(input_path, resolved_root, mode="preview")
+    analysis = analyze_input(
+        input_path, resolved_root, mode="preview", registry_path=registry_path, today=today,
+    )
     if analysis.blocking:
         if target is not None:
             _write_report(analysis.report, target)
@@ -1051,11 +1329,15 @@ def preview_import(input_path: Path | str, root: Path | str | None = None,
 
 
 def import_pack(input_path: Path | str, root: Path | str | None = None,
-                *, report_path: Path | str | None = None) -> dict[str, Any]:
+                *, report_path: Path | str | None = None,
+                registry_path: Path | str | None = None,
+                today: str | None = None) -> dict[str, Any]:
     """Transactionally import a validated pack into content-local."""
     resolved_root = _root(root)
     target = _rooted(resolved_root, report_path) if report_path is not None else None
-    analysis = analyze_input(input_path, resolved_root, mode="import")
+    analysis = analyze_input(
+        input_path, resolved_root, mode="import", registry_path=registry_path, today=today,
+    )
     if analysis.blocking:
         if target is not None:
             _write_report(analysis.report, target)

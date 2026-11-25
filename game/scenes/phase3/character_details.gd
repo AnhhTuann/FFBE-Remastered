@@ -56,8 +56,8 @@ func _ready() -> void:
 	_refresh()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -139,7 +139,7 @@ func _goto(path: String, instance_id: String = "", extra: Dictionary = {}) -> vo
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _consume_instance_id() -> String:
@@ -179,7 +179,7 @@ func _refresh() -> void:
 		child.queue_free()
 	var instance := PlayerState.get_unit_instance(_selected_id)
 	if instance.is_empty():
-		_line(_panel(t("collection.empty")), t("collection.empty") + " " + _selected_id)
+		_line(_panel(t("collection.empty")), t("collection.empty") + " " + LocaleManager.diagnostic_text(_selected_id))
 		_set_status(t("collection.empty"))
 		return
 	var definition := PlayerState.definition_for(instance)
@@ -214,15 +214,21 @@ func _line(parent: VBoxContainer, text: String) -> Label:
 
 func _identity_panel(instance: Dictionary, definition: Dictionary) -> void:
 	var box := _panel(t("details.title"))
+	var form := str(definition.get("form", instance.get("form", "")))
+	var region := str(instance.get("region", definition.get("region", "")))
+	var role := str(definition.get("role", ""))
+	var element := str(definition.get("element", ""))
+	var rarity := str(definition.get("rarity", ""))
 	_line(box, LocaleManager.label_for(definition) + "    " + t("common.uid") + ": " + _selected_id)
-	_line(box, t("details.forms") + ": " + str(definition.get("form", instance.get("form", ""))) + "    " + \
-		t("common.region") + ": " + str(instance.get("region", definition.get("region", ""))))
-	_line(box, t("common.role") + ": " + str(definition.get("role", "")) + "    " + \
-		t("common.element") + ": " + str(definition.get("element", "")) + "    " + \
-		t("common.rarity") + ": " + str(definition.get("rarity", "")))
+	_line(box, t("details.forms") + ": " + LocaleManager.identified(LocaleManager.form_label(form), form) + "    " + \
+		t("common.region") + ": " + LocaleManager.identified(LocaleManager.region_label(region), region))
+	_line(box, t("common.role") + ": " + LocaleManager.identified(LocaleManager.role_label(role), role) + "    " + \
+		t("common.element") + ": " + LocaleManager.identified(LocaleManager.element_label(element), element) + "    " + \
+		t("common.rarity") + ": " + LocaleManager.identified(LocaleManager.rarity_label(rarity), rarity))
 	var categories: Array[String] = []
 	for category: Variant in definition.get("categories", []):
-		categories.append(str(category))
+		var value := str(category)
+		categories.append(LocaleManager.identified(LocaleManager.category_label(value), value))
 	_line(box, t("details.categories") + ": " + " ".join(categories))
 	_line(box, t("common.level") + ": " + str(instance.get("level", 0)) + "    " + \
 		t("awakening.star") + ": " + str(instance.get("star", 0)) + "    " + \
@@ -239,11 +245,14 @@ func _progress_panel(instance: Dictionary, definition: Dictionary) -> void:
 	var native_id := str(instance.get("native_id", ""))
 	var fragment_key := "fragment:%s:%s@base" % [region, native_id]
 	_line(box, t("details.trust") + ": " + str(instance.get("trust", 0)) + "/" + str(trust.get("max", 0)))
+	var tmr_reward := str(trust.get("tmr_reward", ""))
+	var stmr_reward := str(trust.get("stmr_reward", ""))
 	_line(box, t("details.tmr") + ": " + _state(bool(instance.get("tmr_claimed", false))) + "    " + \
-		str(trust.get("tmr_reward", "")))
+		LocaleManager.identified(LocaleManager.resource_label(tmr_reward), tmr_reward))
 	_line(box, t("details.stmr") + ": " + _state(bool(instance.get("stmr_claimed", false))) + "    " + \
-		str(trust.get("stmr_reward", "")))
-	_line(box, t("details.fragments") + ": " + str(resources.get(fragment_key, 0)) + "    " + fragment_key)
+		LocaleManager.identified(LocaleManager.resource_label(stmr_reward), stmr_reward))
+	_line(box, t("details.fragments") + ": " + str(resources.get(fragment_key, 0)) + "    " + \
+		LocaleManager.identified(LocaleManager.resource_label(fragment_key), fragment_key))
 	_line(box, t("upgrade.level_cap") + ": " + _level_cap(definition, instance))
 
 
@@ -257,9 +266,9 @@ func _stats_panel() -> void:
 		return
 	_line(box, t("common.stats") + ": " + _dict_text(resolved.get("stats", {})))
 	_line(box, t("common.abilities") + ": " + _labels_text(resolved.get("abilities", [])))
-	_line(box, t("common.note") + " " + t("equipment.restriction") + ": " + _labels_text(resolved.get("restrictions", [])))
+	_line(box, t("equipment.restriction") + ": " + _labels_text(resolved.get("restrictions", [])))
 	_line(box, t("common.provenance") + ": " + _labels_text(resolved.get("labels", [])))
-	_line(box, t("common.note") + ": " + _labels_text(resolved.get("diagnostics", [])))
+	_line(box, LocaleManager.diagnostic_text(_labels_text(resolved.get("diagnostics", []))))
 
 
 func _abilities_panel(instance: Dictionary, definition: Dictionary) -> void:
@@ -294,9 +303,13 @@ func _abilities_panel(instance: Dictionary, definition: Dictionary) -> void:
 func _provenance_panel(definition: Dictionary) -> void:
 	var box := _panel(t("common.provenance"))
 	var provenance: Dictionary = definition.get("provenance", {})
-	_line(box, t("common.provenance") + ": " + str(provenance.get("source", provenance.get("origin", ""))))
-	_line(box, t("common.note") + ": " + str(definition.get("verification_status", "")) + "    " + \
-		str(definition.get("id", "")))
+	var source := str(provenance.get("source", provenance.get("origin", "")))
+	var license := str(provenance.get("license", ""))
+	var verification := str(definition.get("verification_status", ""))
+	_line(box, t("viewer.source") + ": " + LocaleManager.identified(LocaleManager.provenance_label(source), source))
+	_line(box, t("viewer.license") + ": " + LocaleManager.identified(LocaleManager.provenance_label(license), license))
+	_line(box, t("menu.status") + ": " + LocaleManager.identified(LocaleManager.verification_label(verification), verification) + "    " + \
+		LocaleManager.diagnostic_text(str(definition.get("id", ""))))
 	var mechanics := ContentRepository.get_mechanic_labels()
 	for key: String in [
 		"brave_shift", "super_limit_burst", "leader_skill", "unit_categories", "trust_ability",
@@ -306,7 +319,11 @@ func _provenance_panel(definition: Dictionary) -> void:
 		if not mechanics.has(key) or not mechanics[key] is Dictionary:
 			continue
 		var mechanic: Dictionary = mechanics[key]
-		_line(box, str(mechanic.get("label", "")) + " - " + str(mechanic.get("note", "")))
+		_line(box, "%s - %s - %s" % [
+			LocaleManager.mechanic_name(key),
+			LocaleManager.mechanic_status_label(str(mechanic.get("label", ""))),
+			LocaleManager.mechanic_note(key)
+		])
 
 
 func _level_cap(definition: Dictionary, instance: Dictionary) -> String:
@@ -326,7 +343,7 @@ func _dict_text(value: Variant) -> String:
 		return t("common.none")
 	var parts: Array[String] = []
 	for key: String in (value as Dictionary).keys():
-		parts.append(str(key) + "=" + str((value as Dictionary)[key]))
+		parts.append(LocaleManager.identified(LocaleManager.stat_label(str(key)), str(key)) + "=" + str((value as Dictionary)[key]))
 	return " ".join(parts)
 
 
@@ -351,7 +368,7 @@ func _toggle_favorite() -> void:
 		return
 	var changed: bool = PlayerState.mutate_unit_instance(_selected_id, {"favorite": not bool(instance.get("favorite", false))})
 	if not changed:
-		_set_status(t("common.note") + " " + _selected_id)
+		_set_status(LocaleManager.diagnostic_text(_selected_id))
 		return
 	PlayerState.call("commit", "units")
 	_refresh()

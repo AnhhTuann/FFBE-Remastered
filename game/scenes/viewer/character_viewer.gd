@@ -47,32 +47,21 @@ func _apply_locale(_locale: String = "") -> void:
 	restart_button.text = t("viewer.restart")
 	speed_label.text = t("viewer.speed", {"value": "%.2f" % speed_slider.value})
 	for index: int in range(region_option.item_count):
-		var region_key := _region_key(str(region_option.get_item_metadata(index)))
-		if not region_key.is_empty():
-			region_option.set_item_text(index, t(region_key))
+		var region := str(region_option.get_item_metadata(index))
+		if not region.is_empty():
+			region_option.set_item_text(index, LocaleManager.region_label(region))
 	_update_info()
 	_render_diagnostics()
-
-
-func _region_key(region: String) -> String:
-	match region:
-		"ALL":
-			return "viewer.region_all"
-		"GL":
-			return "viewer.region_gl"
-		"JP":
-			return "viewer.region_jp"
-	return ""
 
 
 func _ready() -> void:
 	_apply_locale()
 	LocaleManager.locale_changed.connect(_apply_locale)
-	region_option.add_item(t("viewer.region_all"))
+	region_option.add_item(LocaleManager.region_label("ALL"))
 	region_option.set_item_metadata(0, "ALL")
-	region_option.add_item(t("viewer.region_gl"))
+	region_option.add_item(LocaleManager.region_label("GL"))
 	region_option.set_item_metadata(1, "GL")
-	region_option.add_item(t("viewer.region_jp"))
+	region_option.add_item(LocaleManager.region_label("JP"))
 	region_option.set_item_metadata(2, "JP")
 
 	region_option.item_selected.connect(_on_region_selected)
@@ -109,7 +98,7 @@ func _populate_units(region_filter: String) -> void:
 		if region_filter != "ALL" and unit.region != region_filter:
 			continue
 		var index: int = unit_option.get_item_count()
-		unit_option.add_item("%s · %s" % [unit.display_id(), unit.display_name])
+		unit_option.add_item("%s · %s" % [unit.display_id(), LocaleManager.unit_name(unit.display_name)])
 		unit_option.set_item_metadata(index, unit.id)
 
 	if unit_option.get_item_count() > 0:
@@ -132,7 +121,11 @@ func _on_unit_selected(index: int) -> void:
 		_show_diagnostic_keys([{"key": "viewer.unknown_unit", "args": {"id": unit_id}}])
 		return
 
-	title_label.text = "%s — %s (%s)" % [t("viewer.title"), _current_unit.display_name, _current_unit.region]
+	title_label.text = "%s — %s (%s)" % [
+		t("viewer.title"),
+		LocaleManager.unit_name(_current_unit.display_name),
+		LocaleManager.region_label(_current_unit.region)
+	]
 	SaveManager.update_settings({
 		"last_region": _current_unit.region,
 		"last_unit_id": _current_unit.id
@@ -157,7 +150,7 @@ func _populate_clips() -> void:
 
 	for clip_name: String in names:
 		var index: int = clip_option.get_item_count()
-		clip_option.add_item(clip_name.capitalize())
+		clip_option.add_item(LocaleManager.clip_label(clip_name))
 		clip_option.set_item_metadata(index, clip_name)
 	clip_option.select(0)
 
@@ -246,20 +239,32 @@ func _update_info() -> void:
 	keys.sort()
 	var stat_lines: Array[String] = []
 	for key in keys:
-		stat_lines.append("- %s: %s" % [str(key), str(_current_unit.stats[key])])
+		var stat := str(key)
+		stat_lines.append("- %s: %s" % [
+			LocaleManager.identified(LocaleManager.stat_label(stat), stat),
+			str(_current_unit.stats[key])
+		])
 	stats_label.text = "%s (%s)\n%s" % [t("viewer.stats"), _current_unit.display_id(), _join_lines(stat_lines)]
 
 	var ability_lines: Array[String] = []
 	for ability in _current_unit.abilities:
 		if ability is Dictionary:
-			ability_lines.append("- %s" % str(ability.get("name", t("common.none").to_lower())))
+			var name_key := str(ability.get("name_key", ""))
+			var label := t(name_key) if not name_key.is_empty() else \
+				LocaleManager.ability_name(str(ability.get("name", t("common.none").to_lower())))
+			ability_lines.append("- %s" % label)
 	abilities_label.text = "%s\n%s" % [t("viewer.abilities"), _join_lines(ability_lines)]
 
+	var status := str(_current_unit.verification_status)
+	var source := str(_current_unit.provenance.get("source", ""))
+	var license := str(_current_unit.provenance.get("license", ""))
+	var source_label := LocaleManager.provenance_label(source) if not source.is_empty() else t("common.none").to_lower()
+	var license_label := LocaleManager.provenance_label(license) if not license.is_empty() else t("common.none").to_lower()
 	provenance_label.text = "%s\n- %s: %s\n- %s: %s\n- %s: %s" % [
 		t("viewer.provenance"),
-		t("menu.status"), _current_unit.verification_status,
-		t("viewer.source"), str(_current_unit.provenance.get("source", t("common.none").to_lower())),
-		t("viewer.license"), str(_current_unit.provenance.get("license", t("common.none").to_lower()))
+		t("menu.status"), LocaleManager.identified(LocaleManager.verification_label(status), status),
+		t("viewer.source"), LocaleManager.identified(source_label, source),
+		t("viewer.license"), LocaleManager.identified(license_label, license)
 	]
 
 
@@ -325,7 +330,7 @@ func _render_diagnostics() -> void:
 		var message: String = str(entry.get("raw", ""))
 		if message.is_empty():
 			message = t(str(entry.get("key", "")), entry.get("args", {}))
-		text += "- " + message + "\n"
+		text += "- " + LocaleManager.diagnostic_text(message) + "\n"
 	diagnostics_label.text = text
 
 

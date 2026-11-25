@@ -16,8 +16,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DICT_DIR = ROOT / "game/data/localization"
 REPORT_PATH = ROOT / "data/validation/localization-coverage.json"
 TOOL_PATH = ROOT / "tools/localization/coverage_report.py"
+TOKEN_MANIFEST_PATH = ROOT / "game/data/phase3/localization_tokens.json"
 LOCALES = ("en", "ja", "vi")
-EXPECTED_KEY_COUNT = 294
+EXPECTED_KEY_COUNT = 495
+EXPECTED_DYNAMIC_MAPPING_COUNT = 223
+EXPECTED_DYNAMIC_KEY_COUNT = 211
 
 VI_TERMS = (
     "Nhân vật",
@@ -63,6 +66,8 @@ PLACEHOLDER_SAMPLES = {
     "party.slot": ("{slot}",),
     "party.build_summary": ("{count}",),
     "battle.turn": ("{turn}",),
+    "party.error.empty_slot": ("{slot}",),
+    "party.error.duplicate": ("{id}",),
 }
 
 
@@ -106,6 +111,7 @@ class Phase3LocalizationTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.tool = _load_module()
         cls.dictionaries = {locale: _json(DICT_DIR / f"{locale}.json") for locale in LOCALES}
+        cls.token_manifest = _json(TOKEN_MANIFEST_PATH)
         cls.report = _json(REPORT_PATH)
 
     def test_dictionary_contract_and_key_parity(self) -> None:
@@ -177,6 +183,82 @@ class Phase3LocalizationTest(unittest.TestCase):
         for key, value in ja.items():
             self.assertFalse(value.isascii(), f"{key}: romaji-only placeholder")
 
+    def test_dynamic_token_manifest(self) -> None:
+        manifest = self.token_manifest
+        self.assertEqual(manifest["fixture_marker"], "SYNTHETIC_FIXTURE")
+        categories = manifest["categories"]
+        self.assertIsInstance(categories, dict)
+        mappings = [value for value in categories.values() if isinstance(value, dict)]
+        mapping_count = sum(len(mapping) for mapping in mappings)
+        self.assertEqual(mapping_count, EXPECTED_DYNAMIC_MAPPING_COUNT)
+
+        dynamic_keys = {key for mapping in mappings for key in mapping.values()}
+        self.assertEqual(len(dynamic_keys), EXPECTED_DYNAMIC_KEY_COUNT)
+        for locale in LOCALES:
+            missing = sorted(key for key in dynamic_keys if key not in self.dictionaries[locale])
+            self.assertEqual(missing, [], locale)
+
+        dynamic = self.report["dynamic_references"]
+        self.assertEqual(dynamic["manifest_file"], "game/data/phase3/localization_tokens.json")
+        self.assertEqual(dynamic["mapping_count"], EXPECTED_DYNAMIC_MAPPING_COUNT)
+        self.assertEqual(dynamic["reference_count"], EXPECTED_DYNAMIC_KEY_COUNT)
+        self.assertEqual(dynamic["manifest_errors"], [])
+        self.assertEqual(dynamic["missing_keys"], [])
+        self.assertEqual(self.report["blocking"]["dynamic_reference_error_count"], 0)
+        for locale in LOCALES:
+            unused = set(self.report["per_locale"][locale]["unused_keys"])
+            self.assertEqual(unused & dynamic_keys, set(), locale)
+
+    def test_hardening_keys_and_translated_search(self) -> None:
+        expected_keys = (
+            "common.diagnostic",
+            "common.failed",
+            "reason.already_claimed",
+            "reason.insufficient_resources",
+            "verification.synthetic_fixture",
+            "mechanic.name.brave_shift",
+            "evidence.note.brave_shift",
+            "code.stat.hp",
+            "code.slot.weapon",
+            "code.region.gl",
+            "resource.gil",
+            "resource.trust_moogle",
+            "unit.synthetic.astra_gl.name",
+            "viewer.clip.idle",
+            "viewer.clip.victory",
+            "ability.synthetic.starlight_slash.name",
+        )
+        for locale in LOCALES:
+            for key in expected_keys:
+                self.assertIn(key, self.dictionaries[locale], f"{locale}: {key}")
+
+        self.assertEqual(self.dictionaries["en"]["code.stat.hp"], "HP")
+        self.assertIn("Vũ khí", self.dictionaries["vi"]["code.slot.weapon"])
+        self.assertIn("武器", self.dictionaries["ja"]["code.slot.weapon"])
+        self.assertIn("Technical", self.dictionaries["en"]["common.diagnostic"])
+        self.assertIn("{slot}", self.dictionaries["vi"]["party.error.empty_slot"])
+        self.assertIn("（", self.dictionaries["ja"]["code.region.gl"])
+
+        manager = (ROOT / "game/core/locale_manager.gd").read_text(encoding="utf-8")
+        for helper in (
+            "func token(", "func has_token(", "func identified(",
+            "func diagnostic_text(", "func filter_value_label(",
+            "func reason_label(", "func mechanic_note(", "func unit_name(",
+        ):
+            self.assertIn(helper, manager, helper)
+
+        collection = (ROOT / "game/scenes/phase3/collection.gd").read_text(encoding="utf-8")
+        self.assertIn("LocaleManager.filter_value_label(key, value)", collection)
+        self.assertIn("LocaleManager.region_label(region).to_lower()", collection)
+        self.assertIn("LocaleManager.category_label(value).to_lower()", collection)
+
+        owned_scenes = list((ROOT / "game/scenes/phase3").glob("*.gd")) + [
+            ROOT / "game/scenes/viewer/character_viewer.gd"
+        ]
+        for path in owned_scenes:
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("LocaleManager.t(text)", text, path.as_posix())
+
     def test_glossary_and_guide_documentation(self) -> None:
         glossary = (ROOT / "docs/localization/glossary.md").read_text(encoding="utf-8")
         guide = (ROOT / "docs/localization/translation-guide.md").read_text(encoding="utf-8")
@@ -190,7 +272,13 @@ class Phase3LocalizationTest(unittest.TestCase):
         self.assertIn("python3 tools/localization/coverage_report.py", guide)
         self.assertIn("python3 -m unittest tests.test_phase3_localization -v", guide)
         self.assertIn("vi is the default locale", guide.lower().replace("`vi`", "vi"))
+        self.assertIn("localization_tokens.json", guide)
+        self.assertIn("developer diagnostic", guide.lower())
         self.assertNotIn("translation is complete", guide.lower())
+        notes = (ROOT / "docs/qa/phase3-hardening-localization-notes.md").read_text(encoding="utf-8")
+        self.assertIn("dynamic-reference", notes.lower())
+        self.assertIn("Prompt 05", notes)
+        self.assertIn("SYNTHETIC_FIXTURE", notes)
 
         report = self.report
         self.assertIn("`pass`", coverage_doc)
@@ -207,6 +295,7 @@ class Phase3LocalizationTest(unittest.TestCase):
         self.assertEqual(report["blocking"]["missing_key_count"], 0)
         self.assertEqual(report["blocking"]["placeholder_mismatch_count"], 0)
         self.assertEqual(report["union_key_count"], EXPECTED_KEY_COUNT)
+        self.assertEqual(report["blocking"]["dynamic_reference_error_count"], 0)
         self.assertEqual(report["placeholder_mismatches"], [])
         self.assertGreaterEqual(report["vietnamese_diacritics"]["coverage"], 0.9)
         self.assertEqual(report["japanese_glyphs"]["coverage"], 1.0)
@@ -276,6 +365,42 @@ class Phase3LocalizationTest(unittest.TestCase):
             report = _json(output)
             for locale in LOCALES:
                 self.assertIn("menu.unknown", report["per_locale"][locale]["missing_keys"])
+
+    def test_cli_dynamic_manifest_evidence(self) -> None:
+        dictionaries = {
+            locale: {"app.title": "Title", "code.region.gl": "GL"} for locale in LOCALES
+        }
+        manifest = {
+            "schema_version": 1,
+            "categories": {"region": {"GL": "code.region.gl"}},
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "report.json"
+            _write_fixture(root, dictionaries, 'L.t("app.title")\n')
+            token_dir = root / "game/data/phase3"
+            token_dir.mkdir(parents=True, exist_ok=True)
+            (token_dir / "localization_tokens.json").write_text(
+                json.dumps(manifest, ensure_ascii=False), encoding="utf-8"
+            )
+
+            result = _run_cli(root, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = _json(output)
+            self.assertEqual(report["dynamic_references"]["reference_count"], 1)
+            self.assertEqual(report["dynamic_references"]["mapping_count"], 1)
+            self.assertEqual(report["per_locale"]["en"]["unused_keys"], [])
+            self.assertEqual(report["blocking"]["dynamic_reference_error_count"], 0)
+
+            (token_dir / "localization_tokens.json").write_text(
+                '{invalid json', encoding="utf-8"
+            )
+            result = _run_cli(root, output)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            report = _json(output)
+            self.assertEqual(report["status"], "fail")
+            self.assertEqual(report["blocking"]["dynamic_reference_error_count"], 1)
+            self.assertTrue(report["dynamic_references"]["manifest_errors"])
 
     def test_report_is_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

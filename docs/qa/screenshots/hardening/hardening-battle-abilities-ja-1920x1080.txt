@@ -1,0 +1,16 @@
+name=hardening-battle-abilities-ja-1920x1080
+scene=res://scenes/battle/battle_scene.tscn
+resolution=1920x1080
+fullscreen=1
+locale=ja
+scenario=abilities
+instance_id=
+party_id=
+encounter=encounter:GL:950002@boss
+seed=20261126
+freeze_frame=1
+window_id=178257927
+geometry=WINDOW=178257927 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 
+pixels=1920x1080 colors=2629 stddev=0.129105
+runtime_error_lines=0
+log_basename=hardening-battle-abilities-ja-1920x1080.log

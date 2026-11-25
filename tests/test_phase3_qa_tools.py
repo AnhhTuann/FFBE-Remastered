@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 import tempfile
@@ -113,6 +114,42 @@ class Phase3QaToolsTest(unittest.TestCase):
         self.assertIn("docs/qa/screenshots/phase3/phase3-main-menu-vi-1280x720.png", rendered)
         self.assertIn("Runtime error lines across all captures: 0", rendered)
         self.assertIn("subjective visual sign-off", rendered)
+
+    def test_reads_alternate_capture_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "docs/qa/screenshots/hardening"
+            directory.mkdir(parents=True)
+            (directory / "hardening.txt").write_text(
+                self._capture("hardening"), encoding="utf-8"
+            )
+            captures = self.tool.read_captures(
+                root, "docs/qa/screenshots/hardening"
+            )
+            rendered = self.tool.render(
+                captures, "docs/qa/screenshots/hardening"
+            )
+            self.assertEqual([item["name"] for item in captures], ["hardening"])
+            self.assertIn(
+                "docs/qa/screenshots/hardening/hardening.png", rendered
+            )
+
+    def test_capture_script_rejects_unsafe_arguments(self) -> None:
+        script = ROOT / "tools/qa/capture_phase3.sh"
+        cases = [
+            {"NAME": "../escape", "RES": "1280x720", "LOCALE": "vi"},
+            {"NAME": "safe", "RES": "1280x720;rm", "LOCALE": "vi"},
+            {"NAME": "safe", "RES": "1280x720", "LOCALE": "fr"},
+        ]
+        for overrides in cases:
+            env = os.environ.copy()
+            env.update(overrides)
+            env["SCENE"] = "boot"
+            result = subprocess.run(
+                ["bash", str(script)], env=env, capture_output=True, text=True, check=False
+            )
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertFalse((ROOT / "escape.png").exists())
 
     def test_cli_writes_deterministic_report(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

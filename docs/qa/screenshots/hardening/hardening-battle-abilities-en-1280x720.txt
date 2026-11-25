@@ -1,0 +1,16 @@
+name=hardening-battle-abilities-en-1280x720
+scene=res://scenes/battle/battle_scene.tscn
+resolution=1280x720
+fullscreen=0
+locale=en
+scenario=abilities
+instance_id=
+party_id=
+encounter=encounter:GL:950002@boss
+seed=20261126
+freeze_frame=1
+window_id=178257927
+geometry=WINDOW=178257927 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=2680 stddev=0.135589
+runtime_error_lines=0
+log_basename=hardening-battle-abilities-en-1280x720.log

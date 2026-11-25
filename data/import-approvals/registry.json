@@ -1,0 +1,6 @@
+{
+  "description": "Trusted local import-approval registry. Entries record documented authorization only; they do not create, prove or transfer legal rights. No FFBE or Elvlin approvals are present.",
+  "entries": [],
+  "registry_id": "local-import-approvals",
+  "schema_version": 1
+}

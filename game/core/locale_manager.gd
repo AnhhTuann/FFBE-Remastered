@@ -9,9 +9,11 @@ signal locale_changed(locale: String)
 const SUPPORTED_LOCALES: Array[String] = ["vi", "en", "ja"]
 const DEFAULT_LOCALE := "vi"
 const FALLBACK_LOCALE := "en"
+const TOKEN_MANIFEST_PATH := "res://data/phase3/localization_tokens.json"
 
 var current_locale: String = DEFAULT_LOCALE
 var _dictionaries: Dictionary = {}
+var _token_categories: Dictionary = {}
 
 
 func _ready() -> void:
@@ -43,6 +45,21 @@ func load_dictionaries() -> void:
 		else:
 			DebugLog.error("Missing or invalid localization dictionary: %s" % path)
 			_dictionaries[locale] = {}
+	_load_token_manifest()
+
+
+func _load_token_manifest() -> void:
+	# Stable internal identifiers (item IDs, region codes, mechanic keys, reason
+	# codes) are data, not UI copy. The manifest maps each identifier to a
+	# dictionary key; unknown identifiers remain visible as stable IDs.
+	_token_categories.clear()
+	var parsed: Variant = _read_json(TOKEN_MANIFEST_PATH)
+	if not parsed is Dictionary:
+		DebugLog.error("Missing or invalid localization token manifest: %s" % TOKEN_MANIFEST_PATH)
+		return
+	var categories: Variant = (parsed as Dictionary).get("categories", {})
+	if categories is Dictionary:
+		_token_categories = (categories as Dictionary).duplicate(true)
 
 
 func normalize_locale(locale: String) -> String:
@@ -120,10 +137,144 @@ func label_for(dynamic_record: Dictionary, key_field: String = "name_key") -> St
 		var localized := t(key)
 		if localized != key:
 			return localized
+	var id := str(dynamic_record.get("id", ""))
+	if not id.is_empty() and has_token("resource", id):
+		return token("resource", id)
 	var fallback := str(dynamic_record.get("display_name", ""))
 	if not fallback.is_empty():
+		if has_token("unit_display", fallback):
+			return token("unit_display", fallback)
+		if has_token("ability", fallback):
+			return token("ability", fallback)
 		return fallback
-	return str(dynamic_record.get("id", key))
+	return id if not id.is_empty() else key
+
+
+func token_key(category: String, value: String) -> String:
+	if _token_categories.is_empty():
+		_load_token_manifest()
+	var values: Variant = _token_categories.get(category, {})
+	if not values is Dictionary:
+		return ""
+	return str((values as Dictionary).get(value, ""))
+
+
+func has_token(category: String, value: String) -> bool:
+	return not token_key(category, value).is_empty()
+
+
+func token(category: String, value: String, fallback: String = "") -> String:
+	var key := token_key(category, value)
+	if key.is_empty():
+		return fallback if not fallback.is_empty() else value
+	var localized := t(key)
+	if localized != key:
+		return localized
+	return fallback if not fallback.is_empty() else value
+
+
+func identified(label: String, id: String) -> String:
+	# Keep the stable identifier visible next to its localized label.
+	if id.is_empty():
+		return label
+	return "%s (%s)" % [label, id]
+
+
+func diagnostic_text(raw: String) -> String:
+	# Developer diagnostics stay raw, but are explicitly marked as such.
+	return "%s: %s" % [t("common.diagnostic"), raw]
+
+
+func field_label(field: String) -> String:
+	return token("field", field)
+
+
+func stat_label(stat: String) -> String:
+	return token("stat", stat)
+
+
+func slot_label(slot: String) -> String:
+	return token("slot", slot)
+
+
+func filter_label(filter_value: String) -> String:
+	return token("filter", filter_value)
+
+
+func filter_value_label(field: String, value: String) -> String:
+	var categories_by_field := {
+		"region": "region", "rarity": "rarity", "role": "role",
+		"category": "category", "element": "element", "status": "status"
+	}
+	return token(str(categories_by_field.get(field, "")), value)
+
+
+func form_label(form: String) -> String:
+	return token("form", form)
+
+
+func region_label(region: String) -> String:
+	return token("region", region)
+
+
+func role_label(role: String) -> String:
+	return token("role", role)
+
+
+func element_label(element: String) -> String:
+	return token("element", element)
+
+
+func category_label(category: String) -> String:
+	return token("category", category)
+
+
+func rarity_label(rarity: String) -> String:
+	return token("rarity", rarity)
+
+
+func status_label(status_value: String) -> String:
+	return token("status", status_value)
+
+
+func verification_label(status_value: String) -> String:
+	return token("verification", status_value)
+
+
+func mechanic_status_label(status_value: String) -> String:
+	return token("mechanic", status_value)
+
+
+func mechanic_name(key: String) -> String:
+	return token("mechanic_key", key)
+
+
+func mechanic_note(key: String) -> String:
+	return token("mechanic_note", key)
+
+
+func provenance_label(value: String) -> String:
+	return token("provenance", value)
+
+
+func resource_label(id: String) -> String:
+	return token("resource", id)
+
+
+func unit_name(display_name: String) -> String:
+	return token("unit_display", display_name)
+
+
+func clip_label(clip_name: String) -> String:
+	return token("clip", clip_name)
+
+
+func ability_name(name: String) -> String:
+	return token("ability", name)
+
+
+func reason_label(reason_code: String) -> String:
+	return token("reason", reason_code)
 
 
 func missing_keys(locale: String) -> Array[String]:

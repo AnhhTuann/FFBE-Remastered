@@ -73,8 +73,8 @@ func _ready() -> void:
 	_refresh()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -154,7 +154,7 @@ func _goto(path: String, instance_id: String = "") -> void:
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _consume_instance_id() -> String:
@@ -212,14 +212,16 @@ func _refresh() -> void:
 		child.queue_free()
 	var instance := PlayerState.get_unit_instance(_selected_id)
 	if instance.is_empty():
-		_line(_panel(t("collection.empty")), t("collection.empty") + " " + _selected_id)
+		_line(_panel(t("collection.empty")), t("collection.empty") + " " + LocaleManager.diagnostic_text(_selected_id))
 		_set_status(t("collection.empty"))
 		return
 	var definition := PlayerState.definition_for(instance)
 	var summary := _panel(t("equipment.title"))
 	_line(summary, LocaleManager.label_for(definition) + "    " + t("common.uid") + ": " + _selected_id)
-	_line(summary, t("common.region") + ": " + str(instance.get("region", "")) + "    " + \
-		t("common.role") + ": " + str(definition.get("role", "")))
+	var region := str(instance.get("region", ""))
+	var role := str(definition.get("role", ""))
+	_line(summary, t("common.region") + ": " + LocaleManager.identified(LocaleManager.region_label(region), region) + "    " + \
+		t("common.role") + ": " + LocaleManager.identified(LocaleManager.role_label(role), role))
 
 	_rebuild_slots(instance)
 	_rebuild_inventory(instance)
@@ -233,7 +235,9 @@ func _rebuild_slots(instance: Dictionary) -> void:
 		var row := HBoxContainer.new()
 		var uid := _uid_string(equipped.get(slot, ""))
 		var label := _body_label()
-		label.text = t("equipment.slots") + ": " + slot + " = " + (uid if not uid.is_empty() else t("common.none"))
+		label.text = t("equipment.slots") + ": " + \
+			LocaleManager.identified(LocaleManager.slot_label(slot), slot) + " = " + \
+			(uid if not uid.is_empty() else t("common.none"))
 		var unequip := _button(t("equipment.unequip"), func() -> void: _unequip_slot(slot))
 		unequip.disabled = uid.is_empty()
 		row.add_child(label)
@@ -249,7 +253,8 @@ func _rebuild_inventory(instance: Dictionary) -> void:
 	filter_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var filter_items: Array[Dictionary] = []
 	for filter: String in FILTERS:
-		filter_items.append({"label": t("equipment.slots") + ": " + filter, "value": filter})
+		filter_items.append({"label": t("equipment.slots") + ": " + \
+			LocaleManager.identified(LocaleManager.filter_label(filter), filter), "value": filter})
 	_fill_option(filter_option, filter_items)
 	for index: int in range(filter_option.item_count):
 		if str(filter_option.get_item_metadata(index)) == _slot_filter:
@@ -260,7 +265,8 @@ func _rebuild_inventory(instance: Dictionary) -> void:
 	if _slot_filter == "materia":
 		var materia_option := OptionButton.new()
 		for index: int in range(4):
-			materia_option.add_item(t("equipment.materia") + " " + str(index + 1))
+			var slot := "materia_%d" % index
+			materia_option.add_item(LocaleManager.slot_label(slot))
 			materia_option.set_item_metadata(index, index)
 		materia_option.selected = clampi(_materia_index, 0, 3)
 		materia_option.item_selected.connect(func(index: int) -> void: _on_materia_index_changed(index))
@@ -293,7 +299,7 @@ func _rebuild_inventory(instance: Dictionary) -> void:
 		_line(box, LocaleManager.label_for(definition) + "    " + t("common.uid") + ": " + _selected_uid)
 		_line(box, t("common.stats") + ": " + _dict_text(definition.get("stats", {})))
 		_line(box, t("common.abilities") + ": " + _labels_text(definition.get("passives", [])))
-		_line(box, t("equipment.restriction") + ": " + str(definition.get("restrictions", {})))
+		_line(box, t("equipment.restriction") + ": " + LocaleManager.diagnostic_text(str(definition.get("restrictions", {}))))
 		_line(box, t("equipment.unique") + ": " + _state(bool(definition.get("unique", false))) + "    " + \
 			t("common.locked") + ": " + _state(bool(entry.get("locked", false))))
 		var actions := HBoxContainer.new()
@@ -301,7 +307,7 @@ func _rebuild_inventory(instance: Dictionary) -> void:
 		actions.add_child(_button(t("equipment.lock"), func() -> void: _run_inventory("toggle_lock", [_selected_uid])))
 		actions.add_child(_button(t("equipment.sell"), func() -> void: _sell_selected()))
 		box.add_child(actions)
-	_line(box, t("common.note") + ": " + str(instance.get("equipped", {})))
+	_line(box, LocaleManager.diagnostic_text(str(instance.get("equipped", {}))))
 
 
 func _rebuild_stats() -> void:
@@ -316,7 +322,7 @@ func _rebuild_stats() -> void:
 	_line(box, t("common.abilities") + ": " + _labels_text(resolved.get("passives", [])))
 	_line(box, t("equipment.restriction") + ": " + _labels_text(resolved.get("restrictions", [])))
 	_line(box, t("common.provenance") + ": " + _labels_text(resolved.get("labels", [])))
-	_line(box, t("common.note") + ": " + _labels_text(resolved.get("diagnostics", [])))
+	_line(box, LocaleManager.diagnostic_text(_labels_text(resolved.get("diagnostics", []))))
 
 
 func _on_filter_changed(index: int) -> void:
@@ -420,10 +426,10 @@ func _sell_selected() -> void:
 		return
 	var entry := PlayerState.find_inventory_entry(_selected_uid)
 	if bool(entry.get("locked", false)):
-		_set_status(t("common.locked") + " " + _selected_uid)
+		_set_status(t("common.locked") + " " + LocaleManager.diagnostic_text(_selected_uid))
 		return
 	if _uid_is_equipped(_selected_uid):
-		_set_status(t("equipment.unique") + " " + _selected_uid)
+		_set_status(t("equipment.unique") + " " + LocaleManager.diagnostic_text(_selected_uid))
 		return
 	_run_inventory("sell", [_selected_uid])
 
@@ -443,14 +449,14 @@ func _uid_is_equipped(uid: String) -> bool:
 
 func _run_inventory(method: String, args: Array) -> void:
 	if PlayerState.inventory == null or not PlayerState.inventory.has_method(method):
-		_set_status(t("common.note") + " " + method)
+		_set_status(LocaleManager.diagnostic_text(method))
 		return
 	var result: Dictionary = _as_dict(PlayerState.inventory.callv(method, args))
 	if result.is_empty() or not bool(result.get("ok", false)):
-		_set_status(t("common.note") + " " + _failure(result, method))
+		_set_status(_failure(result, method))
 		return
 	PlayerState.call("commit", "inventory")
-	_set_status(t("equipment.equip") + " " + _summary(result))
+	_set_status(t("equipment.equip") + " " + LocaleManager.diagnostic_text(_summary(result)))
 	if method.begins_with("un") or method == "sell":
 		_selected_uid = ""
 	else:
@@ -463,11 +469,13 @@ func _as_dict(value: Variant) -> Dictionary:
 
 
 func _failure(result: Dictionary, method: String) -> String:
-	for key: String in ["message", "reason"]:
-		var text := str(result.get(key, ""))
-		if not text.is_empty():
-			return LocaleManager.t(text)
-	return method
+	var reason := str(result.get("reason", ""))
+	if LocaleManager.has_token("reason", reason):
+		return LocaleManager.t("common.failed") + " " + LocaleManager.reason_label(reason)
+	var message := str(result.get("message", ""))
+	if not message.is_empty():
+		return LocaleManager.diagnostic_text(message)
+	return LocaleManager.t("common.failed") + " " + LocaleManager.diagnostic_text(method)
 
 
 func _summary(result: Dictionary) -> String:
@@ -484,7 +492,7 @@ func _dict_text(value: Variant) -> String:
 		return t("common.none")
 	var parts: Array[String] = []
 	for key: String in (value as Dictionary).keys():
-		parts.append(str(key) + "=" + str((value as Dictionary)[key]))
+		parts.append(LocaleManager.identified(LocaleManager.stat_label(str(key)), str(key)) + "=" + str((value as Dictionary)[key]))
 	return " ".join(parts)
 
 

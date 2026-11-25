@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = 1
+DEFAULT_CAPTURE_DIR = "docs/qa/screenshots/phase3"
 REQUIRED_FIELDS = (
     "name",
     "scene",
@@ -28,8 +29,12 @@ def repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def read_captures(root: Path) -> list[dict[str, str]]:
-    directory = root / "docs/qa/screenshots/phase3"
+def read_captures(
+    root: Path, captures_dir: str = DEFAULT_CAPTURE_DIR
+) -> list[dict[str, str]]:
+    directory = Path(captures_dir)
+    if not directory.is_absolute():
+        directory = root / directory
     captures: list[dict[str, str]] = []
     for path in sorted(directory.glob("*.txt")):
         values: dict[str, str] = {}
@@ -63,7 +68,9 @@ def _geometry_value(geometry: str, key: str) -> str:
     return ""
 
 
-def render(captures: list[dict[str, str]]) -> str:
+def render(
+    captures: list[dict[str, str]], image_dir: str = DEFAULT_CAPTURE_DIR
+) -> str:
     resolutions = sorted({item["resolution"] for item in captures})
     locales = sorted({item["locale"] for item in captures})
     errors = sum(int(item["runtime_error_lines"]) for item in captures)
@@ -92,7 +99,7 @@ def render(captures: list[dict[str, str]]) -> str:
         "|---|---|---|---|---|---|---:|",
     ]
     for item in captures:
-        png = f"`docs/qa/screenshots/phase3/{item['name']}.png`"
+        png = f"`{image_dir.rstrip('/')}/{item['name']}.png`"
         geometry = item["geometry"].replace("WINDOW=", "window=")
         lines.append(
             f"| {png} | `{item['scene']}` | {item['resolution']} | `{item['locale']}` | "
@@ -134,6 +141,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=repository_root())
     parser.add_argument(
+        "--captures-dir",
+        type=str,
+        default=DEFAULT_CAPTURE_DIR,
+        help="Capture directory relative to --root",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -141,10 +154,11 @@ def main() -> int:
     )
     args = parser.parse_args()
     root = args.root.resolve()
+    captures_dir = args.captures_dir.rstrip("/")
     output = (args.output or root / "docs/qa/phase3-visual-review.md").resolve()
-    captures = read_captures(root)
+    captures = read_captures(root, captures_dir)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render(captures), encoding="utf-8")
+    output.write_text(render(captures, captures_dir), encoding="utf-8")
     print(f"captures: {len(captures)}")
     print(f"output: {output}")
     return 0

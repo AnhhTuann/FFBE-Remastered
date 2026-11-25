@@ -9,6 +9,13 @@ const BATTLE_SPRITE_SCRIPT := "res://battle/battle_sprite.gd"
 const MAIN_MENU_PATH := "res://scenes/menu/main_menu.tscn"
 const DEFAULT_ENCOUNTER := "encounter:GL:950001@skirmish"
 const SPEEDS: Array[int] = [1, 2, 4]
+## Layout budgets are deliberately small enough to fit the 1280x720 baseline
+## with the eight-combatant boss encounter and the longest localized labels.
+const CARD_WIDTH := 130
+const CARD_HEIGHT := 168
+const CARD_SPRITE_HEIGHT := 64
+const CARD_SPRITE_TOP_INSET := 0
+const ROW_SEPARATION := 3
 const ROLE_COLORS := {
 	"physical_attacker": Color(0.95, 0.72, 0.45),
 	"magical_attacker": Color(0.62, 0.72, 1.0),
@@ -31,6 +38,11 @@ var _party_cards: Array[Dictionary] = []
 var _enemy_cards: Array[Dictionary] = []
 var _background: ColorRect
 var _top_bar: HBoxContainer
+var _main_layout: VBoxContainer
+var _field: PanelContainer
+var _field_row: HBoxContainer
+var _debug_row: HBoxContainer
+var _debug_label: Label
 var _speed_button: Button
 var _encounter_option: OptionButton
 var _encounter_ids: Array[String] = []
@@ -98,101 +110,101 @@ func _build_ui() -> void:
 	_background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_background)
 
-	var field := PanelContainer.new()
-	field.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	field.offset_left = 18.0
-	field.offset_top = 56.0
-	field.offset_right = -18.0
-	field.offset_bottom = -246.0
-	var field_style := StyleBoxFlat.new()
-	field_style.bg_color = Color(0.10, 0.14, 0.20, 0.94)
-	field_style.border_color = Color(0.32, 0.44, 0.58)
-	field_style.set_border_width_all(2)
-	field_style.set_corner_radius_all(8)
-	field.add_theme_stylebox_override("panel", field_style)
-	add_child(field)
-
-	var field_margin := MarginContainer.new()
-	field_margin.add_theme_constant_override("margin_left", 14)
-	field_margin.add_theme_constant_override("margin_right", 14)
-	field_margin.add_theme_constant_override("margin_top", 12)
-	field_margin.add_theme_constant_override("margin_bottom", 12)
-	field.add_child(field_margin)
-
-	var field_row := HBoxContainer.new()
-	field_row.add_theme_constant_override("separation", 10)
-	field_margin.add_child(field_row)
-
-	_enemy_area = HBoxContainer.new()
-	_enemy_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_enemy_area.add_theme_constant_override("separation", 8)
-	field_row.add_child(_enemy_area)
-
-	var center_slot := CenterContainer.new()
-	center_slot.custom_minimum_size = Vector2(96, 0)
-	field_row.add_child(center_slot)
-	_center_label = _label(LocaleManager.t("battle.vs"), 26, HORIZONTAL_ALIGNMENT_CENTER)
-	_center_label.modulate = Color(0.78, 0.86, 1.0)
-	center_slot.add_child(_center_label)
-
-	_party_area = HBoxContainer.new()
-	_party_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_party_area.add_theme_constant_override("separation", 8)
-	_party_area.alignment = BoxContainer.ALIGNMENT_END
-	field_row.add_child(_party_area)
+	# One full-rect VBox owns all primary bands. The battlefield expands; the
+	# command panel sizes to its content, so opening the ability grid cannot
+	# push the hint/log/debug rows below the viewport.
+	_main_layout = VBoxContainer.new()
+	_main_layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_main_layout.offset_left = 18.0
+	_main_layout.offset_top = 8.0
+	_main_layout.offset_right = -18.0
+	_main_layout.offset_bottom = -10.0
+	_main_layout.add_theme_constant_override("separation", 8)
+	add_child(_main_layout)
 
 	_top_bar = HBoxContainer.new()
-	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_top_bar.offset_left = 18.0
-	_top_bar.offset_right = -18.0
-	_top_bar.offset_top = 8.0
-	_top_bar.offset_bottom = 48.0
+	_top_bar.custom_minimum_size = Vector2(0, 40)
 	_top_bar.add_theme_constant_override("separation", 10)
-	add_child(_top_bar)
+	_main_layout.add_child(_top_bar)
 
 	_title_label = _label(LocaleManager.t("battle.scene_title"), 18, HORIZONTAL_ALIGNMENT_LEFT)
-	_title_label.custom_minimum_size = Vector2(240, 0)
+	_title_label.custom_minimum_size = Vector2(200, 0)
 	_title_label.modulate = Color(0.95, 0.96, 1.0)
 	_top_bar.add_child(_title_label)
-	_encounter_option = OptionButton.new()
-	_encounter_option.custom_minimum_size = Vector2(230, 30)
-	_encounter_option.item_selected.connect(_on_encounter_selected)
-	_top_bar.add_child(_encounter_option)
 	_turn_label = _label(LocaleManager.t("battle.turn", {"turn": 1}), 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_turn_label.custom_minimum_size = Vector2(60, 0)
 	_top_bar.add_child(_turn_label)
 	_phase_label = _label(LocaleManager.t("battle.player_phase"), 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_phase_label.custom_minimum_size = Vector2(100, 0)
 	_top_bar.add_child(_phase_label)
 	_chain_label = _label(LocaleManager.t("battle.chain_status", {"count": 0, "bonus": 0}), 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_chain_label.custom_minimum_size = Vector2(110, 0)
 	_chain_label.modulate = Color(1.0, 0.84, 0.42)
 	_top_bar.add_child(_chain_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_top_bar.add_child(spacer)
-	var speed_button := _button(LocaleManager.t("battle.speed_button", {"speed": SPEEDS[0]}), 120)
-	speed_button.pressed.connect(_on_speed_pressed)
-	_top_bar.add_child(speed_button)
-	_speed_button = speed_button
-	_pause_button = _button(LocaleManager.t("battle.pause"), 90)
+	_speed_button = _button(LocaleManager.t("battle.speed_button", {"speed": SPEEDS[0]}), 90)
+	_speed_button.pressed.connect(_on_speed_pressed)
+	_top_bar.add_child(_speed_button)
+	_pause_button = _button(LocaleManager.t("battle.pause"), 80)
 	_pause_button.pressed.connect(_on_pause_pressed)
 	_top_bar.add_child(_pause_button)
-	_menu_button = _button(LocaleManager.t("battle.menu"), 80)
+	_menu_button = _button(LocaleManager.t("battle.menu"), 90)
 	_menu_button.pressed.connect(_on_menu_pressed)
 	_top_bar.add_child(_menu_button)
 
+	_field = PanelContainer.new()
+	_field.custom_minimum_size = Vector2(0, 220)
+	_field.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var field_style := StyleBoxFlat.new()
+	field_style.bg_color = Color(0.10, 0.14, 0.20, 0.94)
+	field_style.border_color = Color(0.32, 0.44, 0.58)
+	field_style.set_border_width_all(2)
+	field_style.set_corner_radius_all(8)
+	_field.add_theme_stylebox_override("panel", field_style)
+	_main_layout.add_child(_field)
+
+	var field_margin := MarginContainer.new()
+	field_margin.add_theme_constant_override("margin_left", 12)
+	field_margin.add_theme_constant_override("margin_right", 12)
+	field_margin.add_theme_constant_override("margin_top", 12)
+	field_margin.add_theme_constant_override("margin_bottom", 12)
+	_field.add_child(field_margin)
+
+	_field_row = HBoxContainer.new()
+	_field_row.add_theme_constant_override("separation", 6)
+	field_margin.add_child(_field_row)
+
+	_enemy_area = HBoxContainer.new()
+	_enemy_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_enemy_area.alignment = BoxContainer.ALIGNMENT_CENTER
+	_enemy_area.add_theme_constant_override("separation", 6)
+	_field_row.add_child(_enemy_area)
+
+	var center_slot := CenterContainer.new()
+	center_slot.custom_minimum_size = Vector2(72, 0)
+	_field_row.add_child(center_slot)
+	_center_label = _label(LocaleManager.t("battle.vs"), 26, HORIZONTAL_ALIGNMENT_CENTER)
+	_center_label.modulate = Color(0.78, 0.86, 1.0)
+	center_slot.add_child(_center_label)
+
+	_party_area = HBoxContainer.new()
+	_party_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_party_area.alignment = BoxContainer.ALIGNMENT_CENTER
+	_party_area.add_theme_constant_override("separation", 6)
+	_field_row.add_child(_party_area)
+
 	var command_panel := PanelContainer.new()
-	command_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	command_panel.offset_left = 18.0
-	command_panel.offset_right = -18.0
-	command_panel.offset_top = -238.0
-	command_panel.offset_bottom = -10.0
+	command_panel.size_flags_vertical = Control.SIZE_SHRINK_END
 	var command_style := StyleBoxFlat.new()
 	command_style.bg_color = Color(0.09, 0.12, 0.18, 0.97)
 	command_style.border_color = Color(0.30, 0.42, 0.56)
 	command_style.set_border_width_all(2)
 	command_style.set_corner_radius_all(8)
 	command_panel.add_theme_stylebox_override("panel", command_style)
-	add_child(command_panel)
+	_main_layout.add_child(command_panel)
 
 	var command_margin := MarginContainer.new()
 	command_margin.add_theme_constant_override("margin_left", 12)
@@ -205,36 +217,41 @@ func _build_ui() -> void:
 	command_margin.add_child(command_vbox)
 
 	_character_row = HBoxContainer.new()
+	_character_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_character_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_character_row.add_theme_constant_override("separation", 5)
 	command_vbox.add_child(_character_row)
 
 	_command_row = HBoxContainer.new()
+	_command_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_command_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_command_row.add_theme_constant_override("separation", 5)
 	command_vbox.add_child(_command_row)
-	_attack_button = _button(LocaleManager.t("battle.command_attack"), 110)
+	_attack_button = _button(LocaleManager.t("battle.command_attack"), 96)
 	_attack_button.pressed.connect(_on_attack_pressed)
 	_command_row.add_child(_attack_button)
-	_ability_button = _button(LocaleManager.t("battle.command_abilities"), 130)
+	_ability_button = _button(LocaleManager.t("battle.command_abilities"), 110)
 	_ability_button.pressed.connect(_on_abilities_pressed)
 	_command_row.add_child(_ability_button)
-	_limit_button = _button(LocaleManager.t("battle.command_limit"), 145)
+	_limit_button = _button(LocaleManager.t("battle.command_limit"), 125)
 	_limit_button.pressed.connect(_on_limit_pressed)
 	_command_row.add_child(_limit_button)
-	_item_button = _button(LocaleManager.t("battle.command_items"), 105)
+	_item_button = _button(LocaleManager.t("battle.command_items"), 90)
 	_item_button.pressed.connect(_on_items_pressed)
 	_command_row.add_child(_item_button)
-	_guard_button = _button(LocaleManager.t("battle.command_guard"), 100)
+	_guard_button = _button(LocaleManager.t("battle.command_guard"), 90)
 	_guard_button.pressed.connect(_on_guard_pressed)
 	_command_row.add_child(_guard_button)
-	_execute_button = _button(LocaleManager.t("battle.command_execute"), 150)
+	_execute_button = _button(LocaleManager.t("battle.command_execute"), 130)
 	_execute_button.pressed.connect(_on_execute_pressed)
 	_command_row.add_child(_execute_button)
-	_clear_button = _button(LocaleManager.t("battle.clear"), 80)
+	_clear_button = _button(LocaleManager.t("battle.clear"), 70)
 	_clear_button.pressed.connect(_on_clear_pressed)
 	_command_row.add_child(_clear_button)
 
 	_ability_scroll = ScrollContainer.new()
 	_ability_scroll.custom_minimum_size = Vector2(0, 82)
+	_ability_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_ability_scroll.visible = false
 	command_vbox.add_child(_ability_scroll)
 	_ability_grid = GridContainer.new()
@@ -242,12 +259,36 @@ func _build_ui() -> void:
 	_ability_scroll.add_child(_ability_grid)
 
 	_hint_label = _label(LocaleManager.t("battle.hint_initial"), 14, HORIZONTAL_ALIGNMENT_LEFT)
+	_hint_label.custom_minimum_size = Vector2(0, 20)
 	_hint_label.modulate = Color(0.82, 0.88, 0.98)
 	command_vbox.add_child(_hint_label)
 	_log_label = _label("", 12, HORIZONTAL_ALIGNMENT_LEFT)
+	_log_label.custom_minimum_size = Vector2(0, 18)
 	_log_label.modulate = Color(0.68, 0.78, 0.90)
-	_log_label.clip_text = true
 	command_vbox.add_child(_log_label)
+
+	# QA/debug controls live in their own visually separated footer. The top
+	# bar and battlefield stay player-facing; the encounter selector is no
+	# longer mixed with turn/phase/chain information.
+	command_vbox.add_child(HSeparator.new())
+	_debug_row = HBoxContainer.new()
+	_debug_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_debug_row.add_theme_constant_override("separation", 8)
+	_debug_label = _label(LocaleManager.t("settings.debug"), 11, HORIZONTAL_ALIGNMENT_LEFT)
+	_debug_label.custom_minimum_size = Vector2(72, 0)
+	_debug_label.modulate = Color(0.50, 0.58, 0.70)
+	_debug_row.add_child(_debug_label)
+	_encounter_option = OptionButton.new()
+	_encounter_option.custom_minimum_size = Vector2(220, 28)
+	_encounter_option.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_encounter_option.clip_text = true
+	_encounter_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_encounter_option.item_selected.connect(_on_encounter_selected)
+	_debug_row.add_child(_encounter_option)
+	var debug_spacer := Control.new()
+	debug_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_debug_row.add_child(debug_spacer)
+	command_vbox.add_child(_debug_row)
 
 	_damage_layer = Control.new()
 	_damage_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -334,6 +375,9 @@ func _label(text: String, size: int, alignment: HorizontalAlignment) -> Label:
 	label.add_theme_font_size_override("font_size", size)
 	label.horizontal_alignment = alignment
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Long localized strings must not inflate a Container's minimum width.
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.clip_text = true
 	return label
 
 
@@ -341,6 +385,8 @@ func _button(text: String, minimum_width: int) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.custom_minimum_size = Vector2(minimum_width, 32)
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.clip_text = true
 	return button
 
 
@@ -465,21 +511,19 @@ func _rebuild_cards() -> void:
 	_party_cards.clear()
 	for combatant in manager.get("state").get("enemies"):
 		_enemy_cards.append(_make_card(combatant, false))
-	var companion := PanelContainer.new()
-	companion.custom_minimum_size = Vector2(128, 150)
-	var companion_label := _label(LocaleManager.t("battle.companion"), 13, HORIZONTAL_ALIGNMENT_CENTER)
-	companion_label.modulate = Color(0.44, 0.50, 0.60)
-	companion.add_child(companion_label)
-	_enemy_cards.append({"button": null, "combatant": null, "panel": companion})
-	_enemy_area.add_child(companion)
 
+	# The reserved companion slot was empty in every verified encounter. It
+	# consumed battlefield width and pushed the party row past the viewport,
+	# so actual combatants are the only cards laid out here.
 	for combatant in manager.get("state").get("party"):
 		_party_cards.append(_make_card(combatant, true))
 
 
 func _make_card(combatant: RefCounted, is_party: bool) -> Dictionary:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(148, 150)
+	panel.custom_minimum_size = Vector2(CARD_WIDTH, CARD_HEIGHT)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.14, 0.19, 0.27)
 	style.border_color = Color(0.36, 0.48, 0.62)
@@ -493,20 +537,28 @@ func _make_card(combatant: RefCounted, is_party: bool) -> Dictionary:
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(0, 28)
 	button.flat = true
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_font_size_override("font_size", 12)
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.clip_text = true
 	button.text = str(combatant.get("display_name"))
-	button.tooltip_text = _card_tooltip(combatant)
+	button.tooltip_text = _card_button_tooltip(combatant)
 	button.pressed.connect(_on_card_pressed.bind(combatant.get("id")))
 	vbox.add_child(button)
 
 	var sprite_host := Control.new()
-	sprite_host.custom_minimum_size = Vector2(0, 64)
+	sprite_host.custom_minimum_size = Vector2(0, CARD_SPRITE_HEIGHT)
+	sprite_host.clip_contents = true
 	vbox.add_child(sprite_host)
 	var sprite_script: Script = load(BATTLE_SPRITE_SCRIPT) as Script
 	if sprite_script != null:
 		var sprite: AnimatedSprite2D = sprite_script.new() as AnimatedSprite2D
 		var role_color: Color = ROLE_COLORS.get(str(combatant.get("role")), Color(0.8, 0.85, 0.95))
 		sprite.setup(str(combatant.get("animation_id")), role_color)
-		sprite.position = Vector2(32, 32)
+		_fit_sprite_to_host(sprite, float(CARD_WIDTH))
+		# BattleSprite reapplies frame origins on every frame; recentre after it
+		# so the sprite never drifts over the name button or the stat bars.
+		sprite.frame_changed.connect(_center_sprite.bind(sprite, float(CARD_WIDTH)))
 		sprite_host.add_child(sprite)
 
 	var hp_bar := _bar(Color(0.35, 0.85, 0.48))
@@ -536,6 +588,44 @@ func _make_card(combatant: RefCounted, is_party: bool) -> Dictionary:
 	}
 
 
+func _fit_sprite_to_host(sprite: AnimatedSprite2D, host_width: float) -> void:
+	if sprite.sprite_frames == null:
+		return
+	var texture: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if texture == null or texture.get_size().x <= 0.0 or texture.get_size().y <= 0.0:
+		return
+	var scaled: Vector2 = texture.get_size() * sprite.scale
+	var longest: float = maxf(scaled.x, scaled.y)
+	if longest > CARD_SPRITE_HEIGHT:
+		sprite.scale *= CARD_SPRITE_HEIGHT / longest
+	_center_sprite(sprite, host_width)
+
+
+func _center_sprite(sprite: AnimatedSprite2D, host_width: float) -> void:
+	if not is_instance_valid(sprite) or sprite.sprite_frames == null:
+		return
+	var texture: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if texture == null:
+		return
+	var scaled: Vector2 = texture.get_size() * sprite.scale
+	var desired: Vector2 = Vector2(
+		(host_width - scaled.x) * 0.5,
+		(CARD_SPRITE_HEIGHT - scaled.y) * 0.5 + CARD_SPRITE_TOP_INSET
+	)
+	var top_left_from_position: Vector2 = sprite.offset * sprite.scale
+	if sprite.centered:
+		top_left_from_position -= scaled * 0.5
+	sprite.position = desired - top_left_from_position
+
+
+func _card_button_tooltip(combatant: RefCounted) -> String:
+	var details: String = _card_tooltip(combatant)
+	var name: String = str(combatant.get("display_name"))
+	if details.is_empty():
+		return name
+	return name + "\n" + details
+
+
 # ---------------------------------------------------------------------------
 # Rendering
 # ---------------------------------------------------------------------------
@@ -562,7 +652,11 @@ func _refresh() -> void:
 
 	while _character_row.get_child_count() < _party_cards.size():
 		var index: int = _character_row.get_child_count()
-		var button := _button("", 148)
+		var button := _button("", 150)
+		button.custom_minimum_size = Vector2(150, 54)
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.add_theme_font_size_override("font_size", 12)
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.pressed.connect(_on_character_pressed.bind(index))
 		_character_row.add_child(button)
 		_character_buttons.append(button)
@@ -609,6 +703,8 @@ func _refresh() -> void:
 
 
 func _apply_locale(_locale: String = "") -> void:
+	if _debug_label != null:
+		_debug_label.text = LocaleManager.t("settings.debug")
 	if _title_label != null:
 		_title_label.text = LocaleManager.t("battle.scene_title")
 	if _speed_button != null:
@@ -629,7 +725,7 @@ func _apply_locale(_locale: String = "") -> void:
 		var combatant: RefCounted = card.get("combatant")
 		var button: Button = card.get("button") as Button
 		if combatant != null and button != null:
-			button.tooltip_text = _card_tooltip(combatant)
+			button.tooltip_text = _card_button_tooltip(combatant)
 		elif button == null:
 			var panel: PanelContainer = card.get("panel") as PanelContainer
 			var companion_label: Label = null
