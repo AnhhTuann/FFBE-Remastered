@@ -1,0 +1,16 @@
+name=hardening-details-vi-1280x720
+scene=res://scenes/phase3/character_details.tscn
+resolution=1280x720
+fullscreen=0
+locale=vi
+scenario=
+instance_id=
+party_id=
+encounter=
+seed=20261126
+freeze_frame=1
+window_id=178257927
+geometry=WINDOW=178257927 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=526 stddev=0.189071
+runtime_error_lines=0
+log_basename=hardening-details-vi-1280x720.log
