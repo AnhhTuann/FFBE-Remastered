@@ -4,11 +4,13 @@
 The tool is deliberately dependency-free and deterministic: the same repository
 state always produces byte-identical JSON. It scans ``game/**/*.gd`` for string
 literals passed to ``L.t(...)`` or ``LocaleManager.t(...)``, compares those keys
-with ``game/data/localization/{en,vi,ja}.json``, and checks placeholder parity,
+with the dictionaries, verifies the dynamic token manifest in
+``game/data/phase3/localization_tokens.json``, and checks placeholder parity,
 Vietnamese diacritics, Japanese glyph coverage, and long-label risk.
 
-Exit status is 0 only when there are no missing keys and no placeholder
-mismatches. Unused keys and long labels are diagnostics, not blockers.
+Exit status is 0 only when there are no missing keys, no placeholder
+mismatches, and no broken dynamic manifest references. Unused keys and long
+labels are diagnostics, not blockers.
 """
 
 from __future__ import annotations
@@ -20,12 +22,13 @@ import unicodedata
 from pathlib import Path
 from typing import Any
 
-TOOL_VERSION = "1.0.0"
-SCHEMA_VERSION = 1
+TOOL_VERSION = "1.1.0"
+SCHEMA_VERSION = 2
 LOCALES: tuple[str, ...] = ("en", "ja", "vi")
 DEFAULT_LOCALE = "vi"
 FALLBACK_LOCALE = "en"
 DICTIONARY_DIR = Path("game/data/localization")
+TOKEN_MANIFEST_PATH = Path("game/data/phase3/localization_tokens.json")
 SOURCE_DIR = Path("game")
 DEFAULT_OUTPUT = Path("data/validation/localization-coverage.json")
 LONG_LABEL_THRESHOLD = 40
@@ -89,6 +92,43 @@ def load_dictionary(root: Path, locale: str) -> tuple[dict[str, str], list[str]]
     return clean, problems
 
 
+def load_token_manifest(root: Path) -> tuple[dict[str, dict[str, str]], list[str]]:
+    """Load dynamic token -> dictionary key mappings.
+
+    The manifest documents identifiers that are resolved at runtime (region
+    codes, item IDs, reason codes, mechanic keys). A missing manifest is not an
+    error for minimal CLI fixtures; a malformed one is.
+    """
+    path = root / TOKEN_MANIFEST_PATH
+    if not path.is_file():
+        return {}, []
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        return {}, [f"{path.as_posix()}: {type(error).__name__}: {error}"]
+    if not isinstance(raw, dict):
+        return {}, [f"{path.as_posix()}: expected a flat JSON object"]
+
+    raw_categories = raw.get("categories", {})
+    if not isinstance(raw_categories, dict):
+        return {}, [f"{path.as_posix()}: 'categories' must be an object"]
+
+    categories: dict[str, dict[str, str]] = {}
+    problems: list[str] = []
+    for category, mapping in sorted(raw_categories.items()):
+        if not isinstance(category, str) or not isinstance(mapping, dict):
+            problems.append(f"{path.as_posix()}: invalid category {category!r}")
+            continue
+        clean: dict[str, str] = {}
+        for token, key in sorted(mapping.items()):
+            if not isinstance(token, str) or not isinstance(key, str) or not key:
+                problems.append(f"{path.as_posix()}: invalid reference {category}/{token!r}")
+                continue
+            clean[token] = key
+        categories[category] = clean
+    return categories, problems
+
+
 def scan_sources(root: Path) -> dict[str, Any]:
     """Find literal translation keys requested by GDScript call sites."""
     source_root = root / SOURCE_DIR
@@ -121,6 +161,9 @@ def build_report(root: Path) -> dict[str, Any]:
     """Build the deterministic coverage report for ``root``."""
     source = scan_sources(root)
     source_keys = set(source["literal_keys"])
+    token_categories, token_problems = load_token_manifest(root)
+    dynamic_keys = sorted({key for mapping in token_categories.values() for key in mapping.values()})
+    dynamic_key_set = set(dynamic_keys)
 
     dictionaries: dict[str, dict[str, str]] = {}
     dictionary_errors: dict[str, list[str]] = {}
@@ -131,8 +174,14 @@ def build_report(root: Path) -> dict[str, Any]:
             dictionary_errors[locale] = problems
 
     union_keys = sorted(
-        set().union(*(set(dictionary) for dictionary in dictionaries.values()), source_keys)
+        set().union(
+            *(set(dictionary) for dictionary in dictionaries.values()),
+            source_keys,
+            dynamic_key_set,
+        )
     )
+    reference_keys = set().union(*(set(dictionary) for dictionary in dictionaries.values()))
+    missing_dynamic_keys = [key for key in dynamic_keys if key not in reference_keys]
 
     per_locale: dict[str, Any] = {}
     for locale in LOCALES:
@@ -141,7 +190,11 @@ def build_report(root: Path) -> dict[str, Any]:
             "dictionary_file": (DICTIONARY_DIR / f"{locale}.json").as_posix(),
             "key_count": len(dictionary),
             "missing_keys": [key for key in union_keys if key not in dictionary],
-            "unused_keys": [key for key in sorted(dictionary) if key not in source_keys],
+            "unused_keys": [
+                key
+                for key in sorted(dictionary)
+                if key not in source_keys and key not in dynamic_key_set
+            ],
             "empty_value_keys": [key for key, value in sorted(dictionary.items()) if not value],
         }
 
@@ -186,7 +239,14 @@ def build_report(root: Path) -> dict[str, Any]:
 
     missing_key_count = sum(len(item["missing_keys"]) for item in per_locale.values())
     placeholder_mismatch_count = len(placeholder_mismatches)
-    status = "pass" if missing_key_count == 0 and placeholder_mismatch_count == 0 else "fail"
+    dynamic_reference_error_count = len(token_problems) + len(missing_dynamic_keys)
+    status = (
+        "pass"
+        if missing_key_count == 0
+        and placeholder_mismatch_count == 0
+        and dynamic_reference_error_count == 0
+        else "fail"
+    )
 
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -197,6 +257,18 @@ def build_report(root: Path) -> dict[str, Any]:
         "locales": list(LOCALES),
         "source_scan": source,
         "union_key_count": len(union_keys),
+        "dynamic_references": {
+            "manifest_file": TOKEN_MANIFEST_PATH.as_posix(),
+            "category_count": len(token_categories),
+            "reference_count": len(dynamic_keys),
+            "mapping_count": sum(len(mapping) for mapping in token_categories.values()),
+            "keys": dynamic_keys,
+            "by_category": {
+                category: len(mapping) for category, mapping in sorted(token_categories.items())
+            },
+            "manifest_errors": token_problems,
+            "missing_keys": missing_dynamic_keys,
+        },
         "per_locale": per_locale,
         "dictionary_errors": dictionary_errors,
         "invalid_dictionary_count": len(dictionary_errors),
@@ -233,6 +305,7 @@ def build_report(root: Path) -> dict[str, Any]:
         "blocking": {
             "missing_key_count": missing_key_count,
             "placeholder_mismatch_count": placeholder_mismatch_count,
+            "dynamic_reference_error_count": dynamic_reference_error_count,
         },
     }
     return report
@@ -271,6 +344,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"union keys: {report['union_key_count']}")
     print(f"missing keys: {report['blocking']['missing_key_count']}")
     print(f"placeholder mismatches: {report['blocking']['placeholder_mismatch_count']}")
+    print(f"dynamic references: {report['dynamic_references']['reference_count']}")
+    print(f"dynamic reference errors: {report['blocking']['dynamic_reference_error_count']}")
     print(f"long labels >{LONG_LABEL_THRESHOLD}: {report['long_label_risk']['total']}")
     print(f"report: {displayed_output}")
     return 0 if report["status"] == "pass" else 1

@@ -57,8 +57,8 @@ func _ready() -> void:
 	_refresh()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -138,7 +138,7 @@ func _goto(path: String, instance_id: String = "") -> void:
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _consume_instance_id() -> String:
@@ -192,9 +192,10 @@ func _refresh() -> void:
 
 	var summary := _panel(t("upgrade.title"))
 	_line(summary, LocaleManager.label_for(definition) + "    " + t("common.uid") + ": " + _selected_id)
+	var rarity := str(definition.get("rarity", ""))
 	_line(summary, t("common.level") + ": " + str(instance.get("level", 0)) + "    " + \
 		t("upgrade.exp") + ": " + str(instance.get("exp", 0)) + "    " + \
-		t("common.rarity") + ": " + str(definition.get("rarity", "")))
+		t("common.rarity") + ": " + LocaleManager.identified(LocaleManager.rarity_label(rarity), rarity))
 	_line(summary, t("details.trust") + ": " + str(instance.get("trust", 0)) + "    " + \
 		t("details.tmr") + ": " + _state(bool(instance.get("tmr_claimed", false))) + "    " + \
 		t("details.stmr") + ": " + _state(bool(instance.get("stmr_claimed", false))))
@@ -210,7 +211,7 @@ func _refresh() -> void:
 	var pot_items: Array[Dictionary] = []
 	for stat: String in POT_STATS:
 		var pot: Dictionary = _pot_rules.get(stat, {})
-		pot_items.append({"label": stat + " +" + str(pot.get("amount", 0)), "value": stat})
+		pot_items.append({"label": LocaleManager.stat_label(stat) + " +" + str(pot.get("amount", 0)), "value": stat})
 	_fill_option(_stat_option, pot_items)
 	var pot_row := HBoxContainer.new()
 	pot_row.add_child(_stat_option)
@@ -250,7 +251,7 @@ func _resources_panel(instance: Dictionary) -> void:
 	for key: String in keys:
 		if key.is_empty():
 			continue
-		_line(box, t("common.cost") + ": " + key + " = " + str(resources.get(key, 0)))
+		_line(box, t("common.cost") + ": " + LocaleManager.identified(LocaleManager.resource_label(key), key) + " = " + str(resources.get(key, 0)))
 
 
 func _fill_option(option: OptionButton, items: Array[Dictionary]) -> void:
@@ -297,13 +298,13 @@ func _confirm_convert() -> void:
 
 func _run(method: String, args: Array) -> void:
 	if PlayerState.progression == null or not PlayerState.progression.has_method(method):
-		_set_status(t("common.note") + " " + method)
+		_set_status(LocaleManager.diagnostic_text(method))
 		return
 	var result: Dictionary = _as_dict(PlayerState.progression.callv(method, args))
 	if result.is_empty() or not bool(result.get("ok", false)):
-		_set_status(t("common.note") + " " + _failure(result, method))
+		_set_status(_failure(result, method))
 		return
-	var message := t("upgrade.result") + " " + _summary(result)
+	var message := t("upgrade.result") + " " + LocaleManager.diagnostic_text(_summary(result))
 	PlayerState.call("commit", "progression")
 	_refresh()
 	_result_label.text = message
@@ -315,11 +316,13 @@ func _as_dict(value: Variant) -> Dictionary:
 
 
 func _failure(result: Dictionary, method: String) -> String:
-	for key: String in ["message", "reason"]:
-		var text := str(result.get(key, ""))
-		if not text.is_empty():
-			return LocaleManager.t(text)
-	return method
+	var reason := str(result.get("reason", ""))
+	if LocaleManager.has_token("reason", reason):
+		return LocaleManager.t("common.failed") + " " + LocaleManager.reason_label(reason)
+	var message := str(result.get("message", ""))
+	if not message.is_empty():
+		return LocaleManager.diagnostic_text(message)
+	return LocaleManager.t("common.failed") + " " + LocaleManager.diagnostic_text(method)
 
 
 func _summary(result: Dictionary) -> String:

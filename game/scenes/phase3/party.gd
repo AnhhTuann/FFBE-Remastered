@@ -73,8 +73,8 @@ func _ready() -> void:
 	_refresh()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -143,7 +143,7 @@ func _goto(path: String) -> void:
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _consume_party_id() -> String:
@@ -284,15 +284,15 @@ func _validate() -> Array[String]:
 	for index: int in range(SLOT_COUNT):
 		var id := _slot_id(index)
 		if id.is_empty():
-			diagnostics.append(t("party.slot") + " " + str(index + 1))
+			diagnostics.append(t("party.error.empty_slot", {"slot": index + 1}))
 			continue
 		if seen.has(id):
-			diagnostics.append(t("party.invalid") + " " + id)
+			diagnostics.append(t("party.error.duplicate", {"id": id}))
 		seen.append(id)
 		if PlayerState.get_unit_instance(id).is_empty():
-			diagnostics.append(t("collection.empty") + " " + id)
+			diagnostics.append(t("collection.empty") + " " + LocaleManager.diagnostic_text(id))
 	if _slot_id(int(_working.get("leader_slot", 0))).is_empty():
-		diagnostics.append(t("party.leader"))
+		diagnostics.append(t("party.error.leader_missing"))
 	return diagnostics
 
 
@@ -358,7 +358,7 @@ func _on_preset_selected(_index: int) -> void:
 func _load_selected_preset() -> void:
 	var id := _selected_preset_id()
 	if id.is_empty() or not PlayerState.parties().has(id):
-		_set_status(t("party.invalid") + " " + id)
+		_set_status(t("party.invalid") + " " + LocaleManager.diagnostic_text(id))
 		return
 	_party_id = id
 	_load_party()
@@ -403,7 +403,7 @@ func _preview() -> void:
 		parts.append(t("common.enabled") + "=" + str(resolved.get("valid", false)))
 		var totals: Variant = resolved.get("totals", resolved.get("stats", {}))
 		parts.append(t("common.stats") + "=" + _dict_text(totals))
-		parts.append(t("common.note") + "=" + _labels_text(resolved.get("diagnostics", [])))
+		parts.append(LocaleManager.diagnostic_text(_labels_text(resolved.get("diagnostics", []))))
 		_last_preview = " ".join(parts)
 	_refresh()
 	_set_status(_last_preview)
@@ -419,7 +419,7 @@ func _launch() -> void:
 	PlayerState.call("commit", "parties")
 	var error: Error = get_tree().change_scene_to_file(BATTLE_PATH)
 	if error != OK:
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _as_dict(value: Variant) -> Dictionary:
@@ -431,7 +431,7 @@ func _dict_text(value: Variant) -> String:
 		return t("common.none")
 	var parts: Array[String] = []
 	for key: String in (value as Dictionary).keys():
-		parts.append(str(key) + "=" + str((value as Dictionary)[key]))
+		parts.append(LocaleManager.identified(LocaleManager.stat_label(str(key)), str(key)) + "=" + str((value as Dictionary)[key]))
 	return " ".join(parts)
 
 

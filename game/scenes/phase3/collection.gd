@@ -82,8 +82,8 @@ func _ready() -> void:
 	_rebuild()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -162,7 +162,7 @@ func _goto(path: String, instance_id: String = "", extra: Dictionary = {}) -> vo
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _fill_option(option: OptionButton, items: Array[Dictionary]) -> void:
@@ -198,7 +198,7 @@ func _add_filter_row(parent: VBoxContainer, key: String, label_text: String, val
 		]
 	else:
 		for value: String in values:
-			items.append({"label": value, "value": value})
+			items.append({"label": LocaleManager.filter_value_label(key, value), "value": value})
 	_fill_option(option, items)
 	option.item_selected.connect(func(_index: int) -> void: _rebuild())
 	_filters[key] = option
@@ -307,8 +307,19 @@ func _instance_passes(instance: Dictionary, definitions: Dictionary, query: Stri
 func _definition_text_matches(definition: Dictionary, query: String) -> bool:
 	if query.is_empty():
 		return true
+	var region := str(definition.get("region", ""))
+	var role := str(definition.get("role", ""))
+	var element := str(definition.get("element", ""))
+	var rarity := str(definition.get("rarity", ""))
 	var haystack := LocaleManager.label_for(definition).to_lower() + " " + \
-		str(definition.get("region", "")).to_lower() + " " + str(definition.get("id", "")).to_lower()
+		LocaleManager.region_label(region).to_lower() + " " + region.to_lower() + " " + \
+		LocaleManager.role_label(role).to_lower() + " " + role.to_lower() + " " + \
+		LocaleManager.element_label(element).to_lower() + " " + element.to_lower() + " " + \
+		LocaleManager.rarity_label(rarity).to_lower() + " " + rarity.to_lower()
+	for category: Variant in definition.get("categories", []):
+		var value := str(category)
+		haystack += " " + LocaleManager.category_label(value).to_lower() + " " + value.to_lower()
+	haystack += " " + str(definition.get("id", "")).to_lower()
 	return haystack.findn(query) >= 0
 
 
@@ -330,7 +341,8 @@ func _instance_row(instance: Dictionary, definitions: Dictionary, counts: Dictio
 	box.add_child(name_label)
 
 	var details: Array[String] = []
-	details.append(t("common.region") + ": " + str(instance.get("region", "")))
+	var region := str(instance.get("region", ""))
+	details.append(t("common.region") + ": " + LocaleManager.identified(LocaleManager.region_label(region), region))
 	details.append(t("common.level") + ": " + str(instance.get("level", 0)))
 	details.append(t("awakening.star") + ": " + str(instance.get("star", 0)))
 	details.append(t("awakening.ex") + ": " + str(instance.get("ex_level", 0)))
@@ -370,11 +382,11 @@ func _unowned_row(definition: Dictionary) -> Control:
 func _toggle_favorite(id: String) -> void:
 	var instance := PlayerState.get_unit_instance(id)
 	if instance.is_empty():
-		_set_status(t("collection.empty") + " " + id)
+		_set_status(t("collection.empty") + " " + LocaleManager.diagnostic_text(id))
 		return
 	var changed: bool = PlayerState.mutate_unit_instance(id, {"favorite": not bool(instance.get("favorite", false))})
 	if not changed:
-		_set_status(t("common.note") + " " + id)
+		_set_status(LocaleManager.diagnostic_text(id))
 		return
 	PlayerState.call("commit", "units")
 	_rebuild()

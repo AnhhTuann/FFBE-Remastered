@@ -57,18 +57,43 @@ Never translate or reorder these:
 - named style: `{path}`, `{locale}`, `{name}` for `String.format()`.
 
 Examples in the current dictionaries: `settings.path` (`{path}`),
-`settings.locale_changed` (`{locale}`), `collection.copy_count` (`%d`), and
-`battle.turn` (`%d`).
+`settings.locale_changed` (`{locale}`), `collection.copy_count` (`{count}`),
+`party.error.empty_slot` (`{slot}`), `party.error.duplicate` (`{id}`), and
+`battle.turn` (`{turn}`).
 
 ## 4. Regional and evidence labels
 
 - `GL` and `JP` are separate source namespaces. Never infer that the same native ID is the
-  same record in both regions; composite identities are documented elsewhere.
-- Verification labels (`VERIFIED`, `RECOVERED`, `PARTIAL`, `UNVERIFIED`, `UNAVAILABLE`)
-  describe evidence, not translation status. A translated label does not make a record
-  `VERIFIED`.
+  same record in both regions; composite identities are documented elsewhere. The filter
+  value `ALL` means all regions.
+- Verification labels (`SYNTHETIC_FIXTURE`, `REMASTERED_DESIGN`, `VERIFIED_RULE`,
+  `PARTIAL_RULE`, `UNVERIFIED_RULE`) describe evidence, not translation status. A localized
+  label does not upgrade a record's verification status.
+- Mechanic labels use the same evidence status codes. Mechanic names and notes are localized
+  through `mechanic.name.*` and `evidence.note.*`; the original English prose in fixture
+  data is treated as source evidence, not as player-facing copy.
 - Names under `unit.*`, `ability.*`, `passive.*`, `leader.*`, `equip.*`, `materia.*`, and
   `vision.synthetic_*` are synthetic fixtures (`SYNTHETIC_FIXTURE`), not recovered data.
 - Measured dictionary coverage is reported in [coverage-report.md](coverage-report.md).
   That report is evidence of parity and script checks only, not a claim that translation
   is complete or that every scene uses the locale service.
+
+## 5. Dynamic identifier vocabulary
+
+Stable identifiers are never rewritten. The table lists the canonical localized labels;
+the full mapping lives in `game/data/phase3/localization_tokens.json`.
+
+| Concept | Stable identifier examples | English | Vietnamese (preferred) | Japanese | Key family |
+|---|---|---|---|---|---|
+| Stat | `hp`, `mp`, `atk`, `def`, `mag`, `spr` | HP / ATK / ... | HP / Tấn công / ... | HP（体力） / 攻撃 / ... | `code.stat.*` |
+| Slot | `weapon`, `armor`, `accessory`, `materia_0` | Weapon / Materia slot 1 | Vũ khí / Khe Ma thụ 1 | 武器 / マテリアスロット 1 | `code.slot.*` |
+| Form | `base`, `brave_shift`, `nv` | Base / Brave Shift / NV | Gốc / Chuyển hình thái / NV | ベース / ブレイブシフト / NV覚醒 | `code.form.*` |
+| Region | `ALL`, `GL`, `JP` | All regions / GL / JP | Tất cả khu vực / GL / JP | すべての地域 / GL / JP | `code.region.*` |
+| Rarity | `3`, `5`, `7`, `nv` | 3 Star / ... / NV | 3 sao / ... / NV | 3 星 / ... / NV覚醒 | `code.rarity.*` |
+| Resource | `gil`, `item:GL:800001@base` | gil / Trust Moogle | gil (tiền) / Moogle tin cậy | ギル（gil） / 信頼モーグリ | `resource.*` |
+| Reason | `unknown_definition`, `already_claimed` | Definition unavailable / Reward already claimed | Định nghĩa không sẵn có / Phần thưởng đã được nhận | 定義がありません / 報酬は受取済みです | `reason.*` |
+| Clip | `idle`, `attack`, `damage`, `victory` | Idle / Attack / Damage / Victory | Nghỉ / Tấn công / Bị sát thương / Chiến thắng | 待機 / 攻撃 / ダメージ / 勝利 | `viewer.clip.*` |
+
+Developer-only values keep raw identifiers but are explicitly introduced by
+`common.diagnostic` ("Technical diagnostic" / "Chẩn đoán kỹ thuật" / "技術診断"). They are
+not player-facing prose and must not be counted as translated UI copy.

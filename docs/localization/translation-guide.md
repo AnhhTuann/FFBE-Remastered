@@ -51,7 +51,31 @@ Japanese values must use Japanese glyphs (kanji/kana), not romaji placeholders. 
 All names in this dictionary are **newly authored synthetic fixture labels**, not recovered
 original game text. Do not add protected source strings without a rights review.
 
-## 4. Workflow
+## 4. Dynamic tokens and stable identifiers
+
+Stable internal identifiers stay in data and in OptionButton metadata: unit and item IDs,
+region codes (`ALL`, `GL`, `JP`), stat codes (`hp`, `atk`, ...), equipment slots, reason
+codes, mechanic keys, and verification statuses. They are **not** translated as values.
+`game/data/phase3/localization_tokens.json` maps each identifier to a dictionary key, and
+`LocaleManager` resolves it at runtime through `token(category, value)` and dedicated
+helpers (`stat_label`, `slot_label`, `region_label`, `reason_label`, `mechanic_note`,
+`unit_name`, `clip_label`, and so on).
+
+Rules for new dynamic references:
+
+- Add the dictionary key to `en.json`, `vi.json`, and `ja.json` in the same change.
+- Add one mapping per stable identifier in `localization_tokens.json`; keep the identifier
+  spelling byte for byte, because save data and metadata depend on it.
+- Show the localized label to players. When the identifier must remain visible, place it in
+  parentheses beside the label (`LocaleManager.identified`), or mark it as a
+  developer diagnostic (`LocaleManager.diagnostic_text`) rather than presenting raw data as
+  UI copy.
+- Reason codes from progression results resolve through `reason_label`. If a result only
+  carries a raw English message, keep that message as an explicit technical diagnostic.
+- Collection search compares both the localized token labels and the stable identifiers, so
+  searching by a translated Vietnamese or Japanese label works without changing stored IDs.
+
+## 5. Workflow
 
 1. Edit the three dictionaries together, keeping keys alphabetically sorted.
 2. Add a key only when a UI consumer needs it or when a listed document requires it; record
@@ -65,7 +89,7 @@ original game text. Do not add protected source strings without a rights review.
    To write somewhere else:
 
    ```sh
-   python3 tools/localization/coverage_report.py --root . --output /tmp/opencode/localization-coverage.json
+   python3 tools/localization/coverage_report.py --root . --output build/localization-coverage.json
    ```
 
 4. Run the localization tests:
@@ -74,22 +98,26 @@ original game text. Do not add protected source strings without a rights review.
    python3 -m unittest tests.test_phase3_localization -v
    ```
 
-5. Commit the dictionaries and the regenerated
+5. Commit the dictionaries, the token manifest, and the regenerated
    `data/validation/localization-coverage.json` together. If the report changes, update
    [coverage-report.md](coverage-report.md) from that report, not by hand-written guesses.
 
-## 5. Reading the report
+## 6. Reading the report
 
 `data/validation/localization-coverage.json` contains:
 
-- `status`: `pass` only when there are no missing keys and no placeholder mismatches.
-- `blocking.missing_key_count` and `blocking.placeholder_mismatch_count`: exit-code inputs.
-- `per_locale.<locale>.missing_keys`: keys in the union of dictionary keys and scanned
-  source literals that the locale lacks.
-- `per_locale.<locale>.unused_keys`: dictionary keys not yet referenced by a literal
-  `L.t(...)` or `LocaleManager.t(...)` call. Currently these are expected: the Godot scenes
-  have not adopted the locale service for all labels. Unused keys are **diagnostic**, not
-  a failure.
+- `status`: `pass` only when there are no missing keys, no placeholder mismatches, and no
+  broken dynamic manifest references.
+- `blocking.missing_key_count`, `blocking.placeholder_mismatch_count`, and
+  `blocking.dynamic_reference_error_count`: exit-code inputs.
+- `per_locale.<locale>.missing_keys`: keys in the union of dictionary keys, scanned source
+  literals, and dynamic manifest references that the locale lacks.
+- `per_locale.<locale>.unused_keys`: dictionary keys not referenced by a literal `L.t(...)`
+  or `LocaleManager.t(...)` call and not referenced by the dynamic manifest. Remaining
+  entries are keys reserved for data-driven consumers and other screens; they are
+  **diagnostic**, not a failure.
+- `dynamic_references`: manifest path, category and mapping counts, the resolved key set,
+  malformed entries, and keys absent from every dictionary.
 - `placeholder_mismatches`: per-key placeholder lists by locale.
 - `vietnamese_diacritics`: number and share of `vi` strings containing diacritics, plus
   the intentional token-only exceptions.
@@ -98,5 +126,6 @@ original game text. Do not add protected source strings without a rights review.
 - `source_scan`: GDScript files scanned, call-site counts, and literal keys found.
 
 Exit codes: `0` when `status` is `pass`, `1` otherwise. Dynamic key expressions such as
-`L.t(key_variable)` are counted as call sites but cannot be resolved statically; use a
-literal key or add an explicit test when a dynamic key must be validated.
+`L.t(key_variable)` are counted as call sites but cannot be resolved statically. Add a
+manifest mapping and an explicit test when a dynamic reference must be validated; do not
+delete a valid key just because the literal scan cannot see it.

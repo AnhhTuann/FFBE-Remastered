@@ -42,8 +42,8 @@ func _ready() -> void:
 	_refresh()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -123,7 +123,7 @@ func _goto(path: String, instance_id: String = "") -> void:
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _consume_instance_id() -> String:
@@ -191,7 +191,7 @@ func _refresh() -> void:
 		_line(cost_box, t("common.none"))
 	else:
 		for key: String in cost_summary.keys():
-			_line(cost_box, str(key) + " = " + str(cost_summary[key]))
+			_line(cost_box, LocaleManager.identified(LocaleManager.resource_label(key), key) + " = " + str(cost_summary[key]))
 
 	var actions := _panel(t("awakening.awaken"))
 	var target_star := _next_star(definition, instance)
@@ -339,7 +339,7 @@ func _requirement_text(spec: Dictionary) -> String:
 func _cost_text(cost: Dictionary) -> String:
 	var parts: Array[String] = []
 	for key: String in cost.keys():
-		parts.append(str(key) + "=" + str(cost[key]) + "/" + str(PlayerState.get_resource(key)))
+		parts.append(LocaleManager.identified(LocaleManager.resource_label(key), key) + "=" + str(cost[key]) + "/" + str(PlayerState.get_resource(key)))
 	return " ".join(parts)
 
 
@@ -353,24 +353,26 @@ func _add_action(parent: VBoxContainer, title: String, requirement: String, enab
 
 func _run(method: String, args: Array, success_key: String) -> void:
 	if PlayerState.progression == null or not PlayerState.progression.has_method(method):
-		_set_status(t("common.note") + " " + method)
+		_set_status(LocaleManager.diagnostic_text(method))
 		return
 	var result: Dictionary = _as_dict(PlayerState.progression.callv(method, args))
 	if result.is_empty() or not bool(result.get("ok", false)):
-		_set_status(t("common.note") + " " + _failure(result, method))
+		_set_status(_failure(result, method))
 		return
 	PlayerState.call("commit", "progression")
-	var message := t(success_key) + " " + _summary(result)
+	var message := t(success_key) + " " + LocaleManager.diagnostic_text(_summary(result))
 	_set_status(message)
 	_refresh()
 
 
 func _failure(result: Dictionary, method: String) -> String:
-	for key: String in ["message", "reason"]:
-		var text := str(result.get(key, ""))
-		if not text.is_empty():
-			return LocaleManager.t(text)
-	return method
+	var reason := str(result.get("reason", ""))
+	if LocaleManager.has_token("reason", reason):
+		return LocaleManager.t("common.failed") + " " + LocaleManager.reason_label(reason)
+	var message := str(result.get("message", ""))
+	if not message.is_empty():
+		return LocaleManager.diagnostic_text(message)
+	return LocaleManager.t("common.failed") + " " + LocaleManager.diagnostic_text(method)
 
 
 func _summary(result: Dictionary) -> String:

@@ -48,8 +48,8 @@ func _ready() -> void:
 	_refresh()
 
 
-func t(key: String) -> String:
-	return LocaleManager.t(key)
+func t(key: String, args: Dictionary = {}) -> String:
+	return LocaleManager.t(key, args)
 
 
 func _make_theme() -> Theme:
@@ -129,7 +129,7 @@ func _goto(path: String) -> void:
 	var error: Error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		transit.queue_free()
-		_set_status(t("common.note") + " " + str(error))
+		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
 
 
 func _panel(title: String) -> VBoxContainer:
@@ -197,13 +197,15 @@ func _refresh() -> void:
 
 	var detail := _panel(t("vision.title"))
 	_line(detail, LocaleManager.label_for(definition) + "    " + t("common.uid") + ": " + _selected_uid)
+	var region := str(definition.get("region", ""))
 	_line(detail, t("vision.level") + ": " + str(level) + "/" + str(definition.get("max_level", 1)) + "    " + \
-		t("common.region") + ": " + str(definition.get("region", "")) + "    " + \
+		t("common.region") + ": " + LocaleManager.identified(LocaleManager.region_label(region), region) + "    " + \
 		t("common.locked") + ": " + _state(bool(entry.get("locked", false))))
-	_line(detail, t("party.leader") + ": " + _state(assigned) + "    " + t("equipment.restriction") + ": " + _party_id)
+	_line(detail, t("party.leader") + ": " + _state(assigned) + "    " + t("equipment.restriction") + ": " + \
+		LocaleManager.diagnostic_text(_party_id))
 	var stats_per_level: Dictionary = definition.get("stats_per_level", {})
 	for stat: String in stats_per_level.keys():
-		_line(detail, t("vision.bonus") + ": " + stat + " +" + str(int(stats_per_level[stat]) * level))
+		_line(detail, t("vision.bonus") + ": " + LocaleManager.identified(LocaleManager.stat_label(stat), stat) + " +" + str(int(stats_per_level[stat]) * level))
 	for passive: Variant in definition.get("passives", []):
 		if passive is Dictionary:
 			_line(detail, t("vision.bonus") + ": " + LocaleManager.label_for(passive as Dictionary))
@@ -215,8 +217,8 @@ func _refresh() -> void:
 		_line(cost_box, t("common.none"))
 	else:
 		for key: String in next_cost.keys():
-			_line(cost_box, t("common.cost") + ": " + key + " = " + str(next_cost[key]) + "/" + \
-				str(PlayerState.get_resource(key)))
+			_line(cost_box, t("common.cost") + ": " + LocaleManager.identified(LocaleManager.resource_label(key), key) + " = " + \
+				str(next_cost[key]) + "/" + str(PlayerState.get_resource(key)))
 
 	var actions := _panel(t("common.owned"))
 	var upgrade := _button(t("vision.upgrade"), func() -> void: _run("upgrade_vision_card", [_selected_uid]))
@@ -257,24 +259,24 @@ func _assigned_uid() -> String:
 func _sell_selected() -> void:
 	var entry := PlayerState.find_inventory_entry(_selected_uid)
 	if bool(entry.get("locked", false)):
-		_set_status(t("common.locked") + " " + _selected_uid)
+		_set_status(t("common.locked") + " " + LocaleManager.diagnostic_text(_selected_uid))
 		return
 	if _assigned_uid() == _selected_uid:
-		_set_status(t("vision.unassign") + " " + _selected_uid)
+		_set_status(t("vision.unassign") + " " + LocaleManager.diagnostic_text(_selected_uid))
 		return
 	_run("sell", [_selected_uid])
 
 
 func _run(method: String, args: Array) -> void:
 	if PlayerState.inventory == null or not PlayerState.inventory.has_method(method):
-		_set_status(t("common.note") + " " + method)
+		_set_status(LocaleManager.diagnostic_text(method))
 		return
 	var result: Dictionary = _as_dict(PlayerState.inventory.callv(method, args))
 	if result.is_empty() or not bool(result.get("ok", false)):
-		_set_status(t("common.note") + " " + _failure(result, method))
+		_set_status(_failure(result, method))
 		return
 	PlayerState.call("commit", "inventory")
-	_set_status(_summary(result))
+	_set_status(LocaleManager.diagnostic_text(_summary(result)))
 	_refresh()
 
 
@@ -283,11 +285,13 @@ func _as_dict(value: Variant) -> Dictionary:
 
 
 func _failure(result: Dictionary, method: String) -> String:
-	for key: String in ["message", "reason"]:
-		var text := str(result.get(key, ""))
-		if not text.is_empty():
-			return LocaleManager.t(text)
-	return method
+	var reason := str(result.get("reason", ""))
+	if LocaleManager.has_token("reason", reason):
+		return LocaleManager.t("common.failed") + " " + LocaleManager.reason_label(reason)
+	var message := str(result.get("message", ""))
+	if not message.is_empty():
+		return LocaleManager.diagnostic_text(message)
+	return LocaleManager.t("common.failed") + " " + LocaleManager.diagnostic_text(method)
 
 
 func _summary(result: Dictionary) -> String:
