@@ -1,0 +1,362 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-25T13:05:52Z",
+  "title": "Supplemental FFBE source discovery",
+  "status": "supplemental_evidence_only",
+  "decision": "No source in this manifest is imported, modified, downloaded into the repository, or treated as a redistribution licence. The Godot foundation uses SYNTHETIC_FIXTURE data only.",
+  "evidence_method": [
+    "GitHub REST repository metadata",
+    "Exact commit SHA and committer date from the default branch",
+    "Recursive Git tree listing with blob sizes",
+    "Targeted raw README/LICENSE/ACKNOWLEDGEMENTS reads",
+    "JSON top-level record counts for aEnigmatic datasets"
+  ],
+  "phase0_unchanged": {
+    "normalized_records": 35928,
+    "inventoried_files": 148168,
+    "collision_candidates": 5181,
+    "regional_unit_form_conflicts": 11,
+    "verified_records": 0
+  },
+  "sources": [
+    {
+      "source_id": "DaddyRaegen/ffbe_asset_dump",
+      "url": "https://github.com/DaddyRaegen/ffbe_asset_dump",
+      "revision": "f82d603c90ec799f539280267d3af7589c79f117",
+      "revision_type": "commit",
+      "date": "2026-10-10T01:43:51Z",
+      "default_branch": "main",
+      "regions": ["GL", "JP", "SHARED"],
+      "categories": ["unit_catalog", "unit_identity", "monster_catalog", "vision_card_catalog", "animation_csv", "sprites", "backgrounds", "ui_effects", "upstream_reports"],
+      "coverage": {
+        "files": 148131,
+        "bytes": 3596307289,
+        "branches_recorded": 5
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "No redistribution permission found; contains third-party FFBE visual assets."
+      },
+      "provenance": "Phase 0 source. Inspected through authenticated GitHub REST metadata, blobless clone, exact tree listing, and targeted text materialization.",
+      "limitations": [
+        "Blobless inspection; binary files were not bulk-downloaded.",
+        "Original CPK/DAT sources were not accessible.",
+        "Upstream coverage counts remain source-provided evidence, not VERIFIED records."
+      ],
+      "differences_from_phase0": "Baseline source; not supplemental to Phase 0.",
+      "usage_decision": "retained_phase0_source_not_imported"
+    },
+    {
+      "source_id": "DanUgore/ffbe_data",
+      "url": "https://github.com/DanUgore/ffbe_data",
+      "revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "revision_type": "commit",
+      "date": "2018-02-09T05:14:32Z",
+      "default_branch": "master",
+      "regions": ["GL", "JP"],
+      "categories": ["units", "abilities", "magic", "limit_bursts", "items", "equipment", "materia", "recipes", "monster_skills", "enemy_ai", "quests", "missions"],
+      "coverage": {
+        "files": 37,
+        "bytes": 77884391,
+        "note": "Historical snapshot; absence does not prove content never existed."
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "No redistribution permission found; extracted game text/metadata may be protected."
+      },
+      "provenance": "Phase 0 source. Exact checked-out revision inspected through GitHub REST metadata and full clone.",
+      "limitations": ["Last data update 2018-02-09.", "No visual assets or vision cards.", "GL enhance.json is empty."],
+      "differences_from_phase0": "Baseline source; not supplemental to Phase 0.",
+      "usage_decision": "retained_phase0_source_not_imported"
+    },
+    {
+      "source_id": "Elvlin/exvius-offline",
+      "url": "https://github.com/Elvlin/exvius-offline",
+      "revision": "b520e563cbc4364a07ee40331012340dc8aeb841",
+      "revision_type": "commit",
+      "date": "2026-11-16T09:47:38Z",
+      "default_branch": "main",
+      "regions": ["GL"],
+      "categories": ["offline_client_metadata", "hot_update_manifest", "python_tooling", "screenshots", "release_apk"],
+      "coverage": {
+        "files": 1613,
+        "bytes": 557413688,
+        "json": 1214,
+        "python": 187,
+        "png": 82,
+        "tsv": 8
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "README describes an unofficial fan project built from the original Global game; no redistribution grant found."
+      },
+      "provenance": "GitHub metadata, exact tree listing, and README at recorded revision. APKs and game data were not downloaded or executed.",
+      "limitations": ["Client-derived data may be incomplete or modified by the fan project.", "Replacement banner/campaign details are acknowledged in the README.", "No independent game revision proof."],
+      "differences_from_phase0": "Much later GL offline-client metadata than the 2018 structured snapshot; no visual asset dump comparison performed.",
+      "usage_decision": "reference_only"
+    },
+    {
+      "source_id": "arandooku/ffbe-sprites",
+      "url": "https://github.com/arandooku/ffbe-sprites",
+      "revision": "082cea674dd4d26441e5b37a8bc35a0e341f473f",
+      "revision_type": "commit",
+      "date": "2026-11-19T18:32:56Z",
+      "default_branch": "main",
+      "regions": ["GL", "JP"],
+      "categories": ["unit_animation_gif", "unit_sprite_sheet", "unit_icon", "unit_illustration", "monster_sprite_sheet", "monster_icon", "vision_card_frame"],
+      "coverage": {
+        "files": 57794,
+        "bytes": 2197627880,
+        "gif": 37968,
+        "png": 19823,
+        "json": 1,
+        "category_counts": {
+          "unit-animation": 37968,
+          "unit-sprite-sheet": 3953,
+          "unit-icon": 3953,
+          "unit-illustration": 3952,
+          "monster-sprite-sheet": 3628,
+          "monster-icon": 3596,
+          "unit-extra": 463,
+          "monster-illustration": 113,
+          "monster-asset": 93,
+          "regional-unit": 66,
+          "vision-card-frame": 6
+        }
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "README states the files are original game files, (c) Square Enix, for fan use."
+      },
+      "provenance": "Explicitly exported from DaddyRaegen/ffbe_asset_dump; derivative, not independent.",
+      "limitations": ["No new rights grant.", "GIFs are conversions, not source pixel data.", "Names derive from catalog/unit_master.json and aEnigmatic GL labels."],
+      "differences_from_phase0": "Convenient assembled GIFs and index, but all underlying provenance returns to Phase 0 Source A.",
+      "usage_decision": "derivative_reference_only"
+    },
+    {
+      "source_id": "arandooku/ffbe-sprites-index",
+      "url": "https://github.com/arandooku/ffbe-sprites-index",
+      "revision": "17ae600bfaf891de1e6ecca65df627a056cf1954",
+      "revision_type": "commit",
+      "date": "2026-11-19T18:50:07Z",
+      "default_branch": "main",
+      "regions": ["GL", "JP"],
+      "categories": ["sprite_index", "labels", "series", "rarity"],
+      "coverage": {
+        "files": 3,
+        "bytes": 9182373,
+        "index_rows": 57719
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "README calls itself an unaffiliated fan archive; no redistribution grant."
+      },
+      "provenance": "Generated index referencing arandooku/ffbe-sprites and aEnigmatic/ffbe GL datamine.",
+      "limitations": ["Index labels are third-party classifications.", "Images remain in another repository."],
+      "differences_from_phase0": "Adds human-readable labels not present in the Phase 0 visual dump.",
+      "usage_decision": "indexing_aid_only"
+    },
+    {
+      "source_id": "HmoobGod/ffbe-rev13-metadata-lab",
+      "url": "https://github.com/HmoobGod/ffbe-rev13-metadata-lab",
+      "revision": "bf69f0de0958f1c89e83c59af6954425caf3be61",
+      "revision_type": "commit",
+      "date": "2026-11-24T15:21:05Z",
+      "default_branch": "main",
+      "regions": [],
+      "categories": ["diagnostic_workflow", "metadata_probe", "inventory_script"],
+      "coverage": {
+        "files": 19,
+        "bytes": 266068,
+        "workflow_yaml": 11,
+        "python": 5,
+        "json": 3
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "No licence found; no game content claims identified."
+      },
+      "provenance": "GitHub metadata and exact tree listing. README is absent at this revision; workflow titles inspected without execution.",
+      "limitations": ["Latest commit notes default branch execution disabled.", "No verified game dataset or asset coverage found."],
+      "differences_from_phase0": "Tooling/diagnostic material only; not comparable to Phase 0 data or asset inventories.",
+      "usage_decision": "no_content_evidence"
+    },
+    {
+      "source_id": "TBMonkey/ffbe-gl-server",
+      "url": "https://github.com/TBMonkey/ffbe-gl-server",
+      "revision": "2a940d88d9209283f07c801eef067c058735ef4c",
+      "revision_type": "commit",
+      "date": "2026-11-22T03:44:52Z",
+      "default_branch": "master",
+      "regions": ["GL"],
+      "categories": ["server_contract", "battle_tables", "mission_tables", "event_spine", "clash_of_wills", "python_engine", "rust_desktop_app"],
+      "coverage": {
+        "files": 83,
+        "bytes": 33686831,
+        "python": 31,
+        "json": 25,
+        "tsv": 9,
+        "notable_paths": [
+          "server/content/battle/F_MONSTER_MST.tsv",
+          "server/content/battle/F_MONSTER_SKILL_MST.tsv",
+          "server/content/battle/F_MISSION_MST.tsv",
+          "server/content/battle/F_BATTLE_GROUP_MST.tsv",
+          "server/content/event_spine.json",
+          "docs/analysis/FFBE_SERVER_CONTRACT.md"
+        ]
+      },
+      "licensing": {
+        "license_file": true,
+        "github_license": "mit",
+        "rights_statement": "MIT covers repository code. ACKNOWLEDGEMENTS.md states game data/content rights remain with Square Enix and gumi."
+      },
+      "provenance": "README, LICENSE, ACKNOWLEDGEMENTS.md, server contract, and exact tree inspected at recorded revision. No server was run against a game client.",
+      "limitations": ["Protocol and reply content are authored by the fan project where stated.", "Game-derived content is not covered by the code licence.", "Targets v9.0.0 Global client."],
+      "differences_from_phase0": "Final-era GL structured contract evidence, substantially later than DanUgore/ffbe_data.",
+      "usage_decision": "structured_contract_reference_not_content_licence"
+    },
+    {
+      "source_id": "lyrgard/ffbeDataExporter",
+      "url": "https://github.com/lyrgard/ffbeDataExporter",
+      "revision": "9aeec842ba35f4716c695553c71ea15c1a344daa",
+      "revision_type": "commit",
+      "date": "2022-11-10T22:44:04Z",
+      "default_branch": "master",
+      "regions": ["GL"],
+      "categories": ["chrome_extension", "user_data_export", "release_archives"],
+      "coverage": {
+        "files": 46,
+        "bytes": 3247281,
+        "javascript": 14,
+        "zip": 19,
+        "png": 9
+      },
+      "licensing": {
+        "license_file": false,
+        "github_license": null,
+        "rights_statement": "No licence found. Tool exports a player's own user data."
+      },
+      "provenance": "GitHub metadata and exact tree listing. Release ZIPs were not downloaded or executed.",
+      "limitations": ["No curated game dataset.", "Account/user data may contain personal information.", "2022 revision."],
+      "differences_from_phase0": "Client export method reference; no comparison to Phase 0 normalized records.",
+      "usage_decision": "tooling_reference_only"
+    },
+    {
+      "source_id": "S0524/ffbe-offline-localization",
+      "url": "https://github.com/S0524/ffbe-offline-localization",
+      "revision": "2006ddb4cf5227eb4e2fe74e471e863310abe750",
+      "revision_type": "commit",
+      "date": "2026-11-23T06:24:53Z",
+      "default_branch": "main",
+      "regions": ["FFBE Offline International"],
+      "categories": ["localization_guide", "cpk_patch_tooling", "text_tables", "ui_resources"],
+      "coverage": {
+        "files": 14,
+        "bytes": 14223737,
+        "python": 5,
+        "png": 6,
+        "markdown": 2
+      },
+      "licensing": {
+        "license_file": true,
+        "github_license": "gpl-3.0",
+        "rights_statement": "GPL-3.0 covers repository scripts; patched game resources are protected and not relicensed."
+      },
+      "provenance": "README_EN.md, LICENSE metadata, and exact tree inspected. No CPK or APK was downloaded or modified.",
+      "limitations": ["Method evidence for localized resource replacement only.", "No verified record coverage.", "Patches target a different product revision."],
+      "differences_from_phase0": "Describes FFBE Offline International hotfix structure, outside the Phase 0 GL/JP snapshot scope.",
+      "usage_decision": "localization_method_reference_only"
+    },
+    {
+      "source_id": "aEnigmatic/ffbe",
+      "url": "https://github.com/aEnigmatic/ffbe",
+      "revision": "95727376e82d27acc1290b6dc8ad27ce3c89ea71",
+      "revision_type": "commit",
+      "date": "2024-09-02T11:05:34Z",
+      "default_branch": "master",
+      "regions": ["GL"],
+      "categories": ["units", "equipment", "items", "materia", "abilities", "limit_bursts", "monsters", "quests", "recipes", "vision_cards"],
+      "coverage": {
+        "files": 32,
+        "json_files": 31,
+        "top_level_records": {
+          "units.json": 1751,
+          "equipment.json": 4275,
+          "items.json": 4729,
+          "materia.json": 1675,
+          "skills_ability.json": 28212,
+          "limitbursts.json": 3584,
+          "monster_skills.json": 19432,
+          "missions.json": 17915,
+          "recipes.json": 2051,
+          "vision_cards.json": 339
+        }
+      },
+      "licensing": {
+        "license_file": true,
+        "github_license": "mit",
+        "rights_statement": "MIT metadata applies to the repository; it does not waive third-party rights in game-derived names, text, or data."
+      },
+      "provenance": "GitHub metadata, exact tree listing, parsed JSON record counts, and README at recorded revision.",
+      "limitations": ["README provides no extraction method or original game revision.", "Data is a datamine dump, not independently verified FFBE truth.", "2024 revision."],
+      "differences_from_phase0": "More recent structured GL records than DanUgore/ffbe_data; no visual assets.",
+      "usage_decision": "structured_cross_check_candidate_not_import_source"
+    },
+    {
+      "source_id": "aEnigmatic/ffbe-jp",
+      "url": "https://github.com/aEnigmatic/ffbe-jp",
+      "revision": "ea7d9fa82659e66fed1a0a5dba4616089cc807dc",
+      "revision_type": "commit",
+      "date": "2025-10-03T09:53:22Z",
+      "default_branch": "master",
+      "regions": ["JP"],
+      "categories": ["units", "equipment", "items", "materia", "abilities", "limit_bursts", "monsters", "quests", "recipes", "vision_cards"],
+      "coverage": {
+        "files": 32,
+        "json_files": 30,
+        "top_level_records": {
+          "units.json": 1683,
+          "equipment.json": 3715,
+          "items.json": 3851,
+          "materia.json": 1599,
+          "skills_ability.json": 27051,
+          "limitbursts.json": 3386,
+          "monster_skills.json": 17926,
+          "missions.json": 17924,
+          "recipes.json": 1995,
+          "vision_cards.json": 252
+        }
+      },
+      "licensing": {
+        "license_file": true,
+        "github_license": "mit",
+        "rights_statement": "MIT metadata applies to the repository; it does not waive third-party rights in game-derived names, text, or data."
+      },
+      "provenance": "GitHub metadata, exact tree listing, parsed JSON record counts, and repository metadata at recorded revision.",
+      "limitations": ["No README description at recorded revision.", "No extraction method or original game revision.", "Data is a datamine dump, not independently verified FFBE truth."],
+      "differences_from_phase0": "More recent structured JP records than DanUgore/ffbe_data; no visual assets.",
+      "usage_decision": "structured_cross_check_candidate_not_import_source"
+    }
+  ],
+  "rights_gate": {
+    "status": "not_passed",
+    "requirements_before_import": [
+      "Documented lawful basis for the exact content and revision",
+      "Exact revision, checksum, region, and category coverage recorded",
+      "Separation of authored code from game-derived text/art/data",
+      "Import report that does not promote supplemental evidence to VERIFIED",
+      "No protected asset in a public commit or distributable build without permission"
+    ]
+  },
+  "related_documents": [
+    "docs/audit/supplemental-source-discovery.md",
+    "docs/audit/unresolved-reference-classification.md",
+    "docs/audit/animation-frame-validation-note.md"
+  ]
+}

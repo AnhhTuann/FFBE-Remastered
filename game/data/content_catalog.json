@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_version": "synthetic-1",
+  "description": "Project-authored fixtures for the Godot technical foundation. No FFBE source data is included.",
+  "files": {
+    "units": "res://data/units.json",
+    "animations": "res://data/animations.json",
+    "settings_defaults": "res://data/settings_defaults.json"
+  }
+}

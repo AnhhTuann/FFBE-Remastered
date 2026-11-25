@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-25T13:05:52Z",
+  "source_report": "data/validation/missing-references.json",
+  "source_reference_count": 651,
+  "classification": "validator_assumption_false_positive",
+  "no_source_record_modified": true,
+  "validator_assumption": "tools/validate/adapters/ffbe_data.spec.json directs recipe references to the items catalog only; individual recipe records declare EQUIP or MATERIA and resolve in equip.json or materia.json.",
+  "evidence_catalogs": [
+    {
+      "region": "GL",
+      "revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "catalogs": {
+        "equip.json": 261,
+        "materia.json": 154,
+        "item.json": 247
+      }
+    },
+    {
+      "region": "JP",
+      "revision": "ce7d98a6499bb8c2f6656f0698f60c30001a05b0",
+      "catalogs": {
+        "equip.json": 934,
+        "materia.json": 500,
+        "item.json": 606
+      }
+    }
+  ],
+  "by_field": {
+    "crafts.id": 617,
+    "materials[].id": 34
+  },
+  "by_region": {
+    "GL": 213,
+    "JP": 438
+  },
+  "by_field_and_region": {
+    "crafts.id/GL": 208,
+    "crafts.id/JP": 409,
+    "materials[].id/GL": 5,
+    "materials[].id/JP": 29
+  },
+  "resolved_target_by_declared_type": {
+    "crafts.id/EQUIP": 444,
+    "crafts.id/MATERIA": 173,
+    "materials[].id/EQUIP": 25,
+    "materials[].id/MATERIA": 9
+  },
+  "unresolved_after_declared_catalog_check": 0,
+  "examples": [
+    {
+      "from_identity": "recipe:GL:905000150",
+      "field": "materials[].id",
+      "missing_id": "504010070",
+      "declared_type": "MATERIA",
+      "resolves_in": "gl/materia.json"
+    },
+    {
+      "from_identity": "recipe:GL:901000180",
+      "field": "crafts.id",
+      "missing_id": "409006800",
+      "declared_type": "EQUIP",
+      "resolves_in": "gl/equip.json"
+    }
+  ],
+  "decision": "Classify the 651 entries as supplemental evidence only. Do not alter Phase 0 source records or validation outputs. A future validator change may read the declared type and the corresponding catalog, but that is outside this milestone."
+}

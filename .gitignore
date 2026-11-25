@@ -26,7 +26,27 @@ data/raw/japan/*
 *.m3r
 *.ssbp
 
-# Godot / build outputs when the engine work begins
-.godot/imported/
+# Godot engine cache, imports, editor state and local runtime data
+.godot/
+game/.godot/
+game/imported/
+game/user/
+game/logs/
+
+# Godot build outputs and export templates
 builds/
+game/build/
+game/exports/
 export/
+*.tpz
+
+# Restricted source material and local credentials
+data/raw/*
+!data/raw/global/
+!data/raw/japan/
+data/restricted/
+game/data/restricted/
+*.env
+*.pem
+*.key
+*.keystore

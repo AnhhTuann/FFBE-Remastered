@@ -27,4 +27,6 @@ Selected Markdown files and their listed reference documents are copied unchange
 - ffbe-project-quality
 - ffbe-godot-foundation
 
-No global configuration, external installer, MCP server, runtime dependency or game asset is added. Skill instructions are not a game implementation. Runtime discovery and skill effectiveness have not been tested locally. Review new upstream revisions and licensing before updating.
+No global configuration, external installer, MCP server, runtime dependency or game asset is added. Skill instructions are not a game implementation.
+
+Runtime discovery was exercised in this environment: `ffbe-godot-foundation`, `ffbe-source-audit`, `ffbe-asset-restoration`, `ffbe-project-quality`, `godot-gdscript-headless-testing`, `godot-export`, and `save-systems` were loaded through the agent skill tool; `ffbe-battle-engine` and `rpg` were read directly from their project-local files. No untrusted skill script was executed and no permission elevation was requested. Review new upstream revisions and licensing before updating.

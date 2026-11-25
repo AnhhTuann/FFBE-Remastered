@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "atlas": {
+    "path": "res://assets/sprites/synthetic_pixel_atlas.png",
+    "width": 128,
+    "height": 128,
+    "frame_width": 32,
+    "frame_height": 32,
+    "columns": 4,
+    "rows": 4
+  },
+  "clips": {
+    "anim:GL:900001@base": {
+      "idle": {
+        "loop": true,
+        "speed": 8.0,
+        "frames": [
+          {"frame_id": 0, "rect": [0, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 1, "rect": [32, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 2, "rect": [64, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 3, "rect": [96, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12}
+        ]
+      },
+      "attack": {
+        "loop": false,
+        "speed": 10.0,
+        "frames": [
+          {"frame_id": 4, "rect": [0, 32, 32, 32], "offset": [1, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 5, "rect": [32, 32, 32, 32], "offset": [2, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 6, "rect": [64, 32, 32, 32], "offset": [3, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 7, "rect": [96, 32, 32, 32], "offset": [2, 0], "origin": [0.5, 0.5], "duration": 0.10}
+        ]
+      },
+      "damage": {
+        "loop": false,
+        "speed": 12.0,
+        "frames": [
+          {"frame_id": 8, "rect": [0, 64, 32, 32], "offset": [0, 1], "origin": [0.5, 0.5], "duration": 0.06},
+          {"frame_id": 9, "rect": [32, 64, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.08}
+        ]
+      },
+      "victory": {
+        "loop": false,
+        "speed": 6.0,
+        "frames": [
+          {"frame_id": 10, "rect": [64, 64, 32, 32], "offset": [0, -1], "origin": [0.5, 0.5], "duration": 0.14},
+          {"frame_id": 11, "rect": [96, 64, 32, 32], "offset": [0, -2], "origin": [0.5, 0.5], "duration": 0.14},
+          {"frame_id": 12, "rect": [64, 96, 32, 32], "offset": [0, -1], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 13, "rect": [96, 96, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12}
+        ]
+      }
+    },
+    "anim:JP:900001@base": {
+      "idle": {
+        "loop": true,
+        "speed": 8.0,
+        "frames": [
+          {"frame_id": 4, "rect": [0, 32, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 5, "rect": [32, 32, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 6, "rect": [64, 32, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 7, "rect": [96, 32, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12}
+        ]
+      },
+      "attack": {
+        "loop": false,
+        "speed": 9.0,
+        "frames": [
+          {"frame_id": 4, "rect": [0, 32, 32, 32], "offset": [1, 0], "origin": [0.5, 0.5], "duration": 0.10},
+          {"frame_id": 8, "rect": [0, 64, 32, 32], "offset": [2, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 9, "rect": [32, 64, 32, 32], "offset": [3, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 10, "rect": [64, 64, 32, 32], "offset": [2, 0], "origin": [0.5, 0.5], "duration": 0.10}
+        ]
+      },
+      "damage": {
+        "loop": false,
+        "speed": 12.0,
+        "frames": [
+          {"frame_id": 11, "rect": [96, 64, 32, 32], "offset": [0, 1], "origin": [0.5, 0.5], "duration": 0.06},
+          {"frame_id": 12, "rect": [64, 96, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.08}
+        ]
+      },
+      "victory": {
+        "loop": false,
+        "speed": 6.0,
+        "frames": [
+          {"frame_id": 13, "rect": [96, 96, 32, 32], "offset": [0, -1], "origin": [0.5, 0.5], "duration": 0.14},
+          {"frame_id": 14, "rect": [0, 0, 32, 32], "offset": [0, -2], "origin": [0.5, 0.5], "duration": 0.14},
+          {"frame_id": 15, "rect": [32, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12}
+        ]
+      }
+    },
+    "anim:GL:900001@brave_shift": {
+      "idle": {
+        "loop": true,
+        "speed": 8.0,
+        "frames": [
+          {"frame_id": 8, "rect": [0, 64, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 9, "rect": [32, 64, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 10, "rect": [64, 64, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 11, "rect": [96, 64, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12}
+        ]
+      },
+      "attack": {
+        "loop": false,
+        "speed": 10.0,
+        "frames": [
+          {"frame_id": 12, "rect": [64, 96, 32, 32], "offset": [1, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 13, "rect": [96, 96, 32, 32], "offset": [2, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 14, "rect": [0, 0, 32, 32], "offset": [3, 0], "origin": [0.5, 0.5], "duration": 0.08},
+          {"frame_id": 15, "rect": [32, 0, 32, 32], "offset": [2, 0], "origin": [0.5, 0.5], "duration": 0.10}
+        ]
+      },
+      "damage": {
+        "loop": false,
+        "speed": 12.0,
+        "frames": [
+          {"frame_id": 7, "rect": [96, 32, 32, 32], "offset": [0, 1], "origin": [0.5, 0.5], "duration": 0.06},
+          {"frame_id": 3, "rect": [96, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.08}
+        ]
+      },
+      "victory": {
+        "loop": false,
+        "speed": 6.0,
+        "frames": [
+          {"frame_id": 2, "rect": [64, 0, 32, 32], "offset": [0, -1], "origin": [0.5, 0.5], "duration": 0.14},
+          {"frame_id": 6, "rect": [64, 32, 32, 32], "offset": [0, -2], "origin": [0.5, 0.5], "duration": 0.14},
+          {"frame_id": 10, "rect": [64, 64, 32, 32], "offset": [0, -1], "origin": [0.5, 0.5], "duration": 0.12},
+          {"frame_id": 14, "rect": [0, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.12}
+        ]
+      }
+    }
+  },
+  "validation_examples": {
+    "out_of_bounds": {
+      "loop": true,
+      "speed": 8.0,
+      "frames": [
+        {"frame_id": 0, "rect": [112, 112, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.1}
+      ]
+    },
+    "zero_duration": {
+      "loop": true,
+      "speed": 8.0,
+      "frames": [
+        {"frame_id": 0, "rect": [0, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.0}
+      ]
+    },
+    "hold_oscillation": {
+      "loop": true,
+      "speed": 8.0,
+      "frames": [
+        {"frame_id": 61, "rect": [0, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.1},
+        {"frame_id": 62, "rect": [32, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.1},
+        {"frame_id": 63, "rect": [64, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.1},
+        {"frame_id": 62, "rect": [32, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.1},
+        {"frame_id": 63, "rect": [64, 0, 32, 32], "offset": [0, 0], "origin": [0.5, 0.5], "duration": 0.1}
+      ]
+    }
+  }
+}
