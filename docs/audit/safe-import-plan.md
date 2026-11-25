@@ -79,3 +79,40 @@ See `tools/README.md`. Repeat the full pipeline from the pinned revisions before
 ## Deferred until after this milestone
 
 Godot project creation, data interfaces, asset viewer, battle engine, summon mechanics, world map, quests/story gameplay, and any public distribution build are explicitly out of scope here.
+
+## Prompt 04.6 — fail-closed import gate
+
+The importer now requires a trusted local approval registry at
+`data/import-approvals/registry.json`. The registry is maintained independently of
+input packs; files inside a pack can never grant permission to that same pack. The
+shipped registry contains zero entries and, in particular, no FFBE or Elvlin
+approval. Registry entries record *documented authorization for a specific,
+hashed revision*; they do not create, prove or transfer legal rights. A separate
+rights review is still required before any distribution.
+
+Admission rules:
+
+1. `SYNTHETIC_FIXTURE` and `REMASTERED_DESIGN` are the only self-admitting
+   evidence classes. They must use synthetic provenance origins and a matching
+   synthetic verification status; they never become third-party recovered data.
+2. A self-declared `cleared_for_specified_use` status is rejected unless an
+   independent registry entry matches the exact source identity, revision,
+   content hashes, permitted use, evidence class, rights status and verification
+   status. Every matching rule is reported in the dry-run `authorization` block.
+3. Evidence class, provenance origin, verification status and rights status use
+   strict allowlists. Unknown or malformed statuses are rejected; there is no
+   silent promotion to `VERIFIED`.
+4. No recovered record is `VERIFIED`: the audited GL/JP classification counts
+   above are zero for VERIFIED. A `VERIFIED` claim is rejected unless a registry
+   entry explicitly authorizes that status with documented verification
+   evidence. Third-party content defaults to `UNVERIFIED` or another recovered
+   evidence label.
+5. FFBE and Elvlin identities are restricted sources. They remain blocked by the
+   rights gate unless a registry entry explicitly authorizes them with
+   documented evidence, exact revision and content hashes.
+6. Imports remain transactional. A failure restores the normalized index,
+   journal, generated pack files and backups; dry-runs report the exact registry
+   rule responsible for acceptance or rejection.
+
+See `docs/architecture/importer-security.md` for the full invariant list and
+adversarial test coverage.

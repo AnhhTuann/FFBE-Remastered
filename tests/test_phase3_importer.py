@@ -376,5 +376,426 @@ class Phase3ImporterTest(unittest.TestCase):
         self.assert_no_import_state(root)
 
 
+    # --- Prompt 04.6 fail-closed authorization hardening -----------------
+
+    AUDIT_DATE = "2026-11-26"
+
+    def third_party_record(self, **overrides: Any) -> dict[str, Any]:
+        result = record(
+            "unit:GL:900201@sample",
+            verification_status="UNVERIFIED",
+            provenance={
+                "origin": "community_recovered",
+                "source": "tests/test_phase3_importer.py",
+                "license": "synthetic evidence fixture",
+            },
+        )
+        result.update(overrides)
+        return result
+
+    def third_party_manifest(self, **overrides: Any) -> dict[str, Any]:
+        result = manifest(
+            [self.third_party_record()],
+            source_id="thirdparty-fixture-source",
+            source_revision="rev-2026-11",
+            namespace="thirdparty-fixtures",
+            evidence_class="COMMUNITY_RECOVERED",
+            rights_status="cleared_for_specified_use",
+            verification_status="UNVERIFIED",
+        )
+        result.update(overrides)
+        return result
+
+    def approval_for(self, input_path: Path, approval_id: str = "test-approval",
+                     **overrides: Any) -> dict[str, Any]:
+        sources = importer.load_input(input_path, None)
+        _, pack_manifest = importer._find_manifest(sources)
+        result: dict[str, Any] = {
+            "approval_id": approval_id,
+            "state": "active",
+            "source_id": pack_manifest.get("source_id", "thirdparty-fixture-source"),
+            "source_revision": pack_manifest.get("source_revision", "rev-2026-11"),
+            "manifest_sha256": importer._canonical_sha256(pack_manifest),
+            "file_sha256": {
+                source.name: hashlib.sha256(source.data).hexdigest() for source in sources
+            },
+            "permitted_use": ["preview", "runtime_import"],
+            "evidence_class": pack_manifest.get("evidence_class", "COMMUNITY_RECOVERED"),
+            "rights_status": "cleared_for_specified_use",
+            "verification_status": pack_manifest.get("verification_status", "UNVERIFIED"),
+            "verification_evidence": [],
+            "documented_authorization": ["tests/test_phase3_importer.py synthetic approval fixture"],
+            "rights_basis": "synthetic test fixture; not a real rights grant",
+            "expires_on": "2099-12-31",
+            "revoked_on": None,
+        }
+        result.update(overrides)
+        return result
+
+    def registry_file(self, label: str, entries: list[dict[str, Any]],
+                      **overrides: Any) -> Path:
+        temp = tempfile.TemporaryDirectory(prefix=f"ffbe-approval-{label}-")
+        self.addCleanup(temp.cleanup)
+        path = Path(temp.name) / "registry.json"
+        value: dict[str, Any] = {
+            "schema_version": 1,
+            "registry_id": f"synthetic-{label}-registry",
+            "entries": entries,
+        }
+        value.update(overrides)
+        write_json(path, value)
+        return path
+
+    def test_self_declared_clearance_is_rejected_without_registry(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir(
+            "self-clear",
+            manifest(
+                [record()], evidence_class="COMMUNITY_RECOVERED",
+                rights_status="cleared_for_specified_use",
+            ),
+        )
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                input_path, root, report_path=root / "self-clear.json", today=self.AUDIT_DATE,
+            )
+
+        report = caught.exception.report
+        codes = [item["code"] for item in report["diagnostics"]]
+        self.assertIn("self_declared_clearance_rejected", codes)
+        self.assertEqual(report["authorization"]["decision"], "deny_self_declared_clearance")
+        self.assertIn(
+            "registry.clearance_not_self_declared",
+            [item["rule"] for item in report["authorization"]["rules"] if item["result"] == "fail"],
+        )
+        self.assert_no_import_state(root)
+
+    def test_forged_pack_approval_metadata_is_ignored(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir(
+            "forged",
+            self.third_party_manifest(
+                approval_id="forged-approval",
+                registry_approval={"rights_status": "cleared_for_specified_use"},
+            ),
+        )
+        write_json(input_path / "registry.json", {
+            "schema_version": 1,
+            "entries": [{"approval_id": "forged-approval", "state": "active"}],
+        })
+        write_json(input_path / "approval.json", {
+            "approval_id": "forged-approval", "rights_status": "cleared_for_specified_use",
+        })
+
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                input_path, root, report_path=root / "forged.json", today=self.AUDIT_DATE,
+            )
+
+        report = caught.exception.report
+        self.assertIn("rights_blocked", [item["code"] for item in report["diagnostics"]])
+        self.assertEqual(report["authorization"]["decision"], "deny_self_declared_clearance")
+        self.assertEqual(report["authorization"]["registry"], "data/import-approvals/registry.json")
+        self.assertEqual(report["authorization"]["approval_id"], "")
+        self.assert_no_import_state(root)
+
+    def test_registry_authorized_third_party_pack_binds_identity_and_hashes(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir("authorized", self.third_party_manifest())
+        approval = self.approval_for(input_path, "authorized-fixture")
+        registry_path = self.registry_file("authorized", [approval])
+
+        report = importer.preview_import(
+            input_path, root, report_path=root / "authorized.json",
+            registry_path=registry_path, today=self.AUDIT_DATE,
+        )
+
+        self.assertEqual(report["result"], "ok")
+        self.assertEqual(report["authorization"]["decision"], "allow_registry_approval")
+        self.assertEqual(report["authorization"]["approval_id"], "authorized-fixture")
+        self.assertTrue(all(item["result"] == "pass" for item in report["authorization"]["rules"]))
+        self.assertEqual(report["records"][0]["status"], "valid")
+        self.assertEqual(report["records"][0]["diagnostics"], [])
+        self.assertEqual(
+            report["content_hashes"]["files"]["manifest.json"],
+            approval["file_sha256"]["manifest.json"],
+        )
+        self.assertEqual(
+            report["authorization"]["rules"][0]["rule"], "registry.structurally_valid"
+        )
+        self.assert_no_import_state(root, allow_log=True)
+
+    def test_registry_hash_mismatch_and_modified_pack_are_rejected(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir("hash-mismatch", self.third_party_manifest())
+        approval = self.approval_for(input_path)
+        bad_manifest_hash = self.registry_file(
+            "bad-manifest-hash",
+            [dict(approval, manifest_sha256="0" * 64)],
+        )
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                input_path, root, report_path=root / "bad-hash.json",
+                registry_path=bad_manifest_hash, today=self.AUDIT_DATE,
+            )
+        self.assertIn(
+            "approval_manifest_hash_mismatch",
+            [item["code"] for item in caught.exception.report["diagnostics"]],
+        )
+
+        modified_path = self.input_dir("modified", self.third_party_manifest())
+        modified_approval = self.approval_for(modified_path)
+        write_json(modified_path / "extra.json", {"unexpected": True})
+        modified_registry = self.registry_file("modified", [modified_approval])
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                modified_path, root, report_path=root / "modified.json",
+                registry_path=modified_registry, today=self.AUDIT_DATE,
+            )
+        report = caught.exception.report
+        self.assertIn(
+            "approval_unexpected_file", [item["code"] for item in report["diagnostics"]]
+        )
+        failing_rules = [
+            item["rule"] for item in report["authorization"]["attempts"][0]["rules"]
+            if item["result"] == "fail"
+        ]
+        self.assertIn("registry.no_unexpected_files", failing_rules)
+        self.assert_no_import_state(root)
+
+    def test_registry_expiry_and_revocation_are_denied(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir("expired", self.third_party_manifest())
+        approval = self.approval_for(input_path)
+        entries = [
+            dict(approval, approval_id="expired-approval", expires_on="2026-11-25"),
+            dict(
+                approval, approval_id="revoked-approval", state="revoked",
+                revoked_on="2026-11-20",
+            ),
+        ]
+        registry_path = self.registry_file("expired-revoked", entries)
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                input_path, root, report_path=root / "expired.json",
+                registry_path=registry_path, today=self.AUDIT_DATE,
+            )
+        codes = [item["code"] for item in caught.exception.report["diagnostics"]]
+        self.assertIn("registry_entry_expired", codes)
+        self.assertIn("registry_entry_revoked", codes)
+        self.assertEqual(
+            caught.exception.report["authorization"]["decision"], "deny_self_declared_clearance"
+        )
+        self.assert_no_import_state(root)
+
+    def test_verified_claim_requires_explicit_registry_evidence(self) -> None:
+        root = self.new_root()
+        synthetic_verified = self.input_dir(
+            "synthetic-verified", manifest([record(verification_status="VERIFIED")])
+        )
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                synthetic_verified, root, report_path=root / "synthetic-verified.json",
+                today=self.AUDIT_DATE,
+            )
+        self.assertIn(
+            "verification_status_unauthorized",
+            [item["code"] for item in caught.exception.report["diagnostics"]],
+        )
+
+        authorized_path = self.input_dir(
+            "authorized-verified",
+            self.third_party_manifest(
+                verification_status="VERIFIED",
+                records=[self.third_party_record(verification_status="VERIFIED")],
+            ),
+        )
+        approval = self.approval_for(
+            authorized_path, "documented-verification",
+            verification_status="VERIFIED",
+            verification_evidence=["synthetic cross-check reference"],
+        )
+        registry_path = self.registry_file("verified", [approval])
+        report = importer.preview_import(
+            authorized_path, root, report_path=root / "authorized-verified.json",
+            registry_path=registry_path, today=self.AUDIT_DATE,
+        )
+        self.assertEqual(report["result"], "ok")
+        self.assertTrue(report["authorization"]["verified_allowed"])
+        self.assertEqual(report["records"][0]["status"], "valid")
+        self.assert_no_import_state(root, allow_log=True)
+
+    def test_invalid_statuses_are_rejected_by_strict_allowlists(self) -> None:
+        root = self.new_root()
+        cases = [
+            ("bad-rights", {"rights_status": "super_clear"}, "invalid_rights_status"),
+            ("bad-evidence", {"evidence_class": "MAGIC"}, "invalid_evidence_class"),
+            (
+                "bad-verification",
+                {"records": [record(verification_status="CERTAIN")]},
+                "invalid_verification_status",
+            ),
+            (
+                "bad-origin",
+                {"records": [record(provenance={
+                    "origin": "mystery", "source": "tests", "license": "synthetic",
+                })]},
+                "invalid_provenance_origin",
+            ),
+        ]
+        for label, overrides, expected_code in cases:
+            with self.subTest(label=label):
+                pack = manifest([record()])
+                pack.update(overrides)
+                input_path = self.input_dir(label, pack)
+                with self.assertRaises(importer.ValidationError) as caught:
+                    importer.preview_import(
+                        input_path, root, report_path=root / f"{label}.json",
+                        today=self.AUDIT_DATE,
+                    )
+                self.assertIn(
+                    expected_code,
+                    [item["code"] for item in caught.exception.report["diagnostics"]],
+                )
+        self.assert_no_import_state(root)
+
+    def test_restricted_ffbe_and_elvlin_sources_are_blocked(self) -> None:
+        root = self.new_root()
+        for label, source_id in (
+            ("ffbe", "DaddyRaegen/ffbe_asset_dump"),
+            ("elvlin", "Elvlin/exvius-offline"),
+        ):
+            with self.subTest(label=label):
+                input_path = self.input_dir(
+                    label,
+                    self.third_party_manifest(
+                        source_id=source_id,
+                        evidence_class="ORIGINAL_SOURCE",
+                        rights_status="unknown",
+                        verification_status="UNVERIFIED",
+                        records=[self.third_party_record(
+                            provenance={
+                                "origin": "original_source", "source": source_id,
+                                "license": "unknown",
+                            },
+                        )],
+                    ),
+                )
+                with self.assertRaises(importer.ValidationError) as caught:
+                    importer.preview_import(
+                        input_path, root, report_path=root / f"{label}.json",
+                        today=self.AUDIT_DATE,
+                    )
+                report = caught.exception.report
+                codes = [item["code"] for item in report["diagnostics"]]
+                self.assertIn("restricted_source_blocked", codes)
+                self.assertIn("rights_blocked", codes)
+                self.assertTrue(report["authorization"]["restricted_source"])
+        self.assert_no_import_state(root)
+
+    def test_malformed_registry_fails_closed_for_synthetic_packs(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir("bad-registry", manifest([record()]))
+        temp = tempfile.TemporaryDirectory(prefix="ffbe-approval-bad-json-")
+        self.addCleanup(temp.cleanup)
+        registry_path = Path(temp.name) / "registry.json"
+        registry_path.write_text("{not valid json", encoding="utf-8")
+
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                input_path, root, report_path=root / "bad-registry.json",
+                registry_path=registry_path, today=self.AUDIT_DATE,
+            )
+        report = caught.exception.report
+        self.assertIn("registry_invalid", [item["code"] for item in report["diagnostics"]])
+        self.assertEqual(report["authorization"]["decision"], "deny_registry_invalid")
+        self.assert_no_import_state(root)
+
+    def test_pack_declared_hashes_are_checked_but_grant_no_permission(self) -> None:
+        root = self.new_root()
+        data_bytes = b"synthetic-data"
+        pack = manifest([record()])
+        pack["content_hashes"] = {"data.txt": hashlib.sha256(data_bytes).hexdigest()}
+        good_path = self.input_dir("declared-hashes", pack)
+        (good_path / "data.txt").write_bytes(data_bytes)
+        report = importer.preview_import(
+            good_path, root, report_path=root / "declared-hashes.json", today=self.AUDIT_DATE,
+        )
+        self.assertEqual(report["result"], "ok")
+
+        tampered = dict(pack)
+        tampered["content_hashes"] = {"data.txt": "0" * 64}
+        tampered_path = self.input_dir("tampered-hashes", tampered)
+        (tampered_path / "data.txt").write_bytes(data_bytes)
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                tampered_path, root, report_path=root / "tampered-hashes.json",
+                today=self.AUDIT_DATE,
+            )
+        self.assertIn(
+            "content_hash_mismatch",
+            [item["code"] for item in caught.exception.report["diagnostics"]],
+        )
+
+        unsafe = dict(pack)
+        unsafe["content_hashes"] = {"../evil.json": "0" * 64}
+        unsafe_path = self.input_dir("unsafe-hashes", unsafe)
+        with self.assertRaises(importer.ValidationError) as caught:
+            importer.preview_import(
+                unsafe_path, root, report_path=root / "unsafe-hashes.json",
+                today=self.AUDIT_DATE,
+            )
+        self.assertIn(
+            "unsafe_content_hash_path",
+            [item["code"] for item in caught.exception.report["diagnostics"]],
+        )
+        self.assert_no_import_state(root, allow_log=True)
+
+    def test_partial_import_failure_rolls_back_all_state(self) -> None:
+        root = self.new_root()
+        input_path = self.input_dir("rollback", manifest([record()]))
+        index_path = root / "content-local/normalized/index.json"
+        journal_path = root / "content-local/reports/import-journal.json"
+        original_index = b'{"packs": {}, "schema_version": 1}\n'
+        original_journal = b'{"entries": [], "packs": {}, "schema_version": 1}\n'
+        index_path.write_bytes(original_index)
+        journal_path.write_bytes(original_journal)
+
+        original_write = importer._atomic_write
+        journal_attempts = {"count": 0}
+
+        def fail_once(path: Path, data: bytes) -> None:
+            if path.name == "import-journal.json":
+                journal_attempts["count"] += 1
+                if journal_attempts["count"] == 1:
+                    raise OSError("simulated partial import failure")
+            original_write(path, data)
+
+        importer._atomic_write = fail_once
+        try:
+            with self.assertRaises(importer.ImporterError) as caught:
+                importer.import_pack(
+                    input_path, root, report_path=root / "rollback-failure.json",
+                    today=self.AUDIT_DATE,
+                )
+        finally:
+            importer._atomic_write = original_write
+
+        failure = caught.exception.report
+        self.assertEqual(failure["result"], "failure")
+        self.assertEqual(failure["error"]["code"], "internal_error")
+        self.assertEqual(journal_attempts["count"], 2)
+        self.assertEqual(index_path.read_bytes(), original_index)
+        self.assertEqual(journal_path.read_bytes(), original_journal)
+        self.assertFalse(Path(str(index_path) + ".bak").exists())
+        self.assertFalse(Path(str(journal_path) + ".bak").exists())
+        self.assertEqual(
+            [path.name for path in (root / "content-local/normalized").glob("*.json")],
+            [index_path.name],
+        )
+        self.assertEqual(list((root / "content-local/packs").glob("*.json")), [])
+        self.assertEqual(failure["pack_id"], "synthetic-demo")
+
+
 if __name__ == "__main__":
     unittest.main()
