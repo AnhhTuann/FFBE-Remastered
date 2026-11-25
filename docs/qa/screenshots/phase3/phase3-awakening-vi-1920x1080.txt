@@ -1,0 +1,16 @@
+name=phase3-awakening-vi-1920x1080
+scene=res://scenes/phase3/awakening.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=
+instance_id=unit:GL:910101:0001@base
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 
+pixels=1920x1080 colors=652 stddev=0.135126
+runtime_error_lines=0
+log_basename=phase3-awakening-vi-1920x1080.log

@@ -1,0 +1,16 @@
+name=phase3-battle-vi-1024x640
+scene=res://scenes/battle/battle_scene.tscn
+resolution=1024x640
+fullscreen=0
+locale=vi
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 
+pixels=1024x640 colors=2763 stddev=0.123924
+runtime_error_lines=0
+log_basename=phase3-battle-vi-1024x640.log

@@ -1,0 +1,16 @@
+name=phase3-menu-en-1280x720
+scene=res://scenes/menu/main_menu.tscn
+resolution=1280x720
+fullscreen=0
+locale=en
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=75497479
+geometry=WINDOW=75497479 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=210 stddev=0.0651302
+runtime_error_lines=0
+log_basename=phase3-menu-en-1280x720.log

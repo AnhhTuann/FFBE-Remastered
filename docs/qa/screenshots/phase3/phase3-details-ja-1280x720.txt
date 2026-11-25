@@ -1,0 +1,16 @@
+name=phase3-details-ja-1280x720
+scene=res://scenes/phase3/character_details.tscn
+resolution=1280x720
+fullscreen=0
+locale=ja
+scenario=
+instance_id=unit:GL:910101:0001@base
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=146800647
+geometry=WINDOW=146800647 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 
+pixels=1280x720 colors=450 stddev=0.0985713
+runtime_error_lines=0
+log_basename=phase3-details-ja-1280x720.log

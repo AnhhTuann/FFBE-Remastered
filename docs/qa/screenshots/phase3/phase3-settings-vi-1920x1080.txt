@@ -1,0 +1,16 @@
+name=phase3-settings-vi-1920x1080
+scene=res://scenes/settings/settings.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+window_id=75497479
+geometry=WINDOW=75497479 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 
+pixels=1920x1080 colors=212 stddev=0.0583554
+runtime_error_lines=0
+log_basename=phase3-settings-vi-1920x1080.log
