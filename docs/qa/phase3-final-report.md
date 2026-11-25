@@ -110,15 +110,15 @@ Locale choice persists through `PlayerState`; fallback is current locale → `en
 | Localization report | `python3 tools/localization/coverage_report.py` | `status: pass` | `final-localization.log` |
 | Visual report | `python3 tools/qa/phase3_visual_report.py` | `123` captures | `visual-report-final5.log` |
 
-Logs are under `/tmp/opencode/ffbe-logs/phase3/`. Normal and negative Godot logs contain no `SCRIPT ERROR` or `Parse Error` lines.
+Logs were written outside the repository under the approved temporary log directory and are not part of the published Git history. Normal and negative Godot logs contain no `SCRIPT ERROR` or `Parse Error` lines.
 
 ## M. Scene and smoke verification
 
-All eleven scenes exited `0` with zero `SCRIPT ERROR`, `Parse Error`, or leading `ERROR:` lines: boot, menu, viewer, settings, and the seven Phase 3 screens. Battle scenarios were checked separately with the same result. Evidence is under `/tmp/opencode/ffbe-logs/phase3/final-smoke/` and `/tmp/opencode/ffbe-logs/phase3/`.
+All eleven scenes exited `0` with zero `SCRIPT ERROR`, `Parse Error`, or leading `ERROR:` lines: boot, menu, viewer, settings, and the seven Phase 3 screens. Battle scenarios were checked separately with the same result. Smoke logs were kept outside the repository and are not published.
 
 ## N. Real GUI QA
 
-`tools/qa/capture_phase3.sh` captured **123** real PNGs from running Godot windows. Every capture has a sidecar with scene, resolution, locale, fullscreen flag, geometry, ImageMagick pixel statistics, and runtime error count.
+`tools/qa/capture_phase3.sh` captured **123** real PNGs from running Godot windows. Every capture has a sidecar with scene, resolution, locale, geometry, ImageMagick pixel statistics, and runtime error count; newer sidecars also record the fullscreen flag, while five older captures predate that metadata field.
 
 - Resolutions: `1280x720`, `1920x1080` fullscreen, `1024x640` smaller resizable window.
 - Locales: `vi`, `en`, `ja`.
@@ -128,9 +128,9 @@ All eleven scenes exited `0` with zero `SCRIPT ERROR`, `Parse Error`, or leading
 - The report generator now rejects mismatched geometry, a check added after two stale-window captures were detected and recaptured.
 - No mockups or composited images were used.
 
-Automated verification covers real-window geometry, pixel variation, runtime error counts, and the complete screen/locale/resolution matrix. No mockups were used. Subjective readability and layout sign-off remains a human QA task and is not claimed by this report.
+Automated checks validate real-window geometry, metadata presence, recorded runtime error counts and the complete screen/locale/resolution matrix. Pixel statistics are recorded for review but are not threshold-gated. No mockups were used. Subjective readability and layout sign-off remains a human QA task and is not claimed by this report.
 
-Evidence: `docs/qa/phase3-visual-review.md`, `docs/qa/screenshots/phase3/`, and logs under the phase-3 log directory.
+Evidence: `docs/qa/phase3-visual-review.md` and `docs/qa/screenshots/phase3/`. Runtime logs remain outside the repository.
 
 ## O. Export and runtime distinction
 
@@ -156,6 +156,8 @@ The four missing template files are `linux_debug.x86_64`, `linux_release.x86_64`
 - 31 long labels are flagged for future layout review; they are not translation failures.
 - 237 dictionary keys are diagnostic-only "unused" under the static scanner because some screens use local helpers or dynamic/data-driven keys.
 - Subjective visual inspection and Windows runtime testing remain unavailable.
+- Post-milestone independent review found remaining unlocalized evidence prose/raw tokens in some screens and limited automated UI-initialization coverage; these caveats are recorded in `docs/qa/git-checkpoint-report.md` and are not changed in this publication checkpoint.
+- The local importer accepts a self-declared rights-cleared status and does not allowlist record `verification_status`; no restricted data was imported in this milestone, but the gate is not hardened for general use.
 - No full gameplay completion claim is made.
 
 ## Q. Definition of Done — 22 items
@@ -167,7 +169,7 @@ The four missing template files are `linux_debug.x86_64`, `linux_release.x86_64`
 | 3 | No push, merge, force push, hard reset, clean, credentials, or local saves committed | PASS | Git history and status review |
 | 4 | Rights gate `not_passed`; no protected assets imported | PASS | `docs/audit/elvlin-source-audit.md`, empty `content-local/` |
 | 5 | Evidence-led GL/JP audits and conflict records generated | PASS | `docs/audit/`, `data/validation/source-conflicts.json` |
-| 6 | Safe local importer with rights gate, dry run, rollback, and logs | PASS | `tools/importer/import_content.py`; `11` importer tests |
+| 6 | Safe local importer with rights gate, dry run, rollback, and logs | BLOCKED | Dry run/rollback and path guards pass; post-milestone review found self-declared rights clearance and no `verification_status` allowlist. No restricted data was imported. |
 | 7 | Region-aware composite identity; no GL/JP numeric collapse | PASS | `ContentId`, unit fixtures, GDScript assertions |
 | 8 | Mechanics classified; no fabricated `VERIFIED` recovered records | PASS | `mechanic_labels.json`, audit reports |
 | 9 | Character Collection screen functional | PASS | Scene smoke, GUI captures, tests |
@@ -178,15 +180,15 @@ The four missing template files are `linux_debug.x86_64`, `linux_release.x86_64`
 | 14 | Vision Card screen functional | PASS | Scene smoke, GUI captures, tests |
 | 15 | Party screen functional | PASS | Scene smoke, GUI captures, tests |
 | 16 | Battle: active party, advanced abilities, localized labels, idempotent rewards | PASS | `game/scenes/battle/battle_scene.gd`, tests, battle captures |
-| 17 | Localization `vi`/`en`/`ja`; persistence, fallback, live switching | PASS | `294` keys, `status: pass`, Settings signal |
+| 17 | Localization `vi`/`en`/`ja`; persistence, fallback, live switching | BLOCKED | `294` keys, `status: pass`, Settings signal; post-milestone review found unlocalized evidence prose and raw tokens in some screens |
 | 18 | Save v2→v3 migration and offline integrity | PASS | v3 state, migration fixture, reward persistence tests |
 | 19 | Python/GDScript suites plus negative control | PASS | `45` Python tests, `1412` Godot checks, negative exit `1` |
 | 20 | Scene and battle smoke checks | PASS | `final-smoke/`, all exits `0`, zero error lines |
-| 21 | Real GUI screenshots for all screens/locales/resolutions; no mockups | PASS | `123` real captures, metadata and logs complete; subjective human layout sign-off not claimed |
+| 21 | Real GUI screenshots for all screens/locales/resolutions; no mockups | PASS | `123` real captures and sidecars; five older sidecars lack `fullscreen`, logs kept outside Git, pixel statistics not threshold-gated |
 | 22 | Export status distinction and final report; Prompt 05 not started | PASS | `docs/qa/phase3-export-report.md`, this report |
 
 ## R. Conclusion and next boundary
 
 Phase 3 is implemented and verified to the extent possible offline and with the pinned engine. The `224` Phase 2 checks remain intact; the expanded suite reports `1412` passing checks and `45` passing Python tests. Real GUI captures exist for the full scene/locale/resolution matrix, and export states are reported separately and honestly.
 
-Remaining blockers are external or evidentiary: matching export templates, rights-cleared real content, complete final-era source truth, and any platform executable runtime test. Subjective visual sign-off remains a human QA task and is not claimed. Prompt 05 must not begin automatically.
+Remaining blockers are external or evidentiary: matching export templates, rights-cleared real content, complete final-era source truth, the importer rights/status hardening noted above, residual UI localization coverage, and any platform executable runtime test. Subjective visual sign-off remains a human QA task and is not claimed. Prompt 05 must not begin automatically.

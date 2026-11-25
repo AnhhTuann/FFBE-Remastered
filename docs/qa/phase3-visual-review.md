@@ -7,7 +7,8 @@
 All images below are real captures from running Godot windows. The harness
 records window geometry, ImageMagick pixel statistics and runtime error counts
 in a `.txt` sidecar next to each PNG. Automated checks validate real-window
-geometry, pixel variation and error-free runtime; subjective visual sign-off
+geometry, metadata presence and recorded runtime error counts. Pixel statistics
+are recorded for review but are not threshold-gated; subjective visual sign-off
 remains a human QA task.
 
 - Captures: 123
