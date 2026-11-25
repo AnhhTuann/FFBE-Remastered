@@ -1,0 +1,41 @@
+source_id,source_revision,region,key,category,label,path,total_records,valid_records,invalid_records,duplicate_records,partial_records,unverified_records,unavailable_records,status_VERIFIED,status_RECOVERED,status_PARTIAL,status_UNVERIFIED,status_UNAVAILABLE,missing_required_field_names,parse_error_count
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,units,characters,Units,gl/unit.json,269,269,0,0,0,0,0,0,269,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,abilities,battle,Abilities,gl/ability.json,451,451,0,0,0,0,0,0,451,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,magic,battle,Magic,gl/magic.json,80,80,0,0,0,0,0,0,80,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,limit_bursts,battle,Limit Bursts,gl/limits.json,293,293,0,0,0,0,0,0,293,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,monster_skills,battle,Monster skills,gl/monskills.json,579,579,0,0,0,0,0,0,579,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,enemy_ai,enemy,Enemy AI,gl/ai.json,309,309,0,0,0,0,0,0,309,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,items,equipment,Items,gl/item.json,247,247,0,0,0,0,0,0,247,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,equipment,equipment,Equipment,gl/equip.json,261,261,0,0,0,0,0,0,261,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,materia,equipment,Materia,gl/materia.json,154,154,0,0,0,0,0,0,154,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,recipes,equipment,Recipes,gl/recipe.json,252,252,0,0,0,0,0,0,252,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,learnsets,characters,Learnsets,gl/learns.json,110,110,0,0,0,0,0,0,110,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,beasts,enemy,Esper beasts,gl/beasts.json,6,6,0,0,0,0,0,0,6,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,boards,enemy,Esper boards,,0,0,0,0,0,0,1,0,0,0,0,1,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,enhancements,characters,Enhancement data,gl/enhance.json,0,0,0,0,0,0,0,0,0,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,important_items,equipment,Important items,gl/important.json,4,4,0,0,0,0,0,0,4,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,colosseum_rewards,quests,Colosseum rewards,gl/colorewards.json,3,3,0,0,0,0,0,0,3,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,quests,quests,Quests,,0,0,0,0,0,0,1,0,0,0,0,1,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,GL,missions,quests,Missions,,0,0,0,0,0,0,1,0,0,0,0,1,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,units,characters,Units,jp/unit.json,1115,1115,0,0,0,0,0,0,1115,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,abilities,battle,Abilities,jp/ability.json,6062,6062,0,0,0,0,0,0,6062,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,magic,battle,Magic,jp/magic.json,210,210,0,0,0,0,0,0,210,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,limit_bursts,battle,Limit Bursts,jp/limits.json,1116,1106,0,0,10,0,0,0,1106,10,0,0,levels,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,monster_skills,battle,Monster skills,jp/monskills.json,4452,4452,0,0,0,0,0,0,4452,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,enemy_ai,enemy,Enemy AI,jp/ai.json,1461,1461,0,0,0,0,0,0,1461,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,items,equipment,Items,jp/item.json,606,606,0,0,0,0,0,0,606,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,equipment,equipment,Equipment,jp/equip.json,934,934,0,0,0,0,0,0,934,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,materia,equipment,Materia,jp/materia.json,500,500,0,0,0,0,0,0,500,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,recipes,equipment,Recipes,jp/recipe.json,456,456,0,0,0,0,0,0,456,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,learnsets,characters,Learnsets,jp/learns.json,372,372,0,0,0,0,0,0,372,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,beasts,enemy,Esper beasts,jp/beasts.json,16,16,0,0,0,0,0,0,16,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,boards,enemy,Esper boards,jp/boards.json,16,16,0,0,0,0,0,0,16,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,enhancements,characters,Enhancement data,jp/enhance.json,151,151,0,0,0,0,0,0,151,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,important_items,equipment,Important items,jp/important.json,22,22,0,0,0,0,0,0,22,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,colosseum_rewards,quests,Colosseum rewards,jp/colorewards.json,2,2,0,0,0,0,0,0,2,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,quests,quests,Quests,quests.json,74,74,0,0,0,0,0,0,74,0,0,0,,0
+DanUgore/ffbe_data,ce7d98a6499bb8c2f6656f0698f60c30001a05b0,JP,missions,quests,Missions,jp/missions.json,3440,3440,0,0,0,0,0,0,3440,0,0,0,,0
+DaddyRaegen/ffbe_asset_dump,f82d603c90ec799f539280267d3af7589c79f117,SHARED,asset_unit_catalog,characters,Unit asset catalog,catalog/units.json,3953,3953,0,0,0,0,0,0,3953,0,0,0,,0
+DaddyRaegen/ffbe_asset_dump,f82d603c90ec799f539280267d3af7589c79f117,SHARED,asset_monster_catalog,enemy,Monster asset catalog,catalog/monsters.json,3628,3627,0,0,1,0,0,0,3627,1,0,0,"frame_data,idle_animation",0
+DaddyRaegen/ffbe_asset_dump,f82d603c90ec799f539280267d3af7589c79f117,SHARED,asset_vision_cards,other,Vision card asset catalog,catalog/vision_cards.json,360,360,0,0,0,0,0,0,360,0,0,0,,0
+DaddyRaegen/ffbe_asset_dump,f82d603c90ec799f539280267d3af7589c79f117,SHARED,asset_unit_master,characters,Region-aware unit master,catalog/unit_master.json,3964,3943,0,0,21,0,0,0,3943,21,0,0,identities,0

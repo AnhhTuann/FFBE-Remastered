@@ -1,0 +1,24 @@
+{
+  "duplicate_examples": [
+    {
+      "count": 2,
+      "paths": [
+        "source-a::unit_icons/unit_icon_100000102.png",
+        "source-a::unit_icons/unit_icon_100000103.png"
+      ],
+      "sha256": "45eaadd4bfd30ba9e85b364dd22534ac4dc35e046b8ceaf59300623ddf79d36b"
+    }
+  ],
+  "duplicate_files": 2,
+  "duplicate_hash_groups": 1,
+  "files_with_checksum": 161,
+  "image_header_examples": [],
+  "metadata_only_files": 148007,
+  "policy": "SHA-256 is null when only Git tree metadata was available. No source file was converted.",
+  "tool": "validate_assets.py",
+  "tool_version": "1.0.0",
+  "unsupported_format_count": 0,
+  "unsupported_format_examples": [],
+  "zero_length_examples": [],
+  "zero_length_files": 0
+}

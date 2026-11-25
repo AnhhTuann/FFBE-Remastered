@@ -1,0 +1,382 @@
+{
+  "animation_csv": {
+    "checked": 0,
+    "csv_files": 68062,
+    "duplicate_frame_ids": 0,
+    "errors": [],
+    "examples": [],
+    "invalid_rows": 0,
+    "non_decreasing": 0,
+    "not_non_decreasing": 0,
+    "rows": 0,
+    "sequence_csv_candidates": 59919,
+    "starts_at_zero": 0
+  },
+  "categories": {
+    "ability-art": {
+      "bytes": 5526295,
+      "files": 480,
+      "formats": {
+        "bmb": 31,
+        "png": 447,
+        "ssbp": 2
+      },
+      "hashed_files": 0
+    },
+    "animations-gif": {
+      "bytes": 1511890954,
+      "files": 37968,
+      "formats": {
+        "gif": 37968
+      },
+      "hashed_files": 0
+    },
+    "battle-backgrounds": {
+      "bytes": 937135263,
+      "files": 4007,
+      "formats": {
+        "jpg": 1351,
+        "json": 1,
+        "png": 1389,
+        "ssbp": 1266
+      },
+      "hashed_files": 5
+    },
+    "catalogs": {
+      "bytes": 45881743,
+      "files": 9,
+      "formats": {
+        "json": 9
+      },
+      "hashed_files": 9
+    },
+    "chain-ability-art": {
+      "bytes": 615980,
+      "files": 61,
+      "formats": {
+        "png": 61
+      },
+      "hashed_files": 0
+    },
+    "emblem-art": {
+      "bytes": 3932542,
+      "files": 472,
+      "formats": {
+        "png": 472
+      },
+      "hashed_files": 0
+    },
+    "equipment-art": {
+      "bytes": 9082832,
+      "files": 2968,
+      "formats": {
+        "png": 2968
+      },
+      "hashed_files": 0
+    },
+    "gallery": {
+      "bytes": 1809847,
+      "files": 10,
+      "formats": {
+        "png": 10
+      },
+      "hashed_files": 0
+    },
+    "gambit-icons": {
+      "bytes": 204119,
+      "files": 30,
+      "formats": {
+        "png": 30
+      },
+      "hashed_files": 0
+    },
+    "global-ability-art": {
+      "bytes": 2616663,
+      "files": 273,
+      "formats": {
+        "png": 273
+      },
+      "hashed_files": 0
+    },
+    "global-emblem-art": {
+      "bytes": 2043872,
+      "files": 262,
+      "formats": {
+        "png": 262
+      },
+      "hashed_files": 0
+    },
+    "global-equipment-art": {
+      "bytes": 7539379,
+      "files": 1135,
+      "formats": {
+        "png": 1135
+      },
+      "hashed_files": 0
+    },
+    "global-item-art": {
+      "bytes": 7758896,
+      "files": 1038,
+      "formats": {
+        "png": 1038
+      },
+      "hashed_files": 0
+    },
+    "global-materia-art": {
+      "bytes": 211489,
+      "files": 26,
+      "formats": {
+        "png": 26
+      },
+      "hashed_files": 0
+    },
+    "global-structured-data": {
+      "bytes": 7876857,
+      "files": 15,
+      "formats": {
+        "json": 15
+      },
+      "hashed_files": 15
+    },
+    "item-art": {
+      "bytes": 52023540,
+      "files": 9826,
+      "formats": {
+        "plist": 4,
+        "png": 9822
+      },
+      "hashed_files": 0
+    },
+    "japan-structured-data": {
+      "bytes": 69497574,
+      "files": 18,
+      "formats": {
+        "json": 17,
+        "txt": 1
+      },
+      "hashed_files": 18
+    },
+    "materia-art": {
+      "bytes": 1338161,
+      "files": 272,
+      "formats": {
+        "png": 272
+      },
+      "hashed_files": 0
+    },
+    "misc-assets": {
+      "bytes": 83876,
+      "files": 15,
+      "formats": {
+        "png": 15
+      },
+      "hashed_files": 0
+    },
+    "monster-animation-metadata": {
+      "bytes": 13232646,
+      "files": 13604,
+      "formats": {
+        "csv": 13604
+      },
+      "hashed_files": 0
+    },
+    "monster-assets": {
+      "bytes": 289206,
+      "files": 113,
+      "formats": {
+        "png": 113
+      },
+      "hashed_files": 0
+    },
+    "monster-icons": {
+      "bytes": 32433524,
+      "files": 3599,
+      "formats": {
+        "png": 3599
+      },
+      "hashed_files": 6
+    },
+    "monster-sprites": {
+      "bytes": 130874002,
+      "files": 3729,
+      "formats": {
+        "bmb": 11,
+        "png": 3718
+      },
+      "hashed_files": 6
+    },
+    "regional-unit-bundles": {
+      "bytes": 5335884,
+      "files": 352,
+      "formats": {
+        "csv": 286,
+        "png": 66
+      },
+      "hashed_files": 16
+    },
+    "root": {
+      "bytes": 41284149,
+      "files": 9,
+      "formats": {
+        "(none)": 2,
+        "json": 5,
+        "md": 2
+      },
+      "hashed_files": 8
+    },
+    "town-assets": {
+      "bytes": 2278652,
+      "files": 93,
+      "formats": {
+        "jpg": 1,
+        "png": 92
+      },
+      "hashed_files": 0
+    },
+    "ui-effects": {
+      "bytes": 472113,
+      "files": 46,
+      "formats": {
+        "png": 46
+      },
+      "hashed_files": 0
+    },
+    "unit-animation-metadata": {
+      "bytes": 200394119,
+      "files": 53450,
+      "formats": {
+        "csv": 53450
+      },
+      "hashed_files": 0
+    },
+    "unit-assets": {
+      "bytes": 25299843,
+      "files": 415,
+      "formats": {
+        "fnt": 17,
+        "plist": 11,
+        "png": 381,
+        "ssbp": 6
+      },
+      "hashed_files": 0
+    },
+    "unit-bundles": {
+      "bytes": 6444686,
+      "files": 1,
+      "formats": {
+        "zip": 1
+      },
+      "hashed_files": 0
+    },
+    "unit-icons": {
+      "bytes": 3962755,
+      "files": 3953,
+      "formats": {
+        "png": 3953
+      },
+      "hashed_files": 8
+    },
+    "unit-illustrations": {
+      "bytes": 10897849,
+      "files": 3952,
+      "formats": {
+        "png": 3952
+      },
+      "hashed_files": 8
+    },
+    "unit-sprite-sheets": {
+      "bytes": 473472000,
+      "files": 4035,
+      "formats": {
+        "png": 4035
+      },
+      "hashed_files": 8
+    },
+    "upstream-reports": {
+      "bytes": 8756505,
+      "files": 33,
+      "formats": {
+        "csv": 2,
+        "json": 21,
+        "md": 6,
+        "png": 2,
+        "py": 1,
+        "txt": 1
+      },
+      "hashed_files": 31
+    },
+    "upstream-tools": {
+      "bytes": 166483,
+      "files": 18,
+      "formats": {
+        "md": 1,
+        "py": 16,
+        "txt": 1
+      },
+      "hashed_files": 18
+    },
+    "vision-card-animation-metadata": {
+      "bytes": 17353731,
+      "files": 720,
+      "formats": {
+        "csv": 720
+      },
+      "hashed_files": 0
+    },
+    "vision-card-art": {
+      "bytes": 16137081,
+      "files": 360,
+      "formats": {
+        "png": 360
+      },
+      "hashed_files": 5
+    },
+    "vision-card-backgrounds": {
+      "bytes": 448405,
+      "files": 6,
+      "formats": {
+        "png": 6
+      },
+      "hashed_files": 0
+    },
+    "vision-card-frames": {
+      "bytes": 204417,
+      "files": 6,
+      "formats": {
+        "png": 6
+      },
+      "hashed_files": 0
+    },
+    "vision-card-icons": {
+      "bytes": 12745315,
+      "files": 361,
+      "formats": {
+        "png": 361
+      },
+      "hashed_files": 0
+    },
+    "vision-card-items": {
+      "bytes": 2217049,
+      "files": 395,
+      "formats": {
+        "png": 395
+      },
+      "hashed_files": 0
+    },
+    "world-assets": {
+      "bytes": 2421384,
+      "files": 33,
+      "formats": {
+        "jpg": 8,
+        "png": 25
+      },
+      "hashed_files": 0
+    }
+  },
+  "file_count": 148168,
+  "image_header_sampling": {},
+  "inventory_count": 2,
+  "tool": "validate_assets.py",
+  "tool_version": "1.0.0",
+  "total_bytes": 3674191680
+}
