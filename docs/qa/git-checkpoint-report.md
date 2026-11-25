@@ -53,6 +53,12 @@ The Prompt 01 skills PR was integrated as `46b68cf3affc12375fadbfd5b22265ddc7940
 preserve patch IDs and author metadata with different parents/committers, confirming
 cherry-pick rather than merge.
 
+Checkpoint documentation was added on the Phase 3 branch without changing older
+milestone commits: `fc91d5ef318120f079884f152de8a8181a0e536f` added the workflow and
+initial checkpoint report; this final remote-verification update is a later
+documentation-only commit. The reviewed Phase 3 milestone remains
+`eeb1f5881f3a3da5698e8492ced7bb11137381da`.
+
 ## C. Git ancestry and private backup evidence
 
 Ancestry was verified with `git merge-base --is-ancestor` for every adjacent pair:
@@ -227,36 +233,61 @@ publication checkpoint.
 
 ## I. Pushed branches and verified remote SHAs
 
-Pending remote verification after publication.
+Each branch was pushed explicitly with `git push -u origin <branch>` after confirming
+the remote reference was absent. `git ls-remote --heads origin` then confirmed:
+
+| Branch | Reviewed milestone commit | Remote SHA at publication |
+|---|---|---|
+| `phase-0-source-audit` | `ffd3e640e362cc4423039b17274f7cf983481fa9` | `ffd3e640e362cc4423039b17274f7cf983481fa9` |
+| `phase-1-godot-foundation` | `d025bad3e736f090e60defb4341e3c2d92123f26` | `d025bad3e736f090e60defb4341e3c2d92123f26` |
+| `phase-2-battle-engine` | `bd9bb68a20900a67603710e3cd8d8d342886cb37` | `bd9bb68a20900a67603710e3cd8d8d342886cb37` |
+| `phase-3-character-progression` | `eeb1f5881f3a3da5698e8492ced7bb11137381da` | `fc91d5ef318120f079884f152de8a8181a0e536f` |
+
+The Phase 3 branch tip is later than the reviewed milestone because it carries the
+checkpoint documentation commits; the Prompt 04 tag intentionally points to the
+reviewed milestone commit. The final documentation-only tip is independently verified
+in the delivery report.
 
 ## J. Checkpoint tags and target SHAs
 
-Tags planned, not yet created:
+No local or remote checkpoint tags existed before creation. Four annotated tags were
+created and pushed explicitly. `git ls-remote --tags origin` confirmed the tag objects
+and peeled commit targets:
 
-| Tag | Target commit |
-|---|---|
-| `checkpoint/prompt-01-source-audit` | `ffd3e640e362cc4423039b17274f7cf983481fa9` |
-| `checkpoint/prompt-02-godot-foundation` | `d025bad3e736f090e60defb4341e3c2d92123f26` |
-| `checkpoint/prompt-03-battle-engine` | `bd9bb68a20900a67603710e3cd8d8d342886cb37` |
-| `checkpoint/prompt-04-character-progression` | `eeb1f5881f3a3da5698e8492ced7bb11137381da` |
-
-No local or remote checkpoint tags existed before creation.
+| Tag | Tag object SHA | Peeled remote commit | Expected milestone |
+|---|---|---|---|
+| `checkpoint/prompt-01-source-audit` | `1a879e1b17736f4e1be9e3a2f2ca844b37ee70ea` | `ffd3e640e362cc4423039b17274f7cf983481fa9` | Prompt 01 |
+| `checkpoint/prompt-02-godot-foundation` | `b1aeae0fc63026f174d30b5362a97adb6e3394af` | `d025bad3e736f090e60defb4341e3c2d92123f26` | Prompt 02 |
+| `checkpoint/prompt-03-battle-engine` | `2dd89c41acbc2a70454f60d50ff3173784fcc01d` | `bd9bb68a20900a67603710e3cd8d8d342886cb37` | Prompt 03 |
+| `checkpoint/prompt-04-character-progression` | `025fd54b82a502a1d78d68c8128ffe60ecddd776` | `eeb1f5881f3a3da5698e8492ced7bb11137381da` | Prompt 04 reviewed milestone |
 
 ## K. Pull requests
 
-Existing before this checkpoint:
+Existing before this checkpoint (not merged, closed, or modified):
 
 | PR | URL | Base | Head | State |
 |---:|---|---|---|---|
 | #1 | https://github.com/AnhhTuann/FFBE-Remastered/pull/1 | `main` | `chore/agent-skills` | OPEN |
 | #2 | https://github.com/AnhhTuann/FFBE-Remastered/pull/2 | `main` | `docs/feature-master-list` | OPEN |
 
-Stacked milestone PRs are created after branch publication and recorded below.
+Stacked milestone PRs created after branch publication, all open drafts:
+
+| PR | URL | Base | Head | State |
+|---:|---|---|---|---|
+| #3 | https://github.com/AnhhTuann/FFBE-Remastered/pull/3 | `main` | `phase-0-source-audit` | OPEN, draft |
+| #4 | https://github.com/AnhhTuann/FFBE-Remastered/pull/4 | `phase-0-source-audit` | `phase-1-godot-foundation` | OPEN, draft |
+| #5 | https://github.com/AnhhTuann/FFBE-Remastered/pull/5 | `phase-1-godot-foundation` | `phase-2-battle-engine` | OPEN, draft |
+| #6 | https://github.com/AnhhTuann/FFBE-Remastered/pull/6 | `phase-2-battle-engine` | `phase-3-character-progression` | OPEN, draft |
+
+Each PR exposes only the incremental changes relative to its base milestone. No PR was
+merged or closed automatically.
 
 ## L. Main branch verification
 
 `main` was `6232acab9fa75fafd8a7c9a2099a1c94c08fa51e` before publication and was not
-modified locally. Post-push verification is recorded after delivery.
+modified locally. `git ls-remote --heads origin main` confirmed the same SHA after all
+branch pushes, tag pushes, and PR creation. No unexpected remote modification was
+observed.
 
 ## M. Known blockers and data gaps
 
@@ -290,12 +321,12 @@ modified locally. Post-push verification is recorded after delivery.
 | 9 | Feature Master List preserved | PASS | byte-identical cherry-pick, Section G |
 | 10 | Nine Agent Skills preserved | PASS | Section G |
 | 11 | Phase 3 regression tests rerun | PASS | Section H |
-| 12 | All safe milestone branches pushed | NOT RUN | pending publication |
-| 13 | Remote SHAs independently verified | NOT RUN | pending publication |
-| 14 | Checkpoint tags created and verified | NOT RUN | pending publication |
-| 15 | Stacked pull requests created or existing PRs verified | NOT RUN | pending publication |
-| 16 | Main unchanged | NOT RUN | pending post-push verification |
-| 17 | Working tree clean | NOT RUN | pending checkpoint commit |
+| 12 | All safe milestone branches pushed | PASS | Section I; four explicit non-force pushes |
+| 13 | Remote SHAs independently verified | PASS | `git ls-remote --heads origin` |
+| 14 | Checkpoint tags created and verified | PASS | Section J; four annotated tags with correct peeled commits |
+| 15 | Stacked pull requests created or existing PRs verified | PASS | Section K; PRs #3–#6 created as drafts, #1/#2 preserved |
+| 16 | Main unchanged | PASS | `6232aca` before and after publication |
+| 17 | Working tree clean | PASS | checkpoint documentation commit created; no uncommitted changes |
 | 18 | Future per-prompt Git workflow documented | PASS | `docs/workflow/prompt-checkpoint-workflow.md`, `AGENTS.md` |
 | 19 | Remaining blockers accurately reported | PASS | Section M |
 | 20 | Prompt 05 not started | PASS | no Prompt 05 work performed |
