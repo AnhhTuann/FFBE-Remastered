@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "units": [
+    {
+      "id": "unit:GL:900001@base",
+      "kind": "unit",
+      "region": "GL",
+      "native_id": "900001",
+      "form": "base",
+      "display_name": "Astra (Synthetic GL)",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "tools/fixtures/generate_synthetic_assets.py",
+        "license": "project-authored",
+        "region": "GL"
+      },
+      "rarity": 5,
+      "stats": {
+        "hp": 5400,
+        "atk": 420,
+        "def": 310,
+        "mag": 180,
+        "spr": 260
+      },
+      "abilities": [
+        {
+          "id": "ability:GL:900101@base",
+          "name": "Starlight Slash",
+          "kind": "SYNTHETIC_FIXTURE"
+        },
+        {
+          "id": "ability:GL:900102@base",
+          "name": "Prismatic Guard",
+          "kind": "SYNTHETIC_FIXTURE"
+        }
+      ],
+      "asset_refs": {
+        "atlas": "res://assets/sprites/synthetic_pixel_atlas.png",
+        "animation_id": "anim:GL:900001@base"
+      }
+    },
+    {
+      "id": "unit:JP:900001@base",
+      "kind": "unit",
+      "region": "JP",
+      "native_id": "900001",
+      "form": "base",
+      "display_name": "Astra (Synthetic JP)",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "tools/fixtures/generate_synthetic_assets.py",
+        "license": "project-authored",
+        "region": "JP"
+      },
+      "rarity": 5,
+      "stats": {
+        "hp": 5100,
+        "atk": 390,
+        "def": 290,
+        "mag": 210,
+        "spr": 245
+      },
+      "abilities": [
+        {
+          "id": "ability:JP:900101@base",
+          "name": "Hikari no Ya",
+          "kind": "SYNTHETIC_FIXTURE"
+        }
+      ],
+      "asset_refs": {
+        "atlas": "res://assets/sprites/synthetic_pixel_atlas.png",
+        "animation_id": "anim:JP:900001@base"
+      },
+      "note": "Same native ID as the GL fixture. The composite identity keeps it distinct."
+    },
+    {
+      "id": "unit:GL:900001@brave_shift",
+      "kind": "unit",
+      "region": "GL",
+      "native_id": "900001",
+      "form": "brave_shift",
+      "display_name": "Astra — Brave Shift (Synthetic)",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "tools/fixtures/generate_synthetic_assets.py",
+        "license": "project-authored",
+        "region": "GL"
+      },
+      "rarity": 5,
+      "stats": {
+        "hp": 5800,
+        "atk": 455,
+        "def": 280,
+        "mag": 340,
+        "spr": 270
+      },
+      "abilities": [
+        {
+          "id": "ability:GL:900201@brave_shift",
+          "name": "Radiant Nova",
+          "kind": "SYNTHETIC_FIXTURE"
+        }
+      ],
+      "asset_refs": {
+        "atlas": "res://assets/sprites/synthetic_pixel_atlas.png",
+        "animation_id": "anim:GL:900001@brave_shift"
+      }
+    },
+    {
+      "id": "unit:GL:900003@base",
+      "kind": "unit",
+      "region": "GL",
+      "native_id": "900003",
+      "form": "base",
+      "display_name": "Missing Asset Diagnostic (Synthetic)",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "tools/fixtures/generate_synthetic_assets.py",
+        "license": "project-authored",
+        "region": "GL"
+      },
+      "rarity": 3,
+      "stats": {
+        "hp": 1000,
+        "atk": 100,
+        "def": 100,
+        "mag": 100,
+        "spr": 100
+      },
+      "abilities": [],
+      "asset_refs": {
+        "atlas": "res://assets/sprites/synthetic_pixel_atlas.png",
+        "animation_id": "anim:GL:900003@does_not_exist"
+      },
+      "note": "Intentional missing animation reference used to verify visible diagnostics."
+    }
+  ]
+}

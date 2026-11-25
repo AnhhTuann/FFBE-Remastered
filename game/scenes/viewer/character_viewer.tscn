@@ -1,0 +1,135 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/viewer/character_viewer.gd" id="1_viewer"]
+
+[node name="CharacterViewer" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_viewer")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+
+[node name="TitleLabel" type="Label" parent="Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 26
+text = "Character Viewer"
+
+[node name="BackButton" type="Button" parent="Layout/Header"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 40)
+text = "Back"
+
+[node name="Content" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftPanel" type="VBoxContainer" parent="Layout/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(430, 0)
+size_flags_horizontal = 3
+
+[node name="RegionLabel" type="Label" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Region filter"
+
+[node name="RegionOption" type="OptionButton" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+
+[node name="UnitLabel" type="Label" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Unit (composite identity)"
+
+[node name="UnitOption" type="OptionButton" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+
+[node name="ClipLabel" type="Label" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Animation clip"
+
+[node name="ClipOption" type="OptionButton" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+
+[node name="StatsLabel" type="Label" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Stats"
+autowrap_mode = 3
+
+[node name="AbilitiesLabel" type="Label" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Abilities"
+autowrap_mode = 3
+
+[node name="ProvenanceLabel" type="Label" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Provenance"
+autowrap_mode = 3
+
+[node name="Controls" type="HBoxContainer" parent="Layout/Content/LeftPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+
+[node name="PlayButton" type="Button" parent="Layout/Content/LeftPanel/Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 40)
+text = "Play"
+
+[node name="RestartButton" type="Button" parent="Layout/Content/LeftPanel/Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 40)
+text = "Restart"
+
+[node name="SpeedLabel" type="Label" parent="Layout/Content/LeftPanel/Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 40)
+text = "Speed: 1.00x"
+vertical_alignment = 1
+
+[node name="SpeedSlider" type="HSlider" parent="Layout/Content/LeftPanel/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.25
+max_value = 2.0
+step = 0.25
+value = 1.0
+
+[node name="SpriteArea" type="Control" parent="Layout/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(420, 420)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Layout/Content/SpriteArea"]
+position = Vector2(210, 210)
+scale = Vector2(4, 4)
+centered = true
+
+[node name="DiagnosticsLabel" type="Label" parent="Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 76)
+theme_override_font_sizes/font_size = 14
+text = "Diagnostics"
+autowrap_mode = 3
