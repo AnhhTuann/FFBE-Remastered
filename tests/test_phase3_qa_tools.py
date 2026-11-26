@@ -320,5 +320,120 @@ class Prompt06QaToolsTest(unittest.TestCase):
         self.assertIn("FFBE_QA_RETURN_SCENE", script)
 
 
+class Prompt07QaToolsTest(unittest.TestCase):
+    """Prompt 07 requires a complete Event Center capture matrix."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tool_path = ROOT / "tools/qa/prompt07_visual_report.py"
+        spec = importlib.util.spec_from_file_location("prompt07_visual_report", tool_path)
+        assert spec is not None and spec.loader is not None
+        cls.tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.tool)
+
+    @staticmethod
+    def _capture(scenario: str, resolution: str, locale: str, errors: str = "0") -> dict[str, str]:
+        return {
+            "name": f"prompt07-{scenario}-{locale}-{resolution}",
+            "scene": "res://scenes/event/event_center.tscn",
+            "resolution": resolution,
+            "locale": locale,
+            "scenario": scenario,
+            "event_center_view": scenario,
+            "event_now_unix": "1740000000",
+            "geometry": "WINDOW=1 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0",
+            "pixels": "1280x720 colors=210 stddev=0.06",
+            "runtime_error_lines": errors,
+        }
+
+    def _full_matrix(self) -> list[dict[str, str]]:
+        return [
+            self._capture(scenario, resolution, locale)
+            for scenario in self.tool.REQUIRED_SCENARIOS
+            for resolution in self.tool.REQUIRED_RESOLUTIONS
+            for locale in self.tool.REQUIRED_LOCALES
+        ]
+
+    def test_default_paths_and_matrix_size(self) -> None:
+        self.assertEqual(self.tool.DEFAULT_CAPTURE_DIR, "docs/qa/screenshots/prompt07")
+        self.assertEqual(self.tool.DEFAULT_OUTPUT, "docs/qa/prompt07-visual-review.md")
+        self.assertEqual(self.tool.REQUIRED_RESOLUTIONS,
+                         ("1024x640", "1280x720", "1920x1080", "720x1280"))
+        self.assertEqual(len(self._full_matrix()), 156)
+
+    def test_validate_matrix_accepts_complete_clean_matrix(self) -> None:
+        self.tool.validate_matrix(self._full_matrix())
+
+    def test_validate_matrix_rejects_missing_capture(self) -> None:
+        with self.assertRaisesRegex(ValueError, "missing Prompt 07 captures"):
+            self.tool.validate_matrix(self._full_matrix()[1:])
+
+    def test_validate_matrix_rejects_runtime_errors(self) -> None:
+        captures = self._full_matrix()
+        captures[0]["runtime_error_lines"] = "2"
+        with self.assertRaisesRegex(ValueError, "runtime error lines"):
+            self.tool.validate_matrix(captures)
+
+    def test_validate_matrix_rejects_blank_capture(self) -> None:
+        captures = self._full_matrix()
+        captures[0]["pixels"] = "1280x720 colors=1 stddev=0"
+        with self.assertRaisesRegex(ValueError, "blank or near-blank captures"):
+            self.tool.validate_matrix(captures)
+
+    def test_read_rejects_sidecar_without_event_hook_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "docs/qa/screenshots/prompt07"
+            directory.mkdir(parents=True)
+            item = self._capture("overview", "1280x720", "vi")
+            del item["event_center_view"]
+            (directory / "broken.txt").write_text(
+                "\n".join(f"{key}={value}" for key, value in item.items()) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "missing event center view metadata"):
+                self.tool.read_captures(root)
+
+    def test_read_rejects_scenario_view_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "docs/qa/screenshots/prompt07"
+            directory.mkdir(parents=True)
+            item = self._capture("overview", "1280x720", "vi")
+            item["event_center_view"] = "detail"
+            (directory / "mismatch.txt").write_text(
+                "\n".join(f"{key}={value}" for key, value in item.items()) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "scenario/view metadata mismatch"):
+                self.tool.read_captures(root)
+
+    def test_render_summarises_prompt07_metadata(self) -> None:
+        rendered = self.tool.render(self._full_matrix())
+        self.assertIn("# Prompt 07 Event Center visual review", rendered)
+        self.assertIn("Captures: 156", rendered)
+        self.assertIn("First-clear and repeat rewards", rendered)
+        self.assertIn("720x1280", rendered)
+        self.assertIn("Runtime error lines across all captures: 0", rendered)
+        self.assertIn("subjective visual sign-off", rendered)
+
+    def test_capture_wrapper_allow_lists_scenarios_and_isolates_profile(self) -> None:
+        script = (ROOT / "tools/qa/capture_prompt07.sh").read_text(encoding="utf-8")
+        for scenario in self.tool.REQUIRED_SCENARIOS:
+            self.assertIn(scenario, script)
+        self.assertIn("QA_PROFILE_ROOT", script)
+        self.assertIn("1740000000", script)
+        self.assertIn("rm -rf -- \"$PROFILE\"", script)
+
+    def test_shared_capture_passes_event_qa_environment(self) -> None:
+        script = (ROOT / "tools/qa/capture_phase3.sh").read_text(encoding="utf-8")
+        for token in (
+            "FFBE_QA_EVENT_NOW_UNIX=", "FFBE_QA_EVENT_CENTER_VIEW=",
+            "FFBE_QA_EVENT_ID=", "FFBE_QA_REGION=", "event_now_unix=",
+            "event_center_view=", "event_id=", "event_region=",
+        ):
+            self.assertIn(token, script)
+
+
 if __name__ == "__main__":
     unittest.main()

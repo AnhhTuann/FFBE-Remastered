@@ -14,7 +14,8 @@ const EXPLORATION_PATH := "res://scenes/world/exploration_area.tscn"
 const BATTLE_PATH := "res://scenes/battle/battle_scene.tscn"
 
 const META_KEYS: Array[String] = [
-	"location_id", "encounter_id", "return_scene", "trigger_id", "battle_result"
+	"location_id", "encounter_id", "return_scene", "trigger_id", "battle_result",
+	"event_id", "stage_id", "region"
 ]
 
 

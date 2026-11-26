@@ -1307,7 +1307,14 @@ func _record_result(state: RefCounted) -> void:
 			player_state = (loop as SceneTree).root.get_node_or_null("PlayerState")
 		var claim: Dictionary = {}
 		if player_state != null:
-			if not _world_context.is_empty() and player_state.has_method("settle_world_battle"):
+			if _world_context.has("event_id") and player_state.has_method("settle_event_battle"):
+				var event_settlement: Dictionary = player_state.call(
+					"settle_event_battle", result_dict, _world_context
+				)
+				claim = event_settlement.get("reward", {})
+				if not bool(event_settlement.get("ok", false)):
+					claim = {"ok": false, "reason": str(event_settlement.get("reason", "save_failed"))}
+			elif not _world_context.is_empty() and player_state.has_method("settle_world_battle"):
 				var settlement: Dictionary = player_state.call("settle_world_battle", result_dict, _world_context)
 				claim = settlement.get("reward", {})
 				if not bool(settlement.get("ok", false)):

@@ -250,7 +250,7 @@ func test_catalog_gate() -> bool:
 	_eq(int(summary.get("esper_definition_count", 0)), 3, "esper count")
 	_eq(int(summary.get("summon_banner_count", 0)), 3, "banner count")
 	_eq(int(summary.get("offline_economy_rule_count", 0)), 1, "offline rule count")
-	_eq(int(summary.get("shop_definition_count", 0)), 2, "shop count")
+	_eq(int(summary.get("shop_definition_count", 0)), 4, "shop count")
 	_eq(int(summary.get("crafting_recipe_count", 0)), 3, "recipe count")
 
 	var packs: Dictionary = {
@@ -703,7 +703,7 @@ func test_economy_system() -> bool:
 func test_shop_system() -> bool:
 	_fresh(0)
 	var shops: RefCounted = _system("res://systems/shop_system.gd")
-	_eq((shops.call("shops") as Dictionary).size(), 2, "shops exposed")
+	_eq((shops.call("shops") as Dictionary).size(), 4, "shops exposed")
 	_eq((shops.call("stock", SHOP_1) as Array).size(), 2, "stock exposed")
 	_data()["resources"]["gil"] = 100000
 	var before: String = _fingerprint()

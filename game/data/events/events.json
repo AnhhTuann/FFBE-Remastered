@@ -1,0 +1,735 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_version": "synthetic-event-1",
+  "description": "Project-authored synthetic Event Center fixtures. No FFBE source data is included.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "source_data_imported": false,
+    "evidence_class": "REMASTERED_DESIGN"
+  },
+  "events": [
+    {
+      "id": "event:GL:980001@stargarden",
+      "kind": "event",
+      "category": "story",
+      "type": "story_arc",
+      "name_key": "event.stargarden.name",
+      "description_key": "event.stargarden.description",
+      "regions": {
+        "GL": {
+          "start_unix": 1700000000,
+          "end_unix": 1800000000,
+          "stage_ids": [],
+          "banner_ref": "summon:GL:970001@base"
+        }
+      },
+      "availability": {
+        "mode": "scheduled"
+      },
+      "unlock": {
+        "kind": "none",
+        "id": ""
+      },
+      "stage_ids": [
+        "stage:GL:980101@gate",
+        "stage:GL:980102@warden"
+      ],
+      "event_currency": "event_currency:GL:980901@stardust",
+      "shop_ref": "shop:GL:980001@stargarden",
+      "banner_ref": "summon:GL:970001@base",
+      "boss_encounter": "encounter:GL:950002@boss",
+      "replay_policy": {
+        "archive_after_end": true,
+        "replay_enabled": true,
+        "keep_rewards_on_replay": true
+      },
+      "missions": [
+        {
+          "id": "clear_gate",
+          "key": "event.mission.clear_gate",
+          "target": 1,
+          "repeatable": false,
+          "reward": {
+            "gil": 200,
+            "items": []
+          }
+        },
+        {
+          "id": "farm_gate",
+          "key": "event.mission.farm_gate",
+          "target": 3,
+          "repeatable": false,
+          "reward": {
+            "gil": 300,
+            "items": [
+              "item:GL:940001@base"
+            ]
+          }
+        }
+      ],
+      "shop": {
+        "id": "shop:GL:980001@stargarden",
+        "items": [
+          {
+            "id": "stargarden_potion",
+            "currency": "event_currency:GL:980901@stardust",
+            "cost": 3,
+            "reward": {
+              "gil": 0,
+              "items": [
+                "item:GL:940001@base"
+              ]
+            },
+            "shop_id": "shop:GL:980001@stargarden"
+          },
+          {
+            "id": "stargarden_ether",
+            "currency": "event_currency:GL:980901@stardust",
+            "cost": 5,
+            "reward": {
+              "gil": 0,
+              "items": [
+                "item:GL:940002@base"
+              ]
+            },
+            "shop_id": "shop:GL:980001@stargarden"
+          }
+        ]
+      },
+      "art": {
+        "panel": "synthetic_placeholder",
+        "label_key": "event.art.stargarden"
+      },
+      "guests": [],
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "region": "GL",
+      "native_id": "980001",
+      "form": "stargarden"
+    },
+    {
+      "id": "event:JP:980002@moonlit",
+      "kind": "event",
+      "category": "seasonal",
+      "type": "seasonal_festival",
+      "name_key": "event.moonlit.name",
+      "description_key": "event.moonlit.description",
+      "regions": {
+        "JP": {
+          "start_unix": 1710000000,
+          "end_unix": 1760000000,
+          "stage_ids": [],
+          "banner_ref": "summon:JP:970003@base"
+        }
+      },
+      "availability": {
+        "mode": "scheduled"
+      },
+      "unlock": {
+        "kind": "none",
+        "id": ""
+      },
+      "stage_ids": [
+        "stage:JP:980111@gate",
+        "stage:JP:980112@boss"
+      ],
+      "event_currency": "event_currency:JP:980902@moonlight",
+      "shop_ref": "",
+      "banner_ref": "summon:JP:970003@base",
+      "boss_encounter": "encounter:JP:950012@boss",
+      "replay_policy": {
+        "archive_after_end": true,
+        "replay_enabled": true,
+        "keep_rewards_on_replay": true
+      },
+      "missions": [
+        {
+          "id": "moonlit_boss",
+          "key": "event.mission.moonlit_boss",
+          "target": 1,
+          "repeatable": false,
+          "reward": {
+            "gil": 250,
+            "items": []
+          }
+        }
+      ],
+      "shop": {
+        "id": "",
+        "items": []
+      },
+      "art": {
+        "panel": "synthetic_placeholder",
+        "label_key": "event.art.moonlit"
+      },
+      "guests": [],
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "region": "JP",
+      "native_id": "980002",
+      "form": "moonlit"
+    },
+    {
+      "id": "event:GL:980003@lumenguest",
+      "kind": "event",
+      "category": "collaboration",
+      "type": "guest_arc",
+      "name_key": "event.lumen.name",
+      "description_key": "event.lumen.description",
+      "regions": {
+        "GL": {
+          "start_unix": 1600000000,
+          "end_unix": 1650000000,
+          "stage_ids": [],
+          "banner_ref": "summon:GL:970001@base"
+        }
+      },
+      "availability": {
+        "mode": "scheduled"
+      },
+      "unlock": {
+        "kind": "none",
+        "id": ""
+      },
+      "stage_ids": [
+        "stage:GL:980121@guest"
+      ],
+      "event_currency": "event_currency:GL:980903@lumen",
+      "shop_ref": "shop:GL:980003@lumenguest",
+      "banner_ref": "summon:GL:970001@base",
+      "boss_encounter": "encounter:GL:950001@skirmish",
+      "replay_policy": {
+        "archive_after_end": true,
+        "replay_enabled": true,
+        "keep_rewards_on_replay": false
+      },
+      "missions": [
+        {
+          "id": "guest_bond",
+          "key": "event.mission.guest_bond",
+          "target": 1,
+          "repeatable": false,
+          "reward": {
+            "gil": 400,
+            "items": []
+          }
+        }
+      ],
+      "shop": {
+        "id": "shop:GL:980003@lumenguest",
+        "items": [
+          {
+            "id": "lumen_potion",
+            "currency": "event_currency:GL:980903@lumen",
+            "cost": 2,
+            "reward": {
+              "gil": 0,
+              "items": [
+                "item:GL:940001@base"
+              ]
+            },
+            "shop_id": "shop:GL:980003@lumenguest"
+          }
+        ]
+      },
+      "art": {
+        "panel": "synthetic_placeholder",
+        "label_key": "event.art.lumen"
+      },
+      "guests": [
+        {
+          "id": "guest:GL:990001@lumen",
+          "name_key": "event.guest.lumen.name",
+          "role_key": "event.guest.lumen.role",
+          "source": "project_authored",
+          "rights_gate": "not_passed"
+        }
+      ],
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "region": "GL",
+      "native_id": "980003",
+      "form": "lumenguest"
+    },
+    {
+      "id": "event:GL:980004@archive",
+      "kind": "event",
+      "category": "challenge",
+      "type": "boss_rush",
+      "name_key": "event.archive.name",
+      "description_key": "event.archive.description",
+      "regions": {
+        "GL": {
+          "start_unix": 1500000000,
+          "end_unix": 1550000000,
+          "stage_ids": [],
+          "banner_ref": ""
+        }
+      },
+      "availability": {
+        "mode": "scheduled"
+      },
+      "unlock": {
+        "kind": "none",
+        "id": ""
+      },
+      "stage_ids": [
+        "stage:GL:980131@vault"
+      ],
+      "event_currency": "event_currency:GL:980904@archive_token",
+      "shop_ref": "",
+      "banner_ref": "",
+      "boss_encounter": "encounter:GL:950002@boss",
+      "replay_policy": {
+        "archive_after_end": true,
+        "replay_enabled": true,
+        "keep_rewards_on_replay": true
+      },
+      "missions": [],
+      "shop": {
+        "id": "",
+        "items": []
+      },
+      "art": {
+        "panel": "synthetic_placeholder",
+        "label_key": "event.art.archive"
+      },
+      "guests": [],
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "region": "GL",
+      "native_id": "980004",
+      "form": "archive"
+    },
+    {
+      "id": "event:JP:980005@future",
+      "kind": "event",
+      "category": "limited",
+      "type": "limited_trial",
+      "name_key": "event.future.name",
+      "description_key": "event.future.description",
+      "regions": {
+        "JP": {
+          "start_unix": 1900000000,
+          "end_unix": 1950000000,
+          "stage_ids": [],
+          "banner_ref": "summon:JP:970003@base"
+        }
+      },
+      "availability": {
+        "mode": "scheduled"
+      },
+      "unlock": {
+        "kind": "none",
+        "id": ""
+      },
+      "stage_ids": [
+        "stage:JP:980141@trial"
+      ],
+      "event_currency": "event_currency:JP:980905@trial_mark",
+      "shop_ref": "",
+      "banner_ref": "summon:JP:970003@base",
+      "boss_encounter": "encounter:JP:950011@skirmish",
+      "replay_policy": {
+        "archive_after_end": false,
+        "replay_enabled": false,
+        "keep_rewards_on_replay": false
+      },
+      "missions": [],
+      "shop": {
+        "id": "",
+        "items": []
+      },
+      "art": {
+        "panel": "synthetic_placeholder",
+        "label_key": "event.art.future"
+      },
+      "guests": [],
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "region": "JP",
+      "native_id": "980005",
+      "form": "future"
+    },
+    {
+      "id": "event:GL:980006@evergreen",
+      "kind": "event",
+      "category": "permanent",
+      "type": "permanent_training",
+      "name_key": "event.evergreen.name",
+      "description_key": "event.evergreen.description",
+      "regions": {
+        "GL": {
+          "start_unix": 0,
+          "end_unix": 0,
+          "stage_ids": [],
+          "banner_ref": ""
+        }
+      },
+      "availability": {
+        "mode": "permanent"
+      },
+      "unlock": {
+        "kind": "none",
+        "id": ""
+      },
+      "stage_ids": [
+        "stage:GL:980151@training"
+      ],
+      "event_currency": "event_currency:GL:980906@training_sigil",
+      "shop_ref": "",
+      "banner_ref": "",
+      "boss_encounter": "encounter:GL:950001@skirmish",
+      "replay_policy": {
+        "archive_after_end": false,
+        "replay_enabled": true,
+        "keep_rewards_on_replay": true
+      },
+      "missions": [
+        {
+          "id": "training",
+          "key": "event.mission.training",
+          "target": 2,
+          "repeatable": false,
+          "reward": {
+            "gil": 150,
+            "items": []
+          }
+        }
+      ],
+      "shop": {
+        "id": "",
+        "items": []
+      },
+      "art": {
+        "panel": "synthetic_placeholder",
+        "label_key": "event.art.evergreen"
+      },
+      "guests": [],
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "region": "GL",
+      "native_id": "980006",
+      "form": "evergreen"
+    }
+  ],
+  "stages": [
+    {
+      "id": "stage:GL:980101@gate",
+      "kind": "event_stage",
+      "event_id": "event:GL:980001@stargarden",
+      "region": "GL",
+      "order": 0,
+      "name_key": "event.stage.gate",
+      "encounter_id": "encounter:GL:950001@skirmish",
+      "unlock_after": [],
+      "first_clear_reward": {
+        "gil": 300,
+        "items": [
+          "item:GL:940001@base"
+        ]
+      },
+      "repeat_reward": {
+        "gil": 120,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:GL:980901@stardust",
+        "amount": 2
+      },
+      "completion_target": 2,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980101",
+      "form": "gate"
+    },
+    {
+      "id": "stage:GL:980102@warden",
+      "kind": "event_stage",
+      "event_id": "event:GL:980001@stargarden",
+      "region": "GL",
+      "order": 1,
+      "name_key": "event.stage.warden",
+      "encounter_id": "encounter:GL:950002@boss",
+      "unlock_after": [
+        "stage:GL:980101@gate"
+      ],
+      "first_clear_reward": {
+        "gil": 800,
+        "items": [
+          "item:GL:940002@base"
+        ]
+      },
+      "repeat_reward": {
+        "gil": 250,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:GL:980901@stardust",
+        "amount": 3
+      },
+      "completion_target": 1,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980102",
+      "form": "warden"
+    },
+    {
+      "id": "stage:JP:980111@gate",
+      "kind": "event_stage",
+      "event_id": "event:JP:980002@moonlit",
+      "region": "JP",
+      "order": 0,
+      "name_key": "event.stage.moon_gate",
+      "encounter_id": "encounter:JP:950011@skirmish",
+      "unlock_after": [],
+      "first_clear_reward": {
+        "gil": 350,
+        "items": [
+          "item:GL:940001@base"
+        ]
+      },
+      "repeat_reward": {
+        "gil": 140,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:JP:980902@moonlight",
+        "amount": 2
+      },
+      "completion_target": 2,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980111",
+      "form": "gate"
+    },
+    {
+      "id": "stage:JP:980112@boss",
+      "kind": "event_stage",
+      "event_id": "event:JP:980002@moonlit",
+      "region": "JP",
+      "order": 1,
+      "name_key": "event.stage.moon_boss",
+      "encounter_id": "encounter:JP:950012@boss",
+      "unlock_after": [
+        "stage:JP:980111@gate"
+      ],
+      "first_clear_reward": {
+        "gil": 900,
+        "items": [
+          "item:GL:940002@base"
+        ]
+      },
+      "repeat_reward": {
+        "gil": 260,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:JP:980902@moonlight",
+        "amount": 4
+      },
+      "completion_target": 1,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980112",
+      "form": "boss"
+    },
+    {
+      "id": "stage:GL:980121@guest",
+      "kind": "event_stage",
+      "event_id": "event:GL:980003@lumenguest",
+      "region": "GL",
+      "order": 0,
+      "name_key": "event.stage.guest",
+      "encounter_id": "encounter:GL:950001@skirmish",
+      "unlock_after": [],
+      "first_clear_reward": {
+        "gil": 600,
+        "items": []
+      },
+      "repeat_reward": {
+        "gil": 100,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:GL:980903@lumen",
+        "amount": 2
+      },
+      "completion_target": 1,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980121",
+      "form": "guest"
+    },
+    {
+      "id": "stage:GL:980131@vault",
+      "kind": "event_stage",
+      "event_id": "event:GL:980004@archive",
+      "region": "GL",
+      "order": 0,
+      "name_key": "event.stage.vault",
+      "encounter_id": "encounter:GL:950002@boss",
+      "unlock_after": [],
+      "first_clear_reward": {
+        "gil": 1000,
+        "items": []
+      },
+      "repeat_reward": {
+        "gil": 300,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:GL:980904@archive_token",
+        "amount": 3
+      },
+      "completion_target": 1,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980131",
+      "form": "vault"
+    },
+    {
+      "id": "stage:JP:980141@trial",
+      "kind": "event_stage",
+      "event_id": "event:JP:980005@future",
+      "region": "JP",
+      "order": 0,
+      "name_key": "event.stage.trial",
+      "encounter_id": "encounter:JP:950011@skirmish",
+      "unlock_after": [],
+      "first_clear_reward": {
+        "gil": 700,
+        "items": []
+      },
+      "repeat_reward": {
+        "gil": 200,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:JP:980905@trial_mark",
+        "amount": 2
+      },
+      "completion_target": 1,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980141",
+      "form": "trial"
+    },
+    {
+      "id": "stage:GL:980151@training",
+      "kind": "event_stage",
+      "event_id": "event:GL:980006@evergreen",
+      "region": "GL",
+      "order": 0,
+      "name_key": "event.stage.training",
+      "encounter_id": "encounter:GL:950001@skirmish",
+      "unlock_after": [],
+      "first_clear_reward": {
+        "gil": 200,
+        "items": []
+      },
+      "repeat_reward": {
+        "gil": 80,
+        "items": []
+      },
+      "currency": {
+        "id": "event_currency:GL:980906@training_sigil",
+        "amount": 1
+      },
+      "completion_target": 2,
+      "reward_policy": {
+        "one_time": false,
+        "repeatable": true
+      },
+      "provenance": {
+        "source": "project_authored",
+        "evidence": "REMASTERED_DESIGN",
+        "rights_gate": "not_passed"
+      },
+      "verification_status": "REMASTERED_DESIGN",
+      "native_id": "980151",
+      "form": "training"
+    }
+  ]
+}

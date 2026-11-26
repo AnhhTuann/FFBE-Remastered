@@ -57,6 +57,10 @@ FFBE_QA_SEED="${SEED:-}" \
 FFBE_QA_FREEZE_FRAME="${FREEZE_FRAME:-}" \
 FFBE_QA_OFFLINE_SECONDS="${OFFLINE_SECONDS:-}" \
 FFBE_QA_NOW_UNIX="${NOW_UNIX:-}" \
+FFBE_QA_EVENT_NOW_UNIX="${EVENT_NOW_UNIX:-}" \
+FFBE_QA_EVENT_CENTER_VIEW="${EVENT_CENTER_VIEW:-}" \
+FFBE_QA_EVENT_ID="${EVENT_ID:-}" \
+FFBE_QA_REGION="${REGION:-}" \
   godot --path "$ROOT/game" "${WINDOW_ARGS[@]}" \
   "${SCENE_ARG[@]}" >"$LOG" 2>&1 &
 PID=$!
@@ -110,6 +114,10 @@ fi
   echo "freeze_frame=${FREEZE_FRAME:-}"
   echo "offline_seconds=${OFFLINE_SECONDS:-}"
   echo "now_unix=${NOW_UNIX:-}"
+  echo "event_now_unix=${EVENT_NOW_UNIX:-}"
+  echo "event_center_view=${EVENT_CENTER_VIEW:-}"
+  echo "event_id=${EVENT_ID:-}"
+  echo "event_region=${REGION:-}"
   echo "window_id=$WINDOW_ID"
   echo "geometry=$GEOMETRY"
   echo "pixels=$PIXEL_STATS"

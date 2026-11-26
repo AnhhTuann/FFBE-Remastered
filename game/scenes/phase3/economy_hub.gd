@@ -9,6 +9,7 @@ const ESPER_PATH := "res://scenes/phase3/esper_management.tscn"
 const SUMMON_PATH := "res://scenes/phase3/summon.tscn"
 const SHOP_PATH := "res://scenes/phase3/shop.tscn"
 const CRAFTING_PATH := "res://scenes/phase3/crafting.tscn"
+const EVENT_CENTER_PATH := "res://scenes/event/event_center.tscn"
 const TRANSIT_NAME := "selection"
 const ECONOMY_CLASS_NAME := "EconomySystem"
 const ECONOMY_SCRIPT_PATHS: Array[String] = [
@@ -240,6 +241,7 @@ func _render() -> void:
 	nav.add_child(_button(t("economy.nav.summon"), func() -> void: _goto(SUMMON_PATH)))
 	nav.add_child(_button(t("economy.nav.shop"), func() -> void: _goto(SHOP_PATH)))
 	nav.add_child(_button(t("economy.nav.crafting"), func() -> void: _goto(CRAFTING_PATH)))
+	nav.add_child(_button(t("event.center.nav"), func() -> void: _goto(EVENT_CENTER_PATH)))
 	nav_box.add_child(nav)
 
 	_line(_panel("common.evidence"), _evidence())
