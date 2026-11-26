@@ -156,3 +156,46 @@ PR #9 vẫn `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, head `phase-5-
 - Prompt 07 chưa được bắt đầu và chỉ được phép sau khi owner phê duyệt checkpoint này.
 - Chưa có capture GUI cho trạng thái pending-settlement/retry-save; trạng thái nút và localized text được kiểm tra bằng test headless, không phải screenshot thật.
 - Dữ liệu thế giới là fixture tổng hợp, không phải khôi phục địa lý/cốt truyện FFBE gốc.
+
+---
+
+## 14. Prompt 06.1.1 — guard cho `_start_battle()` khi settlement còn pending
+
+Đây là follow-up phòng vệ hẹp sau Prompt 06.1, **không** mở Prompt 07, không thêm gameplay, không đổi base PR #9 và không hợp nhất PR. Phạm vi duy nhất: `game/scenes/battle/battle_scene.gd::_start_battle(encounter_id)` và test/báo cáo liên quan.
+
+Guard được đặt ngay dòng đầu của `_start_battle()`: nếu `has_pending_settlement()` trả về `true`, hàm gọi `_refresh_pending_settlement_ui()` rồi `return` **trước** mọi thao tác dừng timer, load/create manager, đổi `encounter`, đặt `_run_id`, reset `_result_recorded`, xóa `_result_snapshot`, ẩn overlay hay khởi tạo lại combatant/UI. Nhờ đặt ở ranh giới hàm, guard áp dụng cho cả lời gọi nội bộ trực tiếp, không chỉ các nút/menu đã được chặn từ trước. Khi không có settlement pending, luồng khởi tạo trận giữ nguyên.
+
+`game/tests/prompt06_world_test_suite.gd::test_duplicate_settlement_and_pending_recovery()` được mở rộng: bật `FFBE_QA_MODE=1` để `_start_battle()` vượt kiểm tra party (tức là nếu thiếu guard sẽ thật sự mutate trận), capture trạng thái, gọi trực tiếp `_start_battle(SKIRKISH)`, rồi khẳng định `_run_id`, manager và `summary()`, `_result_snapshot`, `_result_recorded`, pending result/context, fingerprint PlayerState, byte file lưu, `reward_claims`, `world` (quest/receipt) không đổi; nút Retry Save vẫn visible với đúng text địa phương hóa `battle.retry_save` và Menu vẫn bị disable. Sau đó `Retry Save` lưu thành công và mở lại điều hướng. Positive control chứng minh `_start_battle()` vẫn tạo run mới, thay manager, xóa snapshot/recorded và cho phép Retry khi đã hết pending. Env QA được khôi phục trước khi kết thúc test; fixture nằm trong profile `/tmp/opencode/ffbe-profiles/prompt-06-1-1-*`, không đọc/ghi save của owner.
+
+### 14.1 Regression fresh (không dùng số của Prompt 06.1)
+
+| Check | Lệnh/đường dẫn | Kết quả |
+|---|---|---|
+| Godot import | `godot --headless --editor --quit --path game --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-1-dev` | exit `0`, `0` dòng `SCRIPT ERROR`/`Parse Error` |
+| Godot focused Prompt 06 | `godot --headless --path game --script /tmp/opencode/ffbe-profiles/prompt-06-1-1-focused/focused_runner2.gd --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-1-focused-5` | `329 passed, 0 failed`, exit `0` |
+| Godot full suite | `godot --headless --path game --script res://tests/test_runner.gd --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-1-full-2` | `3662 passed, 0 failed`, exit `0` |
+| Negative control | full suite với `FFBE_TEST_NEGATIVE_CONTROL=1`, profile `prompt-06-1-1-negative-2` | exit `1`, `3662 passed, 1 failed` |
+| Python discovery | `python3 -m unittest discover -s tests -v` | `96 tests`, `OK`, exit `0` |
+| Importer security | `python3 -m unittest tests.test_phase3_importer -v` | `22 tests`, `OK`, exit `0` |
+| World data + QA tools | `python3 -m unittest tests.test_prompt06_world_data tests.test_phase3_qa_tools -v` | `30 tests`, `OK`, exit `0` |
+| Localization | `python3 tools/localization/coverage_report.py --root .` | `status: pass`, `831` keys, `45` world keys, `0` missing, `0` placeholder mismatch, `280` dynamic refs, `0` dynamic error, exit `0` |
+| Linux release export | `godot --headless --path game --export-release "Linux" build/linux/FFBE-Remastered.x86_64` | exit `0`, ELF64 x86-64 |
+| Windows release export | `godot --headless --path game --export-release "Windows Desktop" build/windows/FFBE-Remastered.exe` | exit `0`, PE32+ x86-64 |
+| Smoke binary Linux | `./FFBE-Remastered.x86_64 --headless --quit-after 300` trong profile isolate | exit `0`, không có `SCRIPT ERROR`/`Parse Error`/`ERROR:` |
+| `git diff --check` | review trước commit | exit `0` |
+
+Log mới nằm dưới `/tmp/opencode/ffbe-logs/prompt-06-1-1/`: `import.log`, `focused.log`, `full-suite.log`, `negative-control.log`, `python-discovery.log`, `importer-security.log`, `world-qa.log`, `localization.log`, `export-linux.log`, `export-windows.log`, `smoke-linux.log`. Các dòng `ERROR` dự kiến trong full suite đến từ fixture âm tính; vài dòng resource-at-exit và Unicode font-cache là tiếng ồn engine, không phải lỗi script.
+
+### 14.2 Publication và checkpoint
+
+- Commit code Prompt 06.1.1: `13c370f8cd064c84f2e9363016dac7f28c092579` — `fix(world): guard direct restart during pending settlement`.
+- Tag mới `checkpoint/prompt-06.1-direct-restart-guard` là annotated tag object `36b7f5e64f6250fb82ea3551840d47ae7d0536f7`, trỏ tới commit code `13c370f8cd064c84f2e9363016dac7f28c092579`.
+- Tag Prompt 06 `checkpoint/prompt-06-world-exploration-story` vẫn trỏ tới `af9cceaca88cf7de92dcb96907c40223f0783fa2`, tag Prompt 06.1 `checkpoint/prompt-06.1-world-integrity` vẫn trỏ tới `d3d5fd8805cadae82cc4389e676c776f9ed1f9c4`; cả hai không bị thay thế.
+- PR #9 vẫn `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, head `phase-5-world-exploration-story`; không merge, không đổi base, không đụng PR #8 hay `main`. Không force push, hard reset, `git clean` hay rebase phá hủy.
+
+### 14.3 Giới hạn còn lại
+
+- Phục hồi pending vẫn **chỉ trong bộ nhớ**: nếu tiến trình kết thúc bất thường hoặc crash trước khi Retry Save, result/context pending không được khôi phục. Không tuyên bố khả năng chống crash/process-termination.
+- Windows runtime: **BLOCKED / NOT RUN** trên host Linux; exit export không phải bằng chứng chạy runtime.
+- Phê duyệt trực quan/art-direction/readability: **NOT VERIFIED**; follow-up này kiểm tra trạng thái nút bằng headless test, không chụp GUI mới.
+- Rights gate vẫn `not_passed`; toàn bộ nội dung là fixture tổng hợp/remastered design, không đưa asset được bảo vệ, credential, save runtime hay executable vào Git.
