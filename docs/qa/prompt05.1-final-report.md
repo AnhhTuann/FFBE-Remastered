@@ -4,7 +4,7 @@
 **Prompt 05 checkpoint:** `59d521602c683756e6a5273e241192817f53372a`\
 **Stacked PR base:** `phase-3-hardening` at `33aa0f697943ef0417444bff32510849a662b6f0`\
 **PR:** [#8](https://github.com/AnhhTuann/FFBE-Remastered/pull/8) — `OPEN`, `DRAFT` at the start of this pass\
-**Status:** implementation and validation complete; publication evidence is being recorded.
+**Status:** implementation, validation and publication complete; owner approval is pending before any merge.
 
 ## A. Scope and boundary
 
@@ -245,7 +245,15 @@ No protected asset was downloaded, imported or staged. No exported executable, t
 
 ## P. Publication evidence
 
-Publication in progress. This section is completed in the final publication commit with the exact commit SHA, push verification, PR state, tag target and independent remote checks.
+- Reviewed the staged diff before commit. `git diff --cached --check` returned exit `0` with no output.
+- Implementation commit: `bb428c5bca9aeaed5c14b611fe8c656e9b51afae` — `fix(prompt05.1): harden economy, receipts and save integrity`.
+- Published with a normal push: `git push origin phase-4-esper-summon-economy`, reported `59d5216..bb428c5`.
+- One docs-only follow-up commit on the same branch records this publication evidence; no amend, rebase, force push or history rewrite was used.
+- Independent post-push verification after the implementation commit: local HEAD and `origin/phase-4-esper-summon-economy` were both `bb428c5bca9aeaed5c14b611fe8c656e9b51afae`. After the evidence commit, local and remote branch were re-read and matched at the final HEAD.
+- GitHub PR #8 was re-read after publication: `state: OPEN`, `isDraft: true`, `baseRefName: phase-3-hardening`, `baseRefOid: 33aa0f697943ef0417444bff32510849a662b6f0`, `headRefName: phase-4-esper-summon-economy`, URL `https://github.com/AnhhTuann/FFBE-Remastered/pull/8`. The PR was not merged, closed or retargeted.
+- `origin/main` remained `6232acab9fa75fafd8a7c9a2099a1c94c08fa51e`; `origin/phase-3-hardening` remained `33aa0f697943ef0417444bff32510849a662b6f0`.
+- The tag `checkpoint/prompt-05.1-economy-integrity` was confirmed absent before creation, then created as an annotated tag at the final branch HEAD. No existing tag was replaced or deleted.
+- Final tracked-file count: `696`; no executable, archive, runtime save, credential or temporary test log was staged.
 
 ## Q. Final status
 
@@ -291,5 +299,5 @@ Implementation and validation are complete and green. All Prompt 05.1 hardening 
 | 34 | Isolated profiles only; no real saves touched | PASS | dedicated `/tmp/opencode/ffbe-profiles/prompt-05.1-*` homes |
 | 35 | Windows runtime execution | BLOCKED | no Windows host; export success is not runtime verification |
 | 36 | Diff reviewed, `git diff --check` clean | PASS | no output, exit `0` |
-| 37 | Commit, normal push, PR #8 and tag verification | NOT VERIFIED | recorded in the final publication commit |
+| 37 | Commit, normal push, PR #8 and tag verification | PASS | implementation commit `bb428c5`, normal push, PR #8 `OPEN`/`DRAFT` with unchanged base, annotated checkpoint tag |
 | 38 | Final report delivered; Prompt 06 not started | PASS | this document and unchanged branch boundary |
