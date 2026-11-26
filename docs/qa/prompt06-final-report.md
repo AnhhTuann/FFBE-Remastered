@@ -2,7 +2,8 @@
 
 **Nhánh phát triển:** `phase-5-world-exploration-story`
 **PR #9:** `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, URL `https://github.com/AnhhTuann/FFBE-Remastered/pull/9`
-**Checkpoint đã xuất bản:** `af9cceaca88cf7de92dcb96907c40223f0783fa2`, tag `checkpoint/prompt-06-world-exploration-story`
+**Checkpoint Prompt 06:** `af9cceaca88cf7de92dcb96907c40223f0783fa2`, tag `checkpoint/prompt-06-world-exploration-story` (giữ nguyên)
+**Checkpoint Prompt 06.1:** `d3d5fd8805cadae82cc4389e676c776f9ed1f9c4`, tag annotated `checkpoint/prompt-06.1-world-integrity` (tag object `696da594d0e9353e80c438955268377c4b7fdbe6`)
 **Phạm vi báo cáo này:** Prompt 06.1 — hardening sau checkpoint Prompt 06; không mở Prompt 07, không hợp nhất PR, không đổi base PR #9.
 **Trạng thái rights gate:** `not_passed`.
 
@@ -139,13 +140,13 @@ Export dùng template Godot `4.7.2.stable` có sẵn thông qua profile HOME iso
 
 ## 11. Git Commit SHA
 
-Commit hardening chính: `819abcd3032e168c2e6d540271bc4d0f3301270a`
-Tiêu đề commit: `fix(world): harden save integrity and world settlement`
-Checkpoint trước đó vẫn là `af9cceaca88cf7de92dcb96907c40223f0783fa2` và tag `checkpoint/prompt-06-world-exploration-story`. Một commit docs-only tiếp theo ghi nhận SHA này; không thay đổi code, dữ liệu hay ảnh. Không có hard reset, force push, rebase phá hủy, cherry-pick, `git clean` hay ghi đè lịch sử.
+Commit hardening Prompt 06 trước đó: `819abcd3032e168c2e6d540271bc4d0f3301270a` — `fix(world): harden save integrity and world settlement`.
+Commit hardening Prompt 06.1 follow-up: `d3d5fd8805cadae82cc4389e676c776f9ed1f9c4` — `fix(world): make battle settlement replay-safe and recoverable`.
+Tag mới `checkpoint/prompt-06.1-world-integrity` là annotated tag object `696da594d0e9353e80c438955268377c4b7fdbe6`, trỏ tới commit `d3d5fd8805cadae82cc4389e676c776f9ed1f9c4`. Tag Prompt 06 `checkpoint/prompt-06-world-exploration-story` vẫn trỏ tới `af9cceaca88cf7de92dcb96907c40223f0783fa2` và không bị thay thế. Một commit docs-only tiếp theo ghi nhận các SHA này; không thay đổi code, dữ liệu hay ảnh. Không có hard reset, force push, rebase phá hủy, cherry-pick, `git clean` hay ghi đè lịch sử.
 
 ## 12. PR #9 đã cập nhật
 
-PR #9 vẫn `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, head `phase-5-world-exploration-story`. Chỉ nhánh này được push bình thường. PR #8, `main` và tag checkpoint Prompt 06 không bị thay đổi. PR #9 chưa merge, chưa đóng và chưa chuyển DRAFT→READY.
+PR #9 vẫn `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, head `phase-5-world-exploration-story`. Chỉ nhánh này được push bình thường và tag mới được push riêng. PR #8, `main`, base/state của PR #9 và tag checkpoint Prompt 06 không bị thay đổi. PR #9 chưa merge, chưa đóng và chưa chuyển DRAFT→READY.
 
 ## 13. Rủi ro / blocker còn lại
 
@@ -153,4 +154,5 @@ PR #9 vẫn `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, head `phase-5-
 - Phê duyệt trực quan/art-direction/readability: **NOT VERIFIED**; tự động hóa chỉ xác nhận geometry, pixel statistics, số dòng lỗi và capture thật.
 - Save tương lai/không đọc được được cố ý giữ khóa để owner phục hồi; hardening này không tự động ghi đè dữ liệu đó.
 - Prompt 07 chưa được bắt đầu và chỉ được phép sau khi owner phê duyệt checkpoint này.
+- Chưa có capture GUI cho trạng thái pending-settlement/retry-save; trạng thái nút và localized text được kiểm tra bằng test headless, không phải screenshot thật.
 - Dữ liệu thế giới là fixture tổng hợp, không phải khôi phục địa lý/cốt truyện FFBE gốc.
