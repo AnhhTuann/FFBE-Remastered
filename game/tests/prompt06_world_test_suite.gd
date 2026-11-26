@@ -958,6 +958,50 @@ func test_duplicate_settlement_and_pending_recovery() -> bool:
 	_eq(str(battle.get("_run_id")), run_before_guards, "pending settlement prevents a refight")
 	_ok(WorldContext.peek().is_empty(), "pending settlement prevents battle-return navigation")
 
+	# --- Direct _start_battle() cannot discard a pending settlement ----------
+	# QA mode lets _start_battle pass party validation, so without the boundary
+	# guard this call would really replace the manager and clear the result.
+	OS.set_environment("FFBE_QA_MODE", "1")
+	var manager_before_direct: RefCounted = battle.get("manager") as RefCounted
+	var manager_summary_before: Dictionary = {}
+	if manager_before_direct != null and manager_before_direct.has_method("summary"):
+		manager_summary_before = manager_before_direct.call("summary")
+	var run_before_direct: String = str(battle.get("_run_id"))
+	var snapshot_before_direct: Dictionary = (battle.get("_result_snapshot") as Dictionary).duplicate(true)
+	var recorded_before_direct: bool = bool(battle.get("_result_recorded"))
+	var result_before_direct: Dictionary = state.call("get_pending_battle_result")
+	var context_before_direct: Dictionary = state.call("get_pending_battle_context")
+	var memory_before_direct: String = _fingerprint()
+	var disk_before_direct: String = FileAccess.get_file_as_string(PLAYER_STATE_PATH)
+	var claims_before_direct: Dictionary = (_data().get("reward_claims", {}) as Dictionary).duplicate(true)
+	var world_before_direct: Dictionary = (_data().get("world", {}) as Dictionary).duplicate(true)
+
+	battle.call("_start_battle", SKIRMISH)
+
+	_eq(str(battle.get("_run_id")), run_before_direct, "direct restart does not change run id")
+	var manager_after_direct: RefCounted = battle.get("manager") as RefCounted
+	_ok(manager_after_direct == manager_before_direct, "direct restart does not replace manager")
+	var manager_summary_after: Dictionary = {}
+	if manager_after_direct != null and manager_after_direct.has_method("summary"):
+		manager_summary_after = manager_after_direct.call("summary")
+	_eq(manager_summary_after, manager_summary_before, "direct restart does not reinitialize manager state")
+	_eq(battle.get("_result_snapshot"), snapshot_before_direct, "direct restart preserves result snapshot")
+	_eq(bool(battle.get("_result_recorded")), recorded_before_direct, "direct restart preserves recorded flag")
+	_eq(state.call("get_pending_battle_result"), result_before_direct, "direct restart preserves pending result")
+	_eq(state.call("get_pending_battle_context"), context_before_direct, "direct restart preserves pending context")
+	_eq(_fingerprint(), memory_before_direct, "direct restart changes no in-memory state")
+	_eq(FileAccess.get_file_as_string(PLAYER_STATE_PATH), disk_before_direct,
+		"direct restart changes no persisted bytes")
+	_eq(_data().get("reward_claims", {}), claims_before_direct,
+		"direct restart creates no reward claim")
+	_eq(_data().get("world", {}), world_before_direct,
+		"direct restart creates no world or quest mutation and no receipt")
+	_ok(retry_save != null and retry_save.visible, "Retry Save remains available after direct restart")
+	if retry_save != null:
+		_eq(retry_save.text, LocaleManager.t("battle.retry_save"),
+			"direct restart refreshes the localized Retry Save label")
+	_ok(menu_button.disabled, "Menu remains disabled after direct restart")
+
 	saves.call("clear_write_failure")
 	battle.call("_on_retry_save_pressed")
 	_eq(str(battle.get("_reward_status_key")), "reward.saved", "retry-save settles without refighting")
@@ -975,6 +1019,18 @@ func test_duplicate_settlement_and_pending_recovery() -> bool:
 	_ok((saved.get("reward_claims", {}) as Dictionary).has("battle|once|%s" % BOSS),
 		"retried settlement persists the original reward claim")
 
+	# --- Positive control: normal restart still works after recovery ---------
+	var run_after_recovery: String = str(battle.get("_run_id"))
+	var manager_after_recovery: RefCounted = battle.get("manager") as RefCounted
+	battle.call("_start_battle", SKIRMISH)
+	_ok(str(battle.get("_run_id")) != run_after_recovery, "no pending: direct restart starts a new run")
+	_ok((battle.get("manager") as RefCounted) != manager_after_recovery,
+		"no pending: direct restart replaces the manager")
+	_no(bool(battle.get("_result_recorded")), "no pending: new battle clears recorded flag")
+	_ok((battle.get("_result_snapshot") as Dictionary).is_empty(), "no pending: new battle clears result snapshot")
+	_ok(bool(battle.call("can_leave_battle")), "no pending: navigation is available")
+	_ok(bool(battle.call("retry_allowed")), "no pending: battle restart is available")
+
 	# --- Ordinary battle reward retry stays on the reward path ---------------
 	var reward_run: String = "fixture-pending-reward-fail"
 	saves.call("fail_next_atomic_write")
@@ -990,6 +1046,7 @@ func test_duplicate_settlement_and_pending_recovery() -> bool:
 	_ok((reward_saved.get("reward_claims", {}) as Dictionary).has("battle|run|%s" % reward_run),
 		"ordinary retry persists the original run reward claim")
 
+	OS.set_environment("FFBE_QA_MODE", str(_original_env.get("FFBE_QA_MODE", "")))
 	tree.root.remove_child(battle)
 	battle.free()
 	return true

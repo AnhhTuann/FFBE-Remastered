@@ -531,6 +531,12 @@ func _block_battle_start(reason_key: String) -> void:
 # ---------------------------------------------------------------------------
 
 func _start_battle(encounter_id: String) -> void:
+	# A pending settlement owns this screen until its write succeeds. Keep this
+	# guard at the function boundary so an internal caller cannot stop the
+	# clock, replace the manager or clear the result snapshot by restarting.
+	if has_pending_settlement():
+		_refresh_pending_settlement_ui()
+		return
 	if _tick_timer != null:
 		_tick_timer.stop()
 	var script: Script = load(BATTLE_MANAGER_SCRIPT) as Script
