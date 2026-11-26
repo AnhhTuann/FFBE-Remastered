@@ -190,7 +190,15 @@ The existing v4 save contract, battle reward ledger, economy/summon/shop/craftin
 
 ## S. Review and publication evidence
 
-`RESULT_PENDING`
+- Reviewed the staged diff before commit. `git diff --cached --check` returned exit `0` with no output.
+- Security review (`/tmp/opencode/ffbe-logs/prompt06/final/security-audit.txt`): `207` staged files, `0` credential filename/text hits, `0` executable or archive candidates, `0` runtime save candidates, `0` temporary log candidates, `0` registry entries, `0` active imported packs and `last_import: null`. The `72` `.txt` sidecars are intentional GUI evidence containing geometry, pixel statistics, locale and runtime-error metadata.
+- Implementation commit: `6d22904d0922b2530097930502f80f99c7fbe006` — `feat(prompt06): add synthetic world exploration and story slice`.
+- Published with a normal push: `git push origin phase-5-world-exploration-story`, reported as a new remote branch. One docs-only follow-up commit on the same branch records this publication evidence; no amend, rebase, force push or history rewrite was used.
+- Independent post-push verification after the implementation commit: local HEAD and `origin/phase-5-world-exploration-story` were both `6d22904d0922b2530097930502f80f99c7fbe006`. After the evidence commit, local and remote branch were re-read and matched at the final HEAD.
+- GitHub PR #9 was re-read after publication: `state: OPEN`, `isDraft: true`, `baseRefName: phase-4-esper-summon-economy`, `baseRefOid: d66cd4397d5b842cedfe38b83ff21aec58e74efb`, `headRefName: phase-5-world-exploration-story`, URL `https://github.com/AnhhTuann/FFBE-Remastered/pull/9`. The PR was not merged, closed or retargeted.
+- GitHub PR #8 was re-read and remained `OPEN`, `DRAFT`, base `phase-3-hardening`, head `phase-4-esper-summon-economy` at `d66cd4397d5b842cedfe38b83ff21aec58e74efb`. It was not modified.
+- `origin/main` remained `6232acab9fa75fafd8a7c9a2099a1c94c08fa51e`; `origin/phase-3-hardening` remained `33aa0f697943ef0417444bff32510849a662b6f0`; `origin/phase-4-esper-summon-economy` remained `d66cd4397d5b842cedfe38b83ff21aec58e74efb`.
+- The tag `checkpoint/prompt-06-world-exploration-story` was confirmed absent before creation, then created as an annotated tag at the final branch HEAD after the docs-only evidence commit. No existing tag was replaced or deleted.
 
 ## T. Final status
 
@@ -231,4 +239,4 @@ Implementation is complete. All host-verifiable validation gates are green; Wind
 | 29 | Python, importer and localization suites | PASS | `95`, `22`, validator `pass` with `829` keys |
 | 30 | Linux/Windows export and Linux smoke | PASS | all exit `0`; file types and hashes logged |
 | 31 | GUI matrix at three resolutions and locales | PASS | 72 PNG/sidecar pairs, `0` runtime error lines; visual review generator |
-| 32 | Docs, diff, commit, push, draft PR #9, tag | RESULT_PENDING | section S evidence |
+| 32 | Docs, diff, commit, push, draft PR #9, tag | PASS | section S evidence; implementation commit `6d22904`, normal push, PR #9 `OPEN`/`DRAFT`, annotated checkpoint tag |
