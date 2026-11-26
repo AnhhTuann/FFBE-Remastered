@@ -332,8 +332,8 @@
     "keys_without_japanese_glyphs": [],
     "locale": "ja",
     "note": "Japanese values must contain kana or kanji, not romaji placeholders.",
-    "strings_checked": 830,
-    "strings_with_japanese_glyphs": 830
+    "strings_checked": 831,
+    "strings_with_japanese_glyphs": 831
   },
   "locales": [
     "en",
@@ -891,7 +891,7 @@
     "en": {
       "dictionary_file": "game/data/localization/en.json",
       "empty_value_keys": [],
-      "key_count": 830,
+      "key_count": 831,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1344,7 +1344,7 @@
     "ja": {
       "dictionary_file": "game/data/localization/ja.json",
       "empty_value_keys": [],
-      "key_count": 830,
+      "key_count": 831,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1797,7 +1797,7 @@
     "vi": {
       "dictionary_file": "game/data/localization/vi.json",
       "empty_value_keys": [],
-      "key_count": 830,
+      "key_count": 831,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -2331,7 +2331,7 @@
       "game/world/world_state_service.gd"
     ],
     "gd_files_scanned": 77,
-    "literal_call_sites": 104,
+    "literal_call_sites": 108,
     "literal_keys": [
       "battle.ability_button",
       "battle.ability_tooltip",
@@ -2372,6 +2372,7 @@
       "battle.result_detail",
       "battle.resume",
       "battle.retry",
+      "battle.retry_save",
       "battle.return_menu",
       "battle.reward_status",
       "battle.run_id",
@@ -2402,11 +2403,11 @@
       "world.map.title",
       "world.npc.keeper.name"
     ],
-    "translation_call_sites": 142
+    "translation_call_sites": 146
   },
   "status": "pass",
   "tool_version": "1.1.0",
-  "union_key_count": 830,
+  "union_key_count": 831,
   "vietnamese_diacritics": {
     "coverage": 0.9639,
     "keys_without_diacritics": [
@@ -2443,8 +2444,8 @@
     ],
     "locale": "vi",
     "note": "Brand tokens such as NV, EX, TMR, STMR, LB, SLB, gil, UID and digits are expected without diacritics.",
-    "strings_checked": 830,
-    "strings_with_diacritics": 800
+    "strings_checked": 831,
+    "strings_with_diacritics": 801
   },
   "world_data_scan": {
     "data_files": [

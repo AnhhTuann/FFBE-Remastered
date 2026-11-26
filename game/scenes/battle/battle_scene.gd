@@ -75,6 +75,7 @@ var _tick_timer: Timer
 var _qa_freeze_frame: int = -1
 var _result_recorded: bool = false
 var _reward_status_key: String = "battle.reward_unavailable"
+var _retry_save_button: Button = null
 var _result_snapshot: Dictionary = {}
 var _title_label: Label
 var _pause_button: Button
@@ -320,10 +321,16 @@ func _build_ui() -> void:
 	_result_body = _result_overlay.find_child("BodyLabel", true, false) as Label
 	var result_retry := _result_overlay.find_child("PrimaryButton", true, false) as Button
 	var result_menu := _result_overlay.find_child("SecondaryButton", true, false) as Button
+	_retry_save_button = _result_overlay.find_child("TertiaryButton", true, false) as Button
 	result_retry.text = LocaleManager.t("battle.retry")
 	result_menu.text = LocaleManager.t("battle.return_menu")
+	if _retry_save_button != null:
+		_retry_save_button.text = LocaleManager.t("battle.retry_save")
+		_retry_save_button.visible = false
 	result_retry.pressed.connect(_on_retry_pressed)
 	result_menu.pressed.connect(_on_menu_pressed)
+	if _retry_save_button != null:
+		_retry_save_button.pressed.connect(_on_retry_save_pressed)
 	_result_overlay.visible = false
 	add_child(_result_overlay)
 
@@ -380,12 +387,16 @@ func _make_overlay(title_text: String) -> PanelContainer:
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 12)
 	buttons.add_child(hbox)
-	var primary := _button("", 170)
+	var primary := _button("", 120)
 	primary.name = "PrimaryButton"
 	hbox.add_child(primary)
-	var secondary := _button("", 190)
+	var secondary := _button("", 140)
 	secondary.name = "SecondaryButton"
 	hbox.add_child(secondary)
+	var tertiary := _button("", 150)
+	tertiary.name = "TertiaryButton"
+	tertiary.visible = false
+	hbox.add_child(tertiary)
 	return overlay
 
 
@@ -607,6 +618,7 @@ func _start_battle(encounter_id: String) -> void:
 		_encounter_option.select(_build_encounter_option_index(encounter_id))
 	_rebuild_cards()
 	_refresh()
+	_refresh_pending_settlement_ui()
 
 
 func _build_encounter_option_index(encounter_id: String) -> int:
@@ -857,6 +869,8 @@ func _apply_locale(_locale: String = "") -> void:
 		result_retry.text = LocaleManager.t("battle.retry")
 	if result_menu != null:
 		result_menu.text = LocaleManager.t("battle.return_menu")
+	if _retry_save_button != null:
+		_retry_save_button.text = LocaleManager.t("battle.retry_save")
 	var pause_title: Label = _pause_overlay.find_child("TitleLabel", true, false) as Label
 	var pause_body: Label = _pause_overlay.find_child("BodyLabel", true, false) as Label
 	var resume_button: Button = _pause_overlay.find_child("PrimaryButton", true, false) as Button
@@ -1296,6 +1310,7 @@ func _record_result(state: RefCounted) -> void:
 				claim = player_state.call("claim_battle_reward", result_dict)
 		_reward_status_key = _claim_status_key(claim)
 		SaveManager.call("record_battle_result", result_dict, str(result_dict.get("run_id", _run_id)))
+		_refresh_pending_settlement_ui()
 
 
 func _show_result(state: RefCounted) -> void:
@@ -1328,7 +1343,8 @@ func _render_result() -> void:
 	_result_title.modulate = Color(0.55, 1.0, 0.64) if victory else Color(1.0, 0.52, 0.52)
 	var result_retry: Button = _result_overlay.find_child("PrimaryButton", true, false) as Button
 	if result_retry != null:
-		result_retry.visible = not (victory and bool(_result_snapshot.get("one_time", false)))
+		result_retry.visible = not (victory and bool(_result_snapshot.get("one_time", false))) \
+			and not has_pending_settlement()
 	_result_body.text = LocaleManager.t("battle.result_detail", {
 		"name": str(_result_snapshot.get("encounter_name", "")),
 		"turns": int(_result_snapshot.get("turns", 0)),
@@ -1346,6 +1362,7 @@ func _render_result() -> void:
 		_result_body.text += "\n" + LocaleManager.t("battle.one_time_cleared")
 	if not _party_source_key.is_empty():
 		_result_body.text += "\n" + LocaleManager.t(_party_source_key)
+	_refresh_pending_settlement_ui()
 
 
 func _active_party_id() -> String:
@@ -1407,6 +1424,62 @@ func _claim_status_key(claim: Dictionary) -> String:
 	return "battle.reward_unavailable"
 
 
+func _pending_player_state() -> Node:
+	var loop: Variant = Engine.get_main_loop()
+	if loop is SceneTree:
+		return (loop as SceneTree).root.get_node_or_null("PlayerState")
+	return null
+
+
+## A failed settlement must be resolved in place. Navigation, Retry and the
+## debug encounter selector are blocked until the preserved result is saved.
+func has_pending_settlement() -> bool:
+	var player_state: Node = _pending_player_state()
+	if player_state == null or not player_state.has_method("has_pending_battle_settlement"):
+		return false
+	return bool(player_state.call("has_pending_battle_settlement"))
+
+
+func can_leave_battle() -> bool:
+	return not has_pending_settlement()
+
+
+func _refresh_pending_settlement_ui() -> void:
+	var pending: bool = has_pending_settlement()
+	if _menu_button != null:
+		_menu_button.disabled = pending
+	if _result_overlay != null:
+		var result_retry: Button = _result_overlay.find_child("PrimaryButton", true, false) as Button
+		var result_menu: Button = _result_overlay.find_child("SecondaryButton", true, false) as Button
+		if result_retry != null:
+			result_retry.disabled = pending
+		if result_menu != null:
+			result_menu.disabled = pending
+	if _pause_overlay != null:
+		var pause_menu: Button = _pause_overlay.find_child("SecondaryButton", true, false) as Button
+		if pause_menu != null:
+			pause_menu.disabled = pending
+	if _retry_save_button != null:
+		_retry_save_button.text = LocaleManager.t("battle.retry_save")
+		_retry_save_button.visible = pending
+		_retry_save_button.disabled = false
+
+
+func _on_retry_save_pressed() -> void:
+	var player_state: Node = _pending_player_state()
+	if player_state == null or not player_state.has_method("retry_pending_battle_settlement"):
+		return
+	var outcome: Dictionary = player_state.call("retry_pending_battle_settlement")
+	var reward: Dictionary = outcome.get("reward", {})
+	if not bool(outcome.get("ok", false)):
+		reward = {"ok": false, "reason": str(outcome.get("reason", "save_failed"))}
+	_reward_status_key = _claim_status_key(reward)
+	if _result_overlay != null:
+		_result_overlay.visible = true
+		_render_result()
+	_refresh_pending_settlement_ui()
+
+
 # ---------------------------------------------------------------------------
 # Misc controls and QA hooks
 # ---------------------------------------------------------------------------
@@ -1427,13 +1500,17 @@ func _on_pause_pressed() -> void:
 
 
 func _on_encounter_selected(index: int) -> void:
-	# The debug selector cannot swap a world encounter after settlement.
-	if not _world_context.is_empty() or index < 0 or index >= _encounter_ids.size():
+	# The debug selector cannot swap a world encounter after settlement and
+	# cannot discard a settlement whose write has not succeeded yet.
+	if has_pending_settlement() or not _world_context.is_empty() \
+			or index < 0 or index >= _encounter_ids.size():
 		return
 	_start_battle(_encounter_ids[index])
 
 
 func retry_allowed() -> bool:
+	if has_pending_settlement():
+		return false
 	return not (bool(_result_snapshot.get("victory", false)) and bool(_result_snapshot.get("one_time", false)))
 
 
@@ -1459,6 +1536,11 @@ func _world_return_context() -> Dictionary:
 
 
 func _on_menu_pressed() -> void:
+	# A failed settlement is still owned by this screen. Leaving would discard
+	# the preserved result/context and silently lose the reward and quest progress.
+	if has_pending_settlement():
+		_refresh_pending_settlement_ui()
+		return
 	# A world encounter returns to its exploration area and carries the settled
 	# battle result back. Reward claiming happens only in _record_result(), so a
 	# retry or scene reload cannot grant the same run twice.

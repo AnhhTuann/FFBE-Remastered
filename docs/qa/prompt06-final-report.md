@@ -8,7 +8,7 @@
 
 ## 1. Tóm tắt triển khai (Implementation Summary)
 
-Prompt 06.1 giữ nguyên vertical slice thế giới tổng hợp của Prompt 06 và chỉ bổ sung hardening: bảo vệ file lưu tương lai/lỗi, giao dịch ghi dữ liệu nguyên tử, chuyển settlement trận chiến vào thời điểm trận kết thúc, ngăn farm thưởng một lần, sửa Dialog Panel và mở rộng bằng chứng GUI.
+Prompt 06.1 giữ nguyên vertical slice thế giới tổng hợp của Prompt 06 và chỉ bổ sung hardening: bảo vệ file lưu tương lai/lỗi, giao dịch ghi dữ liệu nguyên tử, chuyển settlement trận chiến vào thời điểm trận kết thúc, ngăn farm thưởng một lần, sửa Dialog Panel và mở rộng bằng chứng GUI. Đợt follow-up cuối bổ sung hai hàng bảo vệ: receipt `run_id` là ranh giới idempotency ngay trước mọi mutation, và settlement thất bại giữ cả result lẫn context để retry lưu tại chỗ mà không đánh lại trận.
 
 Các hành vi được giữ nguyên: đường dẫn `user://player_state_v3.json`, định dạng tổng thể version 4, phần `world` bổ sung version 1, di cư v1–v4, ba ngôn ngữ `vi`/`en`/`ja`, điều khiển bàn phím/chuột, quest, treasure và battle-return hiện hữu. Không có nội dung FFBE gốc, asset được bảo vệ, dịch vụ trực tuyến hay giao dịch tiền thật nào được thêm vào.
 
@@ -23,12 +23,14 @@ Các hành vi được giữ nguyên: đường dẫn `user://player_state_v3.js
 | 5 | `on_battle_result()` không có receipt định danh, trigger/result identity và context validation | Kết quả replay, sai trigger hoặc sai location có thể cộng progress trùng |
 | 6 | Dialog Panel có kích thước cố định, nút lựa chọn không cuộn được, focus không có neighbor và label cũ không bị dọn | Overflow/ẩn nút ở resolution nhỏ và điều hướng bàn phím không ổn định |
 | 7 | Harness GUI trước đó chỉ chụp transition trận | Chưa chứng minh được màn hình victory/defeat/retry/return đi qua settlement thật |
+| 8 | Receipt chỉ được kiểm tra ở `on_battle_result()` return path | Gọi lại `settle_world_battle()` với cùng `run_id` vẫn có thể cộng quest object cần nhiều victory |
+| 9 | Chỉ giữ `_pending_battle_result`, không giữ context và không có retry-save action | Retry/menu/QA auto-return có thể bỏ kết quả chưa lưu; người chơi phải đánh lại trận |
 
 ## 3. Tệp đã thay đổi (Files Changed)
 
 **Lõi lưu và giao dịch**
 
-- `game/core/player_state.gd`: bốn trạng thái lưu, khóa ghi, `transaction()` với snapshot/rollback, pending battle result, `settle_world_battle()`, `_stage_world_battle()`, claim key one-time ổn định.
+- `game/core/player_state.gd`: bốn trạng thái lưu, khóa ghi, `transaction()` với snapshot/rollback, pending battle result/context, `settle_world_battle()` với early duplicate receipt guard, `retry_pending_battle_settlement()`, `_stage_world_battle()`, claim key one-time ổn định.
 - `game/core/save_manager.gd`: path guard, fault hook backup, prevalidate JSON trước khi ghi, khôi phục `.bak` khi rename thất bại.
 - `game/world/quest_settlement.gd` và `.uid`: lớp stage thuần cho quest, reward, unlock; không tự commit.
 
@@ -37,16 +39,16 @@ Các hành vi được giữ nguyên: đường dẫn `user://player_state_v3.js
 - `game/world/interaction_controller.gd`: treasure/reward/quest một giao dịch, `on_battle_result()` theo receipt, chặn trigger one-time đã claim.
 - `game/world/quest_manager.gd`: `record_event()` một transaction duy nhất.
 - `game/battle/battle_result.gd`, `battle_manager.gd`, `reward_resolver.gd`: truyền cờ `one_time` tới reward resolver.
-- `game/scenes/battle/battle_scene.gd`: settle trong `_record_result()`, ẩn/chặn Retry sau victory one-time, khóa selector khi có world context, QA auto-return về exploration.
+- `game/scenes/battle/battle_scene.gd`: settle trong `_record_result()`, ẩn/chặn Retry sau victory one-time, khóa selector khi có world context, QA auto-return về exploration; follow-up thêm nút `battle.retry_save` và chặn Menu/Retry/selector/auto-return khi settlement còn pending.
 
 **Dialog, QA và tài liệu**
 
 - `game/world/dialogue_panel.gd`, `game/scenes/world/dialogue_panel.tscn`: choices cuộn được, responsive sizing, focus neighbors, dọn prompt/status cũ.
 - `game/world/exploration_area.gd`: scenario `haven_npc_choice`, focus dialogue và dọn trạng thái cũ.
-- `game/tests/prompt06_world_test_suite.gd`: 14 kịch bản fault-injection/idempotency/one-time.
+- `game/tests/prompt06_world_test_suite.gd`: 14 kịch bản fault-injection/idempotency/one-time cộng test mới `test_duplicate_settlement_and_pending_recovery` với quest fixture hai victory, kiểm tra fingerprint bộ nhớ và byte file lưu.
 - `tools/qa/capture_prompt06.sh`, `tools/qa/prompt06_visual_report.py`, `tests/test_phase3_qa_tools.py`: ma trận 117 ảnh, world-context thật cho capture trận chiến.
-- Localization `vi`/`en`/`ja` thêm `battle.one_time_cleared`; coverage JSON/report và kỳ vọng test cập nhật lên 830 keys.
-- Tài liệu cập nhật: `docs/qa/prompt06-final-report.md`, `docs/qa/prompt06-visual-review.md`, `docs/architecture/world-exploration.md`, `docs/data-dictionary/world-story-schema.md`.
+- Localization `vi`/`en`/`ja` thêm `battle.one_time_cleared`; follow-up thêm `battle.retry_save`; coverage JSON/report và kỳ vọng test cập nhật lên 831 keys.
+- Tài liệu cập nhật: `docs/qa/prompt06-final-report.md`, `docs/qa/prompt06-visual-review.md`, `docs/architecture/world-exploration.md`, `docs/data-dictionary/world-story-schema.md`, `docs/localization/coverage-report.md`.
 
 ## 4. Kết quả toàn vẹn lưu (Save Integrity Results)
 
@@ -59,10 +61,11 @@ Các hành vi được giữ nguyên: đường dẫn `user://player_state_v3.js
 ## 5. Kết quả giao dịch trận/điểm/nhân vật (Battle/Quest/Treasure Transaction Results)
 
 - `BattleScene._record_result()` gọi `PlayerState.settle_world_battle()` ngay khi có result. Reward battle, flag encounter, `processed_battle_runs`, `last_battle_result`, interaction count và quest event nằm trong một transaction.
+- `settle_world_battle()` kiểm tra `processed_battle_runs[<run_id>]` trước write guard, pending-state và staging. Receipt trùng trả `duplicate: true` và không đụng vào reward/world/quest dù quest object cần hai victory; `run_id` khác vẫn settle riêng.
 - `_stage_world_battle()` kiểm tra trigger tồn tại, `kind = encounter_trigger`, `encounter_id` trùng và `area_id` trùng `location_id` khi có context.
 - Treasure dùng `claim_world_reward()` với callback stage treasure + quest; failed write rollback cả claim, reward, flag và progress.
 - `QuestManager.record_event()` chỉ commit một lần qua `QuestSettlement.stage_event()`; mọi objective bị event tác động được cập nhật chung.
-- Khi settlement thất bại, transaction rollback và giữ `pending_battle_result` để retry an toàn. Khi settlement thành công, pending result bị xóa.
+- Khi settlement thất bại, transaction rollback và giữ cả `pending_battle_result` lẫn `pending_battle_context` (trigger/location/encounter). Nút `battle.retry_save` gọi `retry_pending_battle_settlement()` để replay đúng result/context đó qua receipt checks; không đánh lại trận và không grant trùng. Pending được gắn nhãn `world` hoặc `reward`: world replay qua `settle_world_battle()`, reward thường replay qua `claim_battle_reward()`, nên trận không có world context không bị kẹt ở màn hình result. Menu, Retry, pause-return, encounter selector và QA auto-return đều bị chặn khi còn pending. Khi settlement thành công, các pending field bị xóa.
 
 ## 6. Kết quả idempotency
 
@@ -72,7 +75,7 @@ Các hành vi được giữ nguyên: đường dẫn `user://player_state_v3.js
 | Quest reward | `world|quest|<quest_id>` | Chỉ reward lần đầu; unlock vẫn ổn định |
 | Repeatable encounter | `battle|run|<run_id>` | Mỗi run mới được reward tương ứng |
 | One-time world encounter | `battle|once|<encounter_id>` | Retry/run mới không farm được reward |
-| Battle return | `processed_battle_runs[<run_id>]` | Return lần hai là no-op settlement |
+| Battle return / duplicate settlement | `processed_battle_runs[<run_id>]` | Return lần hai và gọi settlement lại cùng `run_id` đều no-op trước mọi staging |
 | Quest event trùng | progress clamp tới required count | Không vượt mục tiêu, không reward trùng |
 
 ## 7. Kết quả fault-injection
@@ -94,6 +97,8 @@ Mười bốn kịch bản bắt buộc đều nằm trong `game/tests/prompt06_
 13. Battle return after success — không grant reward lần hai.
 14. Migration failure — status `LOAD_FAILED`, source bytes giữ nguyên, không để lại `.mig.bak` một phần.
 
+Test bổ sung `test_duplicate_settlement_and_pending_recovery()` kiểm tra riêng: quest fixture hai victory; first victory tăng progress lên 1; duplicate cùng `run_id` giữ nguyên fingerprint bộ nhớ và byte file lưu, không tăng progress, không complete quest, không grant reward; `run_id` khác tăng progress lên 2 và ghi receipt/reward quest vào JSON. Cùng test giả lỗi atomic write boss, khẳng định result/context được giữ, save bytes không đổi, Menu/Retry disabled, nút `battle.retry_save` hiện với localized text, các guard chặn refight/điều hướng, sau đó retry thành công ghi đúng run/trigger/reward và mở điều hướng lại. Test cũng giả lỗi reward thường, xác nhận nhãn `reward`, replay qua claim path và ghi đúng `battle|run|<run_id>` mà không đi qua settlement thế giới.
+
 ## 8. GUI trước/sau (GUI Before/After)
 
 | Khía cạnh | Trước Prompt 06.1 | Sau Prompt 06.1 |
@@ -103,34 +108,34 @@ Mười bốn kịch bản bắt buộc đều nằm trong `game/tests/prompt06_
 | Battle GUI | Chỉ transition vào battle | Victory, defeat, Retry và Battle return chạy battle thật trong profile isolate với world settlement |
 | Bằng chứng | Geometry/pixel/error count | Geometry/pixel/error count cho 117 ảnh, zero runtime error line; behavior khẳng định bằng headless tests |
 
-Các ảnh là capture cửa sổ Godot thật, không phải mockup hoặc ảnh ghép. Chúng chứng minh render/navigation xảy ra; chúng **không** thay thế phê duyệt trực quan chủ quan của owner. Báo cáo sinh tự động: `docs/qa/prompt06-visual-review.md`.
+Các ảnh là capture cửa sổ Godot thật, không phải mockup hoặc ảnh ghép. Chúng chứng minh render/navigation xảy ra; chúng **không** thay thế phê duyệt trực quan chủ quan của owner. Báo cáo sinh tự động: `docs/qa/prompt06-visual-review.md`. Ma trận 117 ảnh là bằng chứng của Prompt 06.1 trước đó; follow-up này không thêm scenario capture mới, mà kiểm tra trạng thái nút `battle.retry_save` bằng test headless trong profile isolate.
 
 ## 9. Kết quả full regression
 
 | Check | Lệnh/đường dẫn | Kết quả |
 |---|---|---|
-| Godot import (class registration) | `godot --headless --editor --quit --path game --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-dev` | exit `0` |
-| Godot full suite | `godot --headless --path game --script res://tests/test_runner.gd --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-dev` | `3594 passed, 0 failed`, exit `0` |
-| Negative control | full suite với `FFBE_TEST_NEGATIVE_CONTROL=1` | exit `1`, `3594 passed, 1 failed` |
+| Godot import (class registration) | `godot --headless --editor --quit --path game --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-dev` | exit `0`; ba warning Unicode font-cache trước khi scan project, không có `SCRIPT ERROR`/`Parse Error` |
+| Godot full suite | `godot --headless --path game --script res://tests/test_runner.gd --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-dev` | `3642 passed, 0 failed`, exit `0` |
+| Negative control | full suite với `FFBE_TEST_NEGATIVE_CONTROL=1` | exit `1`, `3642 passed, 1 failed` |
 | Python discovery | `python3 -m unittest discover -s tests -v` | `96 tests`, `OK`, exit `0` |
 | Importer security | `python3 -m unittest tests.test_phase3_importer -v` | `22 tests`, `OK`, exit `0` |
 | World data + QA tools | `python3 -m unittest tests.test_prompt06_world_data tests.test_phase3_qa_tools -v` | `30 tests`, `OK`, exit `0` |
-| Localization | `python3 tools/localization/coverage_report.py --root .` | `status: pass`, `830` keys, `45` world keys, `0` missing, `0` placeholder mismatch, `280` dynamic refs, `0` dynamic error |
-| GUI matrix | `tools/qa/prompt06_visual_report.py` | `117` PNG/sidecar pairs, `0` runtime error line |
+| Localization | `python3 tools/localization/coverage_report.py --root .` | `status: pass`, `831` keys, `45` world keys, `0` missing, `0` placeholder mismatch, `280` dynamic refs, `0` dynamic error |
+| GUI matrix | `tools/qa/prompt06_visual_report.py` | `117` PNG/sidecar pairs, `0` runtime error line (bằng chứng cũ, không chụp lại ở follow-up) |
 | `git diff --check` | review trước commit | exit `0` |
 
-Log chi tiết nằm dưới `/tmp/opencode/ffbe-logs/prompt061/dev/` và `/tmp/opencode/ffbe-logs/prompt061/gui/`. Các dòng `ERROR` dự kiến trong log Godot đến từ fixture test âm tính và thông báo shutdown resource, không phải runtime GUI error.
+Log chi tiết của follow-up nằm dưới `/tmp/opencode/ffbe-logs/prompt061/recovery/`. Các dòng `ERROR` dự kiến trong log Godot đến từ fixture test âm tính; ba dòng Unicode parsing warning trong import/export là tiếng ồn font-cache của engine trước khi project scan, không phải lỗi script hay lỗi dữ liệu dự án.
 
 ## 10. Kết quả export
 
 | Artifact | Kết quả |
 |---|---|
-| Linux release export | exit `0`, ELF64 x86-64 |
-| Windows release export | exit `0`, PE32+ x86-64 |
-| Smoke binary Linux | exit `0` |
+| Linux release export | `godot --headless --path game --export-release "Linux" build/linux/FFBE-Remastered.x86_64`, exit `0`, ELF64 x86-64 tại `game/build/linux/` |
+| Windows release export | `godot --headless --path game --export-release "Windows Desktop" build/windows/FFBE-Remastered.exe`, exit `0`, PE32+ x86-64 tại `game/build/windows/` |
+| Smoke binary Linux | `./FFBE-Remastered.x86_64 --headless --quit-after 300` trong profile isolate, exit `0`, không có `SCRIPT ERROR`/`Parse Error`/`ERROR:` |
 | Windows runtime | **BLOCKED / NOT RUN** — không có host Windows; exit export không phải bằng chứng chạy runtime |
 
-Export dùng template Godot `4.7.2.stable` có sẵn; không tải template, không nâng engine, không đưa binary vào Git.
+Export dùng template Godot `4.7.2.stable` có sẵn thông qua profile HOME isolate; không tải template, không nâng engine, không đưa binary vào Git. Các file build nằm dưới `game/build/` và bị Git ignore.
 
 ## 11. Git Commit SHA
 

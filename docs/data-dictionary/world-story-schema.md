@@ -174,10 +174,16 @@ the world state adds an internal `world.version = 1` section:
 | `last_battle_result` | object | Most recent result snapshot used by the return path |
 
 `PlayerState` also exposes transient, non-serialized guards: `save_status`
-(`NORMAL`, `MIGRATING`, `READ_ONLY_FUTURE_VERSION`, `LOAD_FAILED`), `read_only_reason`
-and `pending_battle_result`. Only the first two allow writes; the last two terminal
-states preserve on-disk bytes for owner recovery. The pending result is retained only
-when a settlement write fails, so a retry can replay it without a second reward.
+(`NORMAL`, `MIGRATING`, `READ_ONLY_FUTURE_VERSION`, `LOAD_FAILED`), `read_only_reason`,
+`pending_battle_result` and `pending_battle_context`. Only the first two allow writes;
+the last two terminal states preserve on-disk bytes for owner recovery. When a
+settlement write fails, both the result and its trigger/location/encounter context are
+retained in memory. The transient kind is `world` for canonical settlement or `reward`
+for an ordinary battle claim; `retry_pending_battle_settlement()` replays through the
+matching path with normal receipt/claim checks. No new battle is started and no reward
+is granted twice. A settlement whose `processed_battle_runs` receipt already exists
+returns early as a duplicate and never stages reward, world, interaction or quest
+mutations.
 
 World mutation uses `PlayerState.transaction(section, mutator)` through
 `transact_world()`. Reward settlement uses `claim_world_reward()` with claim keys

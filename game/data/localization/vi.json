@@ -98,6 +98,7 @@
   "battle.result_detail": "{name}\nSố lượt: {turns} · Hạt giống: {seed}\nGil: {gil} · Vật phẩm: {items}",
   "battle.resume": "Tiếp tục",
   "battle.retry": "Thử lại",
+  "battle.retry_save": "Thử lưu lại",
   "battle.return_menu": "Về trình đơn",
   "battle.reward_already_claimed": "đã nhận từ trước",
   "battle.reward_not_victory": "thất bại nên không nhận thưởng",

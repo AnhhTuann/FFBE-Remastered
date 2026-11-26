@@ -98,6 +98,7 @@
   "battle.result_detail": "{name}\nTurns: {turns} · Seed: {seed}\nGil: {gil} · Items: {items}",
   "battle.resume": "Resume",
   "battle.retry": "Retry",
+  "battle.retry_save": "Retry Save",
   "battle.return_menu": "Return to Menu",
   "battle.reward_already_claimed": "already claimed",
   "battle.reward_not_victory": "no reward on defeat",

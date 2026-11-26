@@ -175,7 +175,11 @@ battle: `BattleScene._record_result()` calls `PlayerState.settle_world_battle()`
 stages battle reward, world flags, run receipt, encounter flag and quest event in one
 transaction. `InteractionController.on_battle_result()` checks the `processed_battle_runs`
 receipt and treats the return as a presentation step; a replayed result cannot grant,
-count or unlock anything twice.
+count or unlock anything twice. `settle_world_battle()` now checks the same receipt
+*before* the write guard, pending-state capture or any staging, so a repeated `run_id`
+is a true no-op: no reward, world mutation, interaction count or quest objective is
+advanced even when the quest needs multiple victories. A distinct repeatable run still
+settles under its own `battle|run|<run_id>` key.
 
 `_stage_world_battle()` validates trigger existence, kind, encounter identity and
 location against authored data before staging. Defeat records no victory flag and no
@@ -186,13 +190,19 @@ even when the run id changes, hides Retry after victory, and blocks the trigger 
 through the defeat flag and the claim ledger. `BattleResult.one_time` and
 `RewardResolver.resolve(..., one_time)` carry that policy from the world trigger to
 the reward resolver. If the settlement write fails, the full snapshot is rolled back
-and the pending battle result is retained; the player can retry settlement safely.
+and both the result and its trigger/location/encounter context are retained in memory.
+The localized `battle.retry_save` action replays that preserved result through the
+normal settlement identity checks, so recovery never refights and cannot double-grant.
+Battles without world context keep the same guard but replay through `claim_battle_reward()`.
+Menu, result Retry, the pause return and the encounter selector are disabled while a
+settlement is pending; QA auto-return is likewise blocked from discarding it.
 
 ## 8. Localization
 
 `vi` is the default locale, with `en` and `ja` supported through `LocaleManager`.
 All scene labels, prompts, dialogue lines, quest text and battle-result statuses are
-localization keys. The QA-only `FFBE_QA_LOCALE` override starts a capture in a chosen
+localization keys, including the pending-settlement recovery action `battle.retry_save`.
+The QA-only `FFBE_QA_LOCALE` override starts a capture in a chosen
 locale without writing settings, preserving the player's saved locale. Live switching
 emits `locale_changed`, which world scenes and the dialogue panel reconnect to. The
 generated coverage snapshot is `data/validation/localization-coverage.json`; it

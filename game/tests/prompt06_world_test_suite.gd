@@ -50,6 +50,35 @@ var _original_files: Dictionary = {}
 var _original_env: Dictionary = {}
 
 
+## Test-only quest definition with a two-win objective. It is never written to
+## the content repository; settlement accepts it through the optional seam so a
+## duplicate run can be proven to advance nothing.
+class MultiVictoryQuestRepository extends QuestRepository:
+	const MULTI_ID := "quest:GL:9999@multi_victory"
+	const OBJECTIVE_ID := "objective:GL:999901@two_wins"
+	const TARGET := "encounter:GL:950001@skirmish"
+
+	func get_quest_ids() -> Array[String]:
+		return [MULTI_ID]
+
+	func get_quest(id: String) -> Dictionary:
+		if id != MULTI_ID:
+			return {}
+		return {
+			"id": MULTI_ID,
+			"rewards": {"gil": 77, "items": []},
+			"unlocks": []
+		}
+
+	func get_objectives(id: String) -> Array[Dictionary]:
+		if id != MULTI_ID:
+			return []
+		return [{
+			"id": OBJECTIVE_ID, "type": "defeat_encounter",
+			"target": TARGET, "count": 2
+		}]
+
+
 func _init(p_runner: Object = null) -> void:
 	runner = p_runner
 	tree = p_runner as SceneTree
@@ -97,6 +126,7 @@ func run() -> bool:
 	_run("test_exploration_controller")
 	_run("test_battle_context_and_rewards")
 	_run("test_fault_injection_scenarios")
+	_run("test_duplicate_settlement_and_pending_recovery")
 	_run("test_scene_smoke")
 
 	_restore_files()
@@ -288,6 +318,16 @@ func _record_battle(battle: Control, payload: Dictionary) -> Dictionary:
 	return battle.call("_world_return_context")
 
 
+func _make_battle_in_tree(context: Dictionary) -> Control:
+	var packed: PackedScene = load(BATTLE_SCENE) as PackedScene
+	var battle: Control = packed.instantiate() as Control
+	tree.root.add_child(battle)
+	# Set after _ready() so WorldContext.consume() cannot overwrite the fixture.
+	battle.set("_world_context", context.duplicate(true))
+	battle.set("_return_scene_path", EXPLORATION_SCENE)
+	return battle
+
+
 func _fingerprint() -> String:
 	var parser := JSON.new()
 	var text: String = JSON.stringify(_data())
@@ -298,6 +338,22 @@ func _fingerprint() -> String:
 
 func _resource(key: String) -> int:
 	return int(state.call("get_resource", key))
+
+
+func _quest_progress(quest_id: String, objective_id: String) -> int:
+	var world_variant: Variant = _data().get("world", {})
+	if not world_variant is Dictionary:
+		return 0
+	var quests_variant: Variant = (world_variant as Dictionary).get("quests", {})
+	if not quests_variant is Dictionary:
+		return 0
+	var record_variant: Variant = (quests_variant as Dictionary).get(quest_id, {})
+	if not record_variant is Dictionary:
+		return 0
+	var progress_variant: Variant = (record_variant as Dictionary).get("progress", {})
+	if not progress_variant is Dictionary:
+		return 0
+	return int((progress_variant as Dictionary).get(objective_id, 0))
 
 
 # --- tests ----------------------------------------------------------------------
@@ -805,6 +861,137 @@ func test_fault_injection_scenarios() -> bool:
 	var repeat_claims: Dictionary = _data().get("reward_claims", {})
 	_ok(repeat_claims.has("battle|run|fixture-repeat-1"), "Repeatable encounter run 1 claim recorded")
 	_ok(repeat_claims.has("battle|run|fixture-repeat-2"), "Repeatable encounter run 2 claim recorded")
+	return true
+
+
+func test_duplicate_settlement_and_pending_recovery() -> bool:
+	# --- Duplicate settlement with a multi-victory quest ----------------------
+	_fresh()
+	_ok(LocaleManager.has_key("battle.retry_save"), "retry-save action is localized")
+	var quest_repo := MultiVictoryQuestRepository.new()
+	var quest_id: String = MultiVictoryQuestRepository.MULTI_ID
+	var objective_id: String = MultiVictoryQuestRepository.OBJECTIVE_ID
+	var mutable: Dictionary = _data()
+	var world_state: Dictionary = mutable.get("world", {})
+	var quest_map: Dictionary = world_state.get("quests", {})
+	quest_map[quest_id] = {"status": "active", "progress": {}, "completed": false}
+	world_state["quests"] = quest_map
+	mutable["world"] = world_state
+	state.set("data", mutable)
+
+	var repeat_context: Dictionary = {
+		"encounter_id": SKIRMISH, "location_id": MEADOW, "trigger_id": MEADOW_TRIGGER
+	}
+	var first_result: Dictionary = _battle_payload(SKIRMISH, true, "fixture-multi-first")
+	var first: Dictionary = state.call("settle_world_battle", first_result, repeat_context, quest_repo)
+	_ok(bool(first.get("ok", false)), "first multi-victory settlement succeeds")
+	_eq(_quest_progress(quest_id, objective_id), 1, "first victory advances multi-victory objective")
+
+	var memory_before_duplicate: String = _fingerprint()
+	var disk_before_duplicate: String = FileAccess.get_file_as_string(PLAYER_STATE_PATH)
+	var duplicate: Dictionary = state.call(
+		"settle_world_battle", first_result.duplicate(true), repeat_context.duplicate(true), quest_repo
+	)
+	_ok(bool(duplicate.get("ok", false)), "duplicate settlement reports success")
+	_ok(bool(duplicate.get("duplicate", false)), "duplicate settlement is marked duplicate")
+	_eq(_fingerprint(), memory_before_duplicate, "duplicate settlement changes no in-memory state")
+	_eq(FileAccess.get_file_as_string(PLAYER_STATE_PATH), disk_before_duplicate,
+		"duplicate settlement changes no persisted bytes")
+	_eq(_quest_progress(quest_id, objective_id), 1,
+		"duplicate settlement does not advance a multi-victory objective")
+	var quest_after_duplicate: Dictionary = (world_state.get("quests", {}) as Dictionary)
+	_no(bool((quest_after_duplicate[quest_id] as Dictionary).get("completed", false)),
+		"duplicate settlement does not complete the quest")
+	_no((_data().get("reward_claims", {}) as Dictionary).has("world|quest|%s" % quest_id),
+		"duplicate settlement does not grant the quest reward")
+
+	var distinct: Dictionary = state.call(
+		"settle_world_battle", _battle_payload(SKIRMISH, true, "fixture-multi-second"),
+		repeat_context, quest_repo
+	)
+	_ok(bool(distinct.get("ok", false)), "distinct repeatable run settles independently")
+	_eq(_quest_progress(quest_id, objective_id), 2, "distinct victory advances the same objective")
+	var persisted_after: Dictionary = _read_json(PLAYER_STATE_PATH)
+	var persisted_world: Dictionary = persisted_after.get("world", {})
+	var persisted_runs: Dictionary = persisted_world.get("processed_battle_runs", {})
+	_ok(persisted_runs.has("fixture-multi-first"), "first run persisted")
+	_ok(persisted_runs.has("fixture-multi-second"), "second run persisted")
+	_ok((persisted_after.get("reward_claims", {}) as Dictionary).has("world|quest|%s" % quest_id),
+		"second run completes and persists the quest reward")
+
+	# --- Pending settlement fault and no-refight retry ------------------------
+	_fresh()
+	_ok(int(state.call("save")) == OK, "baseline save written before settlement fault")
+	var baseline: String = FileAccess.get_file_as_string(PLAYER_STATE_PATH)
+	var pending_context: Dictionary = {
+		"encounter_id": BOSS, "location_id": SPIRE, "trigger_id": SPIRE_TRIGGER
+	}
+	var battle: Control = _make_battle_in_tree(pending_context)
+	saves.call("fail_next_atomic_write")
+	_record_battle(battle, _battle_payload(BOSS, true, "fixture-pending-fail"))
+
+	var pending_result: Dictionary = state.call("get_pending_battle_result")
+	var preserved_context: Dictionary = state.call("get_pending_battle_context")
+	_eq(str(pending_result.get("run_id", "")), "fixture-pending-fail", "failed settlement preserves result")
+	_eq(str(preserved_context.get("trigger_id", "")), SPIRE_TRIGGER, "failed settlement preserves trigger context")
+	_eq(str(preserved_context.get("location_id", "")), SPIRE, "failed settlement preserves location context")
+	_eq(str(preserved_context.get("encounter_id", "")), BOSS, "failed settlement preserves encounter context")
+	_eq(str(state.call("get_pending_battle_kind")), "world", "failed world settlement is tagged for world retry")
+	_eq(str(battle.get("_reward_status_key")), "battle.reward_save_failed", "failed settlement reports save error")
+	_eq(FileAccess.get_file_as_string(PLAYER_STATE_PATH), baseline,
+		"failed settlement leaves persisted save unchanged")
+	_no(bool(battle.call("retry_allowed")), "pending settlement blocks battle restart")
+	_no(bool(battle.call("can_leave_battle")), "pending settlement blocks navigation")
+	var menu_button: Button = battle.get("_menu_button") as Button
+	_ok(menu_button != null and menu_button.disabled, "top Menu button disabled while pending")
+	var result_retry: Button = battle.find_child("PrimaryButton", true, false) as Button
+	_ok(result_retry != null and result_retry.disabled, "result Retry disabled while pending")
+	var retry_save: Button = battle.find_child("TertiaryButton", true, false) as Button
+	_ok(retry_save != null and retry_save.visible, "localized Retry Save action visible while pending")
+	if retry_save != null:
+		_eq(retry_save.text, LocaleManager.t("battle.retry_save"), "Retry Save uses localized label")
+
+	WorldContext.clear()
+	var run_before_guards: String = str(battle.get("_run_id"))
+	battle.call("_on_retry_pressed")
+	battle.call("_on_menu_pressed")
+	_eq(str(battle.get("_run_id")), run_before_guards, "pending settlement prevents a refight")
+	_ok(WorldContext.peek().is_empty(), "pending settlement prevents battle-return navigation")
+
+	saves.call("clear_write_failure")
+	battle.call("_on_retry_save_pressed")
+	_eq(str(battle.get("_reward_status_key")), "reward.saved", "retry-save settles without refighting")
+	_ok((state.call("get_pending_battle_result") as Dictionary).is_empty(), "successful retry clears pending result")
+	_ok((state.call("get_pending_battle_context") as Dictionary).is_empty(), "successful retry clears pending context")
+	_ok(bool(battle.call("can_leave_battle")), "successful retry restores navigation")
+	_no(retry_save.visible, "successful retry hides Retry Save")
+	_no(menu_button.disabled, "successful retry re-enables Menu")
+	var saved: Dictionary = _read_json(PLAYER_STATE_PATH)
+	var saved_world: Dictionary = saved.get("world", {})
+	var saved_runs: Dictionary = saved_world.get("processed_battle_runs", {})
+	_ok(saved_runs.has("fixture-pending-fail"), "retried settlement persists the original run receipt")
+	_eq(str((saved_runs.get("fixture-pending-fail", {}) as Dictionary).get("trigger_id", "")),
+		SPIRE_TRIGGER, "retried settlement persists the preserved context")
+	_ok((saved.get("reward_claims", {}) as Dictionary).has("battle|once|%s" % BOSS),
+		"retried settlement persists the original reward claim")
+
+	# --- Ordinary battle reward retry stays on the reward path ---------------
+	var reward_run: String = "fixture-pending-reward-fail"
+	saves.call("fail_next_atomic_write")
+	var failed_claim: Dictionary = state.call("claim_battle_reward", _battle_payload(SKIRMISH, true, reward_run))
+	_eq(str(failed_claim.get("reason", "")), "save_failed", "ordinary reward save failure is preserved")
+	_eq(str(state.call("get_pending_battle_kind")), "reward", "ordinary battle failure is tagged for claim retry")
+	saves.call("clear_write_failure")
+	var retried_claim: Dictionary = state.call("retry_pending_battle_settlement")
+	_ok(bool(retried_claim.get("ok", false)), "ordinary pending reward retries without world settlement")
+	_ok((state.call("get_pending_battle_result") as Dictionary).is_empty(), "ordinary retry clears pending result")
+	_eq(str(state.call("get_pending_battle_kind")), "", "successful retry clears pending kind")
+	var reward_saved: Dictionary = _read_json(PLAYER_STATE_PATH)
+	_ok((reward_saved.get("reward_claims", {}) as Dictionary).has("battle|run|%s" % reward_run),
+		"ordinary retry persists the original run reward claim")
+
+	tree.root.remove_child(battle)
+	battle.free()
 	return true
 
 

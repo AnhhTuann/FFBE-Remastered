@@ -98,6 +98,7 @@
   "battle.result_detail": "{name}\nターン数: {turns} · シード: {seed}\nGil: {gil} · アイテム: {items}",
   "battle.resume": "再開",
   "battle.retry": "再挑戦",
+  "battle.retry_save": "保存を再試行",
   "battle.return_menu": "メニューへ戻る",
   "battle.reward_already_claimed": "受取済み",
   "battle.reward_not_victory": "敗北のため報酬なし",

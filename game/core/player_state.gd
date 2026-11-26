@@ -37,6 +37,8 @@ var read_only_reason: String = ""
 var _loading: bool = false
 var _transaction_depth: int = 0
 var _pending_battle_result: Dictionary = {}
+var _pending_battle_context: Dictionary = {}
+var _pending_battle_kind: String = ""
 
 
 func _ready() -> void:
@@ -75,8 +77,41 @@ func get_pending_battle_result() -> Dictionary:
 	return _pending_battle_result.duplicate(true)
 
 
+func get_pending_battle_context() -> Dictionary:
+	return _pending_battle_context.duplicate(true)
+
+
+func get_pending_battle_kind() -> String:
+	return _pending_battle_kind
+
+
+func has_pending_battle_settlement() -> bool:
+	return not _pending_battle_result.is_empty()
+
+
+## Replays the failed settlement with its preserved result and context. No new
+## battle is started and no reward is granted twice: the normal claim/receipt
+## identity checks still apply. A world settlement keeps its trigger/location
+## context; an ordinary battle reward has none and replays the claim directly.
+func retry_pending_battle_settlement() -> Dictionary:
+	if _pending_battle_result.is_empty():
+		return {"ok": false, "reason": "no_pending_settlement", "message": "battle.reward_unavailable"}
+	var outcome: Dictionary
+	if _pending_battle_kind == "world":
+		outcome = settle_world_battle(_pending_battle_result, _pending_battle_context)
+	else:
+		outcome = claim_battle_reward(_pending_battle_result)
+	# A duplicate receipt means the preserved settlement is already committed.
+	# Clear it here too because the early no-op returns before the normal clear.
+	if bool(outcome.get("ok", false)):
+		clear_pending_battle_result()
+	return outcome
+
+
 func clear_pending_battle_result() -> void:
 	_pending_battle_result = {}
+	_pending_battle_context = {}
+	_pending_battle_kind = ""
 
 
 ## Explicit recovery is only possible when the on-disk save is no longer a
@@ -807,6 +842,8 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 	var guard: Error = _write_guard_error()
 	if guard != OK:
 		return {"ok": false, "reason": "read_only", "key": "", "message": "save.error.read_only"}
+	_pending_battle_context = {}
+	_pending_battle_kind = "reward"
 	_pending_battle_result = result.duplicate(true)
 	var outcome: Dictionary = transaction("rewards", func() -> Dictionary:
 		return _stage_battle_reward(result)
@@ -816,7 +853,7 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 			result, str(result.get("encounter_id", "")), str(result.get("run_id", ""))
 		).get("repeat", ""))
 	if str(outcome.get("reason", "")) != "save_failed":
-		_pending_battle_result = {}
+		clear_pending_battle_result()
 	return outcome
 
 
@@ -1012,16 +1049,59 @@ func transact_world(section: String, mutation: Callable) -> Dictionary:
 
 ## Canonical settlement for a world encounter. Reward, encounter flag, run
 ## receipt, world state and quest event are staged into one transaction and
-## committed during the battle, before the player returns to the map.
-func settle_world_battle(result: Dictionary, context: Dictionary = {}) -> Dictionary:
+## committed during the battle, before the player returns to the map. A run
+## receipt is a hard idempotency boundary: no reward, world, interaction or quest
+## mutation is even staged when the same run is settled again.
+##
+## `repository` is an optional test seam; normal callers leave it null.
+func settle_world_battle(
+	result: Dictionary, context: Dictionary = {}, repository: RefCounted = null
+) -> Dictionary:
+	var run_id: String = str(result.get("run_id", ""))
+	var encounter_id: String = str(result.get("encounter_id", ""))
+	if run_id.is_empty() or encounter_id.is_empty():
+		return {"ok": false, "reason": "invalid_result", "message": "world.invalid_result"}
+
+	var world_variant: Variant = data.get("world", null)
+	var world: Dictionary = world_variant if world_variant is Dictionary else {}
+	var processed_variant: Variant = world.get("processed_battle_runs", {})
+	var processed: Dictionary = processed_variant if processed_variant is Dictionary else {}
+	if processed.has(run_id):
+		var prior_variant: Variant = processed[run_id]
+		var prior: Dictionary = prior_variant if prior_variant is Dictionary else {}
+		if not prior.is_empty() and str(prior.get("encounter_id", "")) != encounter_id:
+			return {"ok": false, "reason": "invalid_context", "message": "world.invalid_context"}
+		# Return before the write guard, pending-state capture and transaction.
+		# This is a true no-op even for a quest whose objective needs multiple wins.
+		return {
+			"ok": true, "reason": "", "duplicate": true,
+			"reward": {
+				"ok": false, "reason": "already_claimed", "key": "",
+				"message": "reward.already_claimed"
+			},
+			"world": {
+				"ok": true, "reason": "", "duplicate": true,
+				"one_time": bool(prior.get("one_time", false)),
+				"trigger_id": str(prior.get("trigger_id", ""))
+			},
+			"quest": {"ok": true, "reason": "", "duplicate": true, "touched": [], "completed": []}
+		}
+
 	var guard: Error = _write_guard_error()
 	if guard != OK:
 		return {"ok": false, "reason": "read_only", "message": "save.error.read_only"}
-	_pending_battle_result = result.duplicate(true)
 	var settlement_context: Dictionary = context.duplicate(true)
 	if settlement_context.is_empty() and result.has("trigger_id"):
 		settlement_context["trigger_id"] = str(result.get("trigger_id", ""))
 		settlement_context["location_id"] = str(result.get("location_id", ""))
+	# Keep both halves until a write succeeds. A failed commit rolls data back but
+	# must not discard the context needed for a no-refight retry.
+	_pending_battle_context = settlement_context.duplicate(true)
+	_pending_battle_kind = "world"
+	_pending_battle_result = result.duplicate(true)
+	var quest_repo: QuestRepository = QuestRepository.new()
+	if repository != null and repository is QuestRepository:
+		quest_repo = repository as QuestRepository
 	var outcome: Dictionary = transaction("battle_settlement", func() -> Dictionary:
 		var reward_stage: Dictionary = _stage_battle_reward(result)
 		var reward_reason: String = str(reward_stage.get("reason", ""))
@@ -1032,10 +1112,10 @@ func settle_world_battle(result: Dictionary, context: Dictionary = {}) -> Dictio
 		if not bool(world_stage.get("ok", false)):
 			return world_stage
 		var quest_stage: Dictionary = {"ok": true, "reason": "", "touched": [], "completed": []}
-		if bool(result.get("victory", false)) and not str(result.get("encounter_id", "")).is_empty():
+		if bool(result.get("victory", false)) and not encounter_id.is_empty():
 			quest_stage = QuestSettlement.stage_event(data, {
-				"type": "defeat_encounter", "target": str(result.get("encounter_id", "")), "count": 1
-			}, QuestRepository.new())
+				"type": "defeat_encounter", "target": encounter_id, "count": 1
+			}, quest_repo)
 			if not bool(quest_stage.get("ok", false)):
 				return quest_stage
 		return {
@@ -1044,7 +1124,7 @@ func settle_world_battle(result: Dictionary, context: Dictionary = {}) -> Dictio
 		}
 	)
 	if str(outcome.get("reason", "")) != "save_failed":
-		_pending_battle_result = {}
+		clear_pending_battle_result()
 	if not outcome.has("key"):
 		outcome["key"] = str(((outcome.get("reward", {}) as Dictionary).get("key", "")))
 	return outcome
