@@ -1,0 +1,22 @@
+name=prompt07-categories-en-1920x1080
+scene=res://scenes/event/event_center.tscn
+resolution=1920x1080
+fullscreen=1
+locale=en
+scenario=categories
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=categories
+event_id=
+event_region=GL
+window_id=186646535
+geometry=WINDOW=186646535 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=225 stddev=0.0761358
+runtime_error_lines=0
+log_basename=prompt07-categories-en-1920x1080.log

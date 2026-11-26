@@ -1,0 +1,22 @@
+name=prompt07-summon-ja-720x1280
+scene=res://scenes/event/event_center.tscn
+resolution=720x1280
+fullscreen=1
+locale=ja
+scenario=summon
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=summon
+event_id=event:GL:980001@stargarden
+event_region=GL
+window_id=186646535
+geometry=WINDOW=186646535 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0
+pixels=720x1280 colors=427 stddev=0.0577208
+runtime_error_lines=0
+log_basename=prompt07-summon-ja-720x1280.log

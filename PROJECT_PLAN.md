@@ -604,9 +604,12 @@ The original M0–M9 roadmap remains the long-term charter. The delivered checkp
 | Phase 1–3 / hardening | `phase-3-hardening` | Character viewer, battle slice, desktop UI, offline save and localization foundation | Published; see `docs/qa/phase3-hardening-report.md` |
 | Prompt 05 / 05.1 | `phase-4-esper-summon-economy` | Additive v4 economy, summon, shop, crafting and Esper systems with integrity hardening | Published as draft PR #8; approval pending |
 | Prompt 06 | `phase-5-world-exploration-story` | Synthetic World Map, exploration, dialogue, quests, treasure and battle-return vertical slice | Draft PR #9; approval pending |
+| Prompt 07 | `phase-6-event-center-collaboration` | Synthetic Event Center, schedules, stages, rewards, currency, collaboration framework and summon navigation | Draft PR #10; approval pending |
 
 Prompt 06 adds `game/scenes/world/`, `game/world/` and six `game/data/world/` packs. The world state is additive inside `user://player_state_v3.json`; the top-level format remains v4 and v1–v4 saves are normalized with a migration backup. All records are `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN` with `rights_gate: not_passed`. No recovered FFBE story, map, art or audio was imported.
 
-Prompt 06 evidence and exit criteria are in [docs/qa/prompt06-final-report.md](docs/qa/prompt06-final-report.md). Architecture and record fields are in [docs/architecture/world-exploration.md](docs/architecture/world-exploration.md) and [docs/data-dictionary/world-story-schema.md](docs/data-dictionary/world-story-schema.md).
+Prompt 07 adds `game/events/`, `game/data/events/events.json` and `game/scenes/event/`. Event state is an additive `events` section inside the same format-v4 save; future section versions are refused and failed writes roll back. All records are `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN` with `rights_gate: not_passed`. No recovered FFBE event, character, art, banner rate or dialogue was imported.
 
-**Immediate next milestone:** M0 — Project definition and source discovery, followed by M1 — Full Data and Asset Audit. Do not begin broad gameplay implementation until the audit and technical risks have been reviewed. Prompt 07 must not start until the owner approves the Prompt 06 checkpoint.
+Prompt 07 evidence and exit criteria are in [docs/qa/prompt07-final-report.md](docs/qa/prompt07-final-report.md). Architecture and record fields are in [docs/architecture/event-center.md](docs/architecture/event-center.md) and [docs/data-dictionary/event-schema.md](docs/data-dictionary/event-schema.md).
+
+**Immediate next step:** wait for owner approval of the Prompt 07 checkpoint. The long-term gate for source-gated restoration remains M0 — Project definition and source discovery, followed by M1 — Full Data and Asset Audit. Do not begin Prompt 08 or broad source restoration until those gates and the owner review are satisfied.

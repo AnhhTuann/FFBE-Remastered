@@ -1,0 +1,22 @@
+name=prompt07-detail-ja-1280x720
+scene=res://scenes/event/event_center.tscn
+resolution=1280x720
+fullscreen=0
+locale=ja
+scenario=detail
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=detail
+event_id=event:GL:980001@stargarden
+event_region=GL
+window_id=188743687
+geometry=WINDOW=188743687 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0
+pixels=1280x720 colors=523 stddev=0.0849692
+runtime_error_lines=0
+log_basename=prompt07-detail-ja-1280x720.log

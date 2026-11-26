@@ -1,0 +1,22 @@
+name=prompt07-stages-en-1920x1080
+scene=res://scenes/event/event_center.tscn
+resolution=1920x1080
+fullscreen=1
+locale=en
+scenario=stages
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=stages
+event_id=event:GL:980001@stargarden
+event_region=GL
+window_id=186646535
+geometry=WINDOW=186646535 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=702 stddev=0.121355
+runtime_error_lines=0
+log_basename=prompt07-stages-en-1920x1080.log

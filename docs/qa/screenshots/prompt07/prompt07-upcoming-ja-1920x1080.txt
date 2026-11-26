@@ -1,0 +1,22 @@
+name=prompt07-upcoming-ja-1920x1080
+scene=res://scenes/event/event_center.tscn
+resolution=1920x1080
+fullscreen=1
+locale=ja
+scenario=upcoming
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=upcoming
+event_id=
+event_region=GL
+window_id=190840839
+geometry=WINDOW=190840839 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=220 stddev=0.0569246
+runtime_error_lines=0
+log_basename=prompt07-upcoming-ja-1920x1080.log
