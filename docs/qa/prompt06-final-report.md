@@ -134,9 +134,9 @@ Export dùng template Godot `4.7.2.stable` có sẵn; không tải template, kh�
 
 ## 11. Git Commit SHA
 
-Commit hardening chính: `__HARDENING_COMMIT_SHA__`
+Commit hardening chính: `819abcd3032e168c2e6d540271bc4d0f3301270a`
 Tiêu đề commit: `fix(world): harden save integrity and world settlement`
-Checkpoint trước đó vẫn là `af9cceaca88cf7de92dcb96907c40223f0783fa2` và tag `checkpoint/prompt-06-world-exploration-story`. Không có hard reset, force push, rebase phá hủy, cherry-pick, `git clean` hay ghi đè lịch sử.
+Checkpoint trước đó vẫn là `af9cceaca88cf7de92dcb96907c40223f0783fa2` và tag `checkpoint/prompt-06-world-exploration-story`. Một commit docs-only tiếp theo ghi nhận SHA này; không thay đổi code, dữ liệu hay ảnh. Không có hard reset, force push, rebase phá hủy, cherry-pick, `git clean` hay ghi đè lịch sử.
 
 ## 12. PR #9 đã cập nhật
 
