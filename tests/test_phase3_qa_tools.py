@@ -231,5 +231,94 @@ class Prompt05QaToolsTest(unittest.TestCase):
         self.assertIn("now_unix=", script)
 
 
+class Prompt06QaToolsTest(unittest.TestCase):
+    """Prompt 06 requires a complete real-window capture matrix."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tool_path = ROOT / "tools/qa/prompt06_visual_report.py"
+        spec = importlib.util.spec_from_file_location("prompt06_visual_report", tool_path)
+        assert spec is not None and spec.loader is not None
+        cls.tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.tool)
+
+    @staticmethod
+    def _capture(scenario: str, resolution: str, locale: str, errors: str = "0") -> dict[str, str]:
+        return {
+            "name": f"prompt06-{scenario}-{locale}-{resolution}",
+            "scene": "res://scenes/world/world_map.tscn",
+            "resolution": resolution,
+            "locale": locale,
+            "scenario": scenario,
+            "geometry": "WINDOW=1 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0",
+            "pixels": "1280x720 colors=210 stddev=0.06",
+            "runtime_error_lines": errors,
+        }
+
+    def _full_matrix(self) -> list[dict[str, str]]:
+        return [
+            self._capture(scenario, resolution, locale)
+            for scenario in self.tool.REQUIRED_SCENARIOS
+            for resolution in self.tool.REQUIRED_RESOLUTIONS
+            for locale in self.tool.REQUIRED_LOCALES
+        ]
+
+    def test_default_paths_and_matrix_size(self) -> None:
+        self.assertEqual(self.tool.DEFAULT_CAPTURE_DIR, "docs/qa/screenshots/prompt06")
+        self.assertEqual(self.tool.DEFAULT_OUTPUT, "docs/qa/prompt06-visual-review.md")
+        self.assertEqual(len(self._full_matrix()), 117)
+
+    def test_validate_matrix_accepts_complete_clean_matrix(self) -> None:
+        self.tool.validate_matrix(self._full_matrix())
+
+    def test_validate_matrix_rejects_missing_capture(self) -> None:
+        captures = self._full_matrix()[1:]
+        with self.assertRaisesRegex(ValueError, "missing Prompt 06 captures"):
+            self.tool.validate_matrix(captures)
+
+    def test_validate_matrix_rejects_runtime_errors(self) -> None:
+        captures = self._full_matrix()
+        captures[0]["runtime_error_lines"] = "2"
+        with self.assertRaisesRegex(ValueError, "runtime error lines"):
+            self.tool.validate_matrix(captures)
+
+    def test_read_rejects_sidecar_without_scenario(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "docs/qa/screenshots/prompt06"
+            directory.mkdir(parents=True)
+            (directory / "broken.txt").write_text(
+                Phase3QaToolsTest._capture("broken"), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "missing scenario metadata"):
+                self.tool.read_captures(root)
+
+    def test_render_summarises_prompt06_metadata(self) -> None:
+        rendered = self.tool.render(self._full_matrix())
+        self.assertIn("# Prompt 06 world exploration visual review", rendered)
+        self.assertIn("Captures: 117", rendered)
+        self.assertIn("World Map selected location", rendered)
+        self.assertIn("Runtime error lines across all captures: 0", rendered)
+        self.assertIn("subjective visual sign-off", rendered)
+
+    def test_capture_wrapper_allow_lists_scenarios(self) -> None:
+        script = (ROOT / "tools/qa/capture_prompt06.sh").read_text(encoding="utf-8")
+        for scenario in self.tool.REQUIRED_SCENARIOS:
+            self.assertIn(scenario, script)
+        self.assertIn("QA_PROFILE_ROOT", script)
+        self.assertIn("rm -rf -- \"$PROFILE\"", script)
+
+    def test_capture_wrapper_seeds_real_world_battle_context(self) -> None:
+        script = (ROOT / "tools/qa/capture_prompt06.sh").read_text(encoding="utf-8")
+        self.assertIn("export FFBE_QA_MODE=1", script)
+        self.assertIn("battle_victory)", script)
+        self.assertIn("encounter:GL:950002@boss", script)
+        self.assertIn("encounter_trigger:GL:5102@spire", script)
+        self.assertIn("battle_defeat|battle_retry|battle_return)", script)
+        self.assertIn("encounter:GL:950001@skirmish", script)
+        self.assertIn("encounter_trigger:GL:5101@meadow", script)
+        self.assertIn("FFBE_QA_RETURN_SCENE", script)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -147,9 +147,9 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the detailed architecture, milestones
 
 ## Current status
 
-The repository contains a playable, offline Godot 4.7 desktop slice built entirely from synthetic fixtures and remastered design data. Phase 3 added character progression, inventory, equipment, abilities, Limit Bursts and desktop UI hardening. Prompt 05 adds additive v4 save migration, battle-run identity, transactional rewards, Leader Skills, per-unit Vision Cards, synthetic Esper progression, seeded summons, capped offline economy, shop and crafting foundations, and `vi` / `en` / `ja` localization.
+The repository contains a playable, offline Godot 4.7 desktop slice built entirely from synthetic fixtures and remastered design data. Phase 3 added character progression, inventory, equipment, abilities, Limit Bursts and desktop UI hardening. Prompt 05/05.1 added additive v4 save migration, battle-run identity, transactional rewards, Leader Skills, per-unit Vision Cards, synthetic Esper progression, seeded summons, capped offline economy, shop and crafting foundations, and `vi` / `en` / `ja` localization. Prompt 06 adds a synthetic World Map, keyboard/mouse exploration, NPC dialogue, quests, treasure and a battle-return integration, all stored in an additive `world` section of the same save file.
 
-No original FFBE or Elvlin data, art, banner rates, guarantees or historical pools are imported or claimed. The rights gate remains `not_passed`; all runtime gameplay content is labelled `SYNTHETIC_FIXTURE` or `REMASTERED_DESIGN`. See [docs/qa/prompt05-final-report.md](docs/qa/prompt05-final-report.md) for milestone evidence and [docs/qa/phase3-hardening-report.md](docs/qa/phase3-hardening-report.md) for the preceding checkpoint.
+No original FFBE or Elvlin data, art, banner rates, guarantees, historical pools, maps, story or music is imported or claimed. The rights gate remains `not_passed`; all runtime gameplay content is labelled `SYNTHETIC_FIXTURE` or `REMASTERED_DESIGN`. See [docs/qa/prompt06-final-report.md](docs/qa/prompt06-final-report.md) for the latest milestone evidence, [docs/qa/prompt05.1-final-report.md](docs/qa/prompt05.1-final-report.md) for the preceding checkpoint, and [docs/architecture/world-exploration.md](docs/architecture/world-exploration.md) for the new world architecture.
 
 ## Legal and distribution notice
 

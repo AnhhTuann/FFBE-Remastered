@@ -1,0 +1,60 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://world/dialogue_panel.gd" id="1_dialogue_panel"]
+
+[node name="DialoguePanel" type="PanelContainer"]
+custom_minimum_size = Vector2(760, 240)
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -270.0
+offset_right = 820.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+visible = false
+script = ExtResource("1_dialogue_panel")
+
+[node name="DialogueLayout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SpeakerLabel" type="Label" parent="DialogueLayout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = ""
+
+[node name="TextLabel" type="Label" parent="DialogueLayout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 70)
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 16
+autowrap_mode = 3
+text = ""
+
+[node name="ChoicesScroll" type="ScrollContainer" parent="DialogueLayout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 96)
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ChoicesContainer" type="VBoxContainer" parent="DialogueLayout/ChoicesScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ButtonRow" type="HBoxContainer" parent="DialogueLayout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NextButton" type="Button" parent="DialogueLayout/ButtonRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 36)
+text = ""
+
+[node name="CloseButton" type="Button" parent="DialogueLayout/ButtonRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
+text = ""

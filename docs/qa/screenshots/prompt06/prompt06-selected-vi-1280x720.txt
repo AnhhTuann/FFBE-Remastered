@@ -1,0 +1,18 @@
+name=prompt06-selected-vi-1280x720
+scene=res://scenes/world/world_map.tscn
+resolution=1280x720
+fullscreen=0
+locale=vi
+scenario=selected
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0
+pixels=1280x720 colors=416 stddev=0.102249
+runtime_error_lines=0
+log_basename=prompt06-selected-vi-1280x720.log

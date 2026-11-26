@@ -332,8 +332,8 @@
     "keys_without_japanese_glyphs": [],
     "locale": "ja",
     "note": "Japanese values must contain kana or kanji, not romaji placeholders.",
-    "strings_checked": 742,
-    "strings_with_japanese_glyphs": 742
+    "strings_checked": 831,
+    "strings_with_japanese_glyphs": 831
   },
   "locales": [
     "en",
@@ -374,6 +374,11 @@
           "value": "Select a highlighted {targeting} target, or press Backspace to cancel."
         },
         {
+          "key": "battle.one_time_cleared",
+          "length": 49,
+          "value": "One-time encounter cleared; retry is unavailable."
+        },
+        {
           "key": "battle.pause_detail",
           "length": 114,
           "value": "Speeds change how many logical 60 Hz frames advance per visual tick.\nDamage is never tied to animation completion."
@@ -392,6 +397,26 @@
           "key": "boot.offline_summary",
           "length": 45,
           "value": "Offline gains: {count} payouts over {seconds}"
+        },
+        {
+          "key": "dialogue.keeper.line1",
+          "length": 49,
+          "value": "The old path is open, but the meadow is restless."
+        },
+        {
+          "key": "dialogue.keeper.line3",
+          "length": 54,
+          "value": "Then the meadow is on your route. Good luck out there."
+        },
+        {
+          "key": "dialogue.scout.active",
+          "length": 52,
+          "value": "The lantern is still unlit. Follow the meadow trail."
+        },
+        {
+          "key": "dialogue.scout.line2",
+          "length": 60,
+          "value": "Return when the meadow is safe, and the trail will be yours."
         },
         {
           "key": "evidence.note.brave_shift",
@@ -489,6 +514,16 @@
           "value": "Offline build · synthetic fixtures only · last unit: {unit}"
         },
         {
+          "key": "quest.lantern.description",
+          "length": 57,
+          "value": "Visit the meadow, open its cache and defeat the skirmish."
+        },
+        {
+          "key": "quest.oath.description",
+          "length": 47,
+          "value": "Speak with the keeper before leaving the haven."
+        },
+        {
           "key": "summon.rates_note",
           "length": 70,
           "value": "Synthetic fixture rates only; no original FFBE rate table is asserted."
@@ -502,6 +537,26 @@
           "key": "viewer.missing_animation",
           "length": 48,
           "value": "Missing animation metadata: {animation} / {clip}"
+        },
+        {
+          "key": "world.explore.controls",
+          "length": 61,
+          "value": "WASD/Arrows: move  E/Space: interact  Esc: pause  Mouse: walk"
+        },
+        {
+          "key": "world.location.spire.description",
+          "length": 50,
+          "value": "The last marked point on this demonstration route."
+        },
+        {
+          "key": "world.map.controls",
+          "length": 48,
+          "value": "Arrows/WASD: move focus  Enter: enter  Esc: menu"
+        },
+        {
+          "key": "world.region.vale.description",
+          "length": 58,
+          "value": "A small project-authored world used to verify exploration."
         }
       ],
       "ja": [
@@ -584,6 +639,11 @@
           "key": "evidence.note.weapon_imperil",
           "length": 46,
           "value": "属性インペリルは既存エンジンに実装済みです。武器固有のインペリル値はデータ拡張に留まります。"
+        },
+        {
+          "key": "world.explore.controls",
+          "length": 44,
+          "value": "WASD/矢印: 移動  E/Space: 操作  Esc: 一時停止  マウス: 移動"
         }
       ],
       "vi": [
@@ -613,6 +673,11 @@
           "value": "Chọn mục tiêu {targeting} được đánh dấu, hoặc nhấn Backspace để hủy."
         },
         {
+          "key": "battle.one_time_cleared",
+          "length": 50,
+          "value": "Trận chiến một lần đã hoàn tất; không thể thử lại."
+        },
+        {
           "key": "battle.pause_detail",
           "length": 118,
           "value": "Tốc độ thay đổi số khung logic 60 Hz được tiến hành mỗi nhịp hiển thị.\nSát thương không phụ thuộc vào độ dài hoạt ảnh."
@@ -631,6 +696,36 @@
           "key": "boot.offline_summary",
           "length": 50,
           "value": "Thu hoạch ngoại tuyến: {count} lần trong {seconds}"
+        },
+        {
+          "key": "dialogue.keeper.line1",
+          "length": 50,
+          "value": "Con đường cũ đã mở, nhưng cánh đồng vẫn không yên."
+        },
+        {
+          "key": "dialogue.keeper.line2",
+          "length": 44,
+          "value": "Anh có mang chiếc đèn đi xuống lối đó không?"
+        },
+        {
+          "key": "dialogue.keeper.line3",
+          "length": 55,
+          "value": "Vậy cánh đồng nằm trong lộ trình của anh. Chúc may mắn."
+        },
+        {
+          "key": "dialogue.scout.active",
+          "length": 51,
+          "value": "Chiếc đèn vẫn chưa sáng. Hãy đi theo lối cánh đồng."
+        },
+        {
+          "key": "dialogue.scout.intro",
+          "length": 49,
+          "value": "Một trinh sát đang quan sát con đường phía trước."
+        },
+        {
+          "key": "dialogue.scout.line2",
+          "length": 59,
+          "value": "Hãy quay lại khi cánh đồng an toàn, lối đi sẽ thuộc về anh."
         },
         {
           "key": "evidence.note.brave_shift",
@@ -728,6 +823,16 @@
           "value": "Bản ngoại tuyến · chỉ dữ liệu mô phỏng · nhân vật gần đây: {unit}"
         },
         {
+          "key": "quest.lantern.description",
+          "length": 55,
+          "value": "Ghé cánh đồng, mở kho chứa và đánh bại trận giao tranh."
+        },
+        {
+          "key": "quest.oath.description",
+          "length": 51,
+          "value": "Hãy nói chuyện với người giữ trước khi rời khu trú."
+        },
+        {
           "key": "reason.no_reward",
           "length": 47,
           "value": "Không có phần thưởng tổng hợp cho hình thái này"
@@ -746,17 +851,47 @@
           "key": "viewer.no_units",
           "length": 43,
           "value": "Không tìm thấy nhân vật cho khu vực đã chọn"
+        },
+        {
+          "key": "world.explore.battle_defeat",
+          "length": 45,
+          "value": "Trận chiến thất bại; tiến trình không bị mất."
+        },
+        {
+          "key": "world.explore.battle_victory",
+          "length": 52,
+          "value": "Đã đánh bại trận chiến; tiến trình đã được ghi nhận."
+        },
+        {
+          "key": "world.explore.controls",
+          "length": 73,
+          "value": "WASD/Mũi tên: di chuyển  E/Space: tương tác  Esc: tạm dừng  Chuột: đi tới"
+        },
+        {
+          "key": "world.location.spire.description",
+          "length": 49,
+          "value": "Điểm cuối được đánh dấu trên lộ trình thử nghiệm."
+        },
+        {
+          "key": "world.map.controls",
+          "length": 46,
+          "value": "Mũi tên/WASD: di chuyển  Enter: vào  Esc: menu"
+        },
+        {
+          "key": "world.region.vale.description",
+          "length": 55,
+          "value": "Một thế giới nhỏ do dự án tạo ra để kiểm tra thám hiểm."
         }
       ]
     },
     "threshold": 40,
-    "total": 80
+    "total": 107
   },
   "per_locale": {
     "en": {
       "dictionary_file": "game/data/localization/en.json",
       "empty_value_keys": [],
-      "key_count": 742,
+      "key_count": 831,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1018,6 +1153,7 @@
         "menu.status",
         "menu.subtitle",
         "menu.title",
+        "menu.world",
         "offline.synthetic_rest_site.name",
         "party.build_summary",
         "party.clear_slot",
@@ -1164,13 +1300,51 @@
         "vision.synthetic_standard.name",
         "vision.title",
         "vision.unassign",
-        "vision.upgrade"
+        "vision.upgrade",
+        "world.error.invalid_exit",
+        "world.explore.battle_defeat",
+        "world.explore.battle_victory",
+        "world.explore.chest_opened",
+        "world.explore.controls",
+        "world.explore.interact",
+        "world.explore.locked",
+        "world.explore.out_of_range",
+        "world.explore.pause",
+        "world.explore.resume",
+        "world.explore.return_map",
+        "world.journal.active",
+        "world.journal.close",
+        "world.journal.completed",
+        "world.journal.empty",
+        "world.journal.not_started",
+        "world.journal.title",
+        "world.map.completed",
+        "world.map.connections",
+        "world.map.controls",
+        "world.map.current",
+        "world.map.discovered",
+        "world.map.enter",
+        "world.map.journal",
+        "world.map.legend",
+        "world.map.location_state",
+        "world.map.locked",
+        "world.map.no_route",
+        "world.map.no_selection",
+        "world.map.region",
+        "world.map.requirements",
+        "world.map.reward_summary",
+        "world.map.subtitle",
+        "world.map.zoom_in",
+        "world.map.zoom_out",
+        "world.quest.accept",
+        "world.quest.progress",
+        "world.travel.denied"
       ]
     },
     "ja": {
       "dictionary_file": "game/data/localization/ja.json",
       "empty_value_keys": [],
-      "key_count": 742,
+      "key_count": 831,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1432,6 +1606,7 @@
         "menu.status",
         "menu.subtitle",
         "menu.title",
+        "menu.world",
         "offline.synthetic_rest_site.name",
         "party.build_summary",
         "party.clear_slot",
@@ -1578,13 +1753,51 @@
         "vision.synthetic_standard.name",
         "vision.title",
         "vision.unassign",
-        "vision.upgrade"
+        "vision.upgrade",
+        "world.error.invalid_exit",
+        "world.explore.battle_defeat",
+        "world.explore.battle_victory",
+        "world.explore.chest_opened",
+        "world.explore.controls",
+        "world.explore.interact",
+        "world.explore.locked",
+        "world.explore.out_of_range",
+        "world.explore.pause",
+        "world.explore.resume",
+        "world.explore.return_map",
+        "world.journal.active",
+        "world.journal.close",
+        "world.journal.completed",
+        "world.journal.empty",
+        "world.journal.not_started",
+        "world.journal.title",
+        "world.map.completed",
+        "world.map.connections",
+        "world.map.controls",
+        "world.map.current",
+        "world.map.discovered",
+        "world.map.enter",
+        "world.map.journal",
+        "world.map.legend",
+        "world.map.location_state",
+        "world.map.locked",
+        "world.map.no_route",
+        "world.map.no_selection",
+        "world.map.region",
+        "world.map.requirements",
+        "world.map.reward_summary",
+        "world.map.subtitle",
+        "world.map.zoom_in",
+        "world.map.zoom_out",
+        "world.quest.accept",
+        "world.quest.progress",
+        "world.travel.denied"
       ]
     },
     "vi": {
       "dictionary_file": "game/data/localization/vi.json",
       "empty_value_keys": [],
-      "key_count": 742,
+      "key_count": 831,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1846,6 +2059,7 @@
         "menu.status",
         "menu.subtitle",
         "menu.title",
+        "menu.world",
         "offline.synthetic_rest_site.name",
         "party.build_summary",
         "party.clear_slot",
@@ -1992,7 +2206,45 @@
         "vision.synthetic_standard.name",
         "vision.title",
         "vision.unassign",
-        "vision.upgrade"
+        "vision.upgrade",
+        "world.error.invalid_exit",
+        "world.explore.battle_defeat",
+        "world.explore.battle_victory",
+        "world.explore.chest_opened",
+        "world.explore.controls",
+        "world.explore.interact",
+        "world.explore.locked",
+        "world.explore.out_of_range",
+        "world.explore.pause",
+        "world.explore.resume",
+        "world.explore.return_map",
+        "world.journal.active",
+        "world.journal.close",
+        "world.journal.completed",
+        "world.journal.empty",
+        "world.journal.not_started",
+        "world.journal.title",
+        "world.map.completed",
+        "world.map.connections",
+        "world.map.controls",
+        "world.map.current",
+        "world.map.discovered",
+        "world.map.enter",
+        "world.map.journal",
+        "world.map.legend",
+        "world.map.location_state",
+        "world.map.locked",
+        "world.map.no_route",
+        "world.map.no_selection",
+        "world.map.region",
+        "world.map.requirements",
+        "world.map.reward_summary",
+        "world.map.subtitle",
+        "world.map.zoom_in",
+        "world.map.zoom_out",
+        "world.quest.accept",
+        "world.quest.progress",
+        "world.travel.denied"
       ]
     }
   },
@@ -2061,10 +2313,25 @@
       "game/tests/hardening_ui_flow_test_suite.gd",
       "game/tests/phase3_economy_test_suite.gd",
       "game/tests/phase3_test_suite.gd",
-      "game/tests/test_runner.gd"
+      "game/tests/prompt06_world_test_suite.gd",
+      "game/tests/test_runner.gd",
+      "game/world/dialogue_manager.gd",
+      "game/world/dialogue_panel.gd",
+      "game/world/dialogue_repository.gd",
+      "game/world/exploration_area.gd",
+      "game/world/exploration_controller.gd",
+      "game/world/interaction_controller.gd",
+      "game/world/quest_manager.gd",
+      "game/world/quest_repository.gd",
+      "game/world/quest_settlement.gd",
+      "game/world/world_context.gd",
+      "game/world/world_location_repository.gd",
+      "game/world/world_map.gd",
+      "game/world/world_map_marker_area.gd",
+      "game/world/world_state_service.gd"
     ],
-    "gd_files_scanned": 62,
-    "literal_call_sites": 97,
+    "gd_files_scanned": 77,
+    "literal_call_sites": 108,
     "literal_keys": [
       "battle.ability_button",
       "battle.ability_tooltip",
@@ -2094,6 +2361,7 @@
       "battle.hint_target",
       "battle.hp",
       "battle.menu",
+      "battle.one_time_cleared",
       "battle.pause",
       "battle.pause_detail",
       "battle.paused",
@@ -2104,6 +2372,7 @@
       "battle.result_detail",
       "battle.resume",
       "battle.retry",
+      "battle.retry_save",
       "battle.return_menu",
       "battle.reward_status",
       "battle.run_id",
@@ -2114,6 +2383,8 @@
       "battle.victory",
       "battle.vs",
       "common.failed",
+      "dialogue.choice.close",
+      "dialogue.keeper.line1",
       "mechanic.partial_rule",
       "mechanic.remastered_design",
       "mechanic.unverified_rule",
@@ -2126,15 +2397,19 @@
       "target.ally",
       "target.enemy",
       "target.self",
-      "verification.synthetic_fixture"
+      "verification.synthetic_fixture",
+      "world.dialogue.next",
+      "world.explore.title",
+      "world.map.title",
+      "world.npc.keeper.name"
     ],
-    "translation_call_sites": 118
+    "translation_call_sites": 146
   },
   "status": "pass",
   "tool_version": "1.1.0",
-  "union_key_count": 742,
+  "union_key_count": 831,
   "vietnamese_diacritics": {
-    "coverage": 0.965,
+    "coverage": 0.9639,
     "keys_without_diacritics": [
       "awakening.ex",
       "awakening.nv",
@@ -2161,11 +2436,73 @@
       "field.uid",
       "mechanic.name.nv_plus",
       "mechanic.name.overdrive",
-      "mechanic.name.super_limit_burst"
+      "mechanic.name.super_limit_burst",
+      "world.location.haven.name",
+      "world.location.meadow.name",
+      "world.location.spire.name",
+      "world.region.vale.name"
     ],
     "locale": "vi",
     "note": "Brand tokens such as NV, EX, TMR, STMR, LB, SLB, gil, UID and digits are expected without diacritics.",
-    "strings_checked": 742,
-    "strings_with_diacritics": 716
+    "strings_checked": 831,
+    "strings_with_diacritics": 801
+  },
+  "world_data_scan": {
+    "data_files": [
+      "game/data/world/dialogues.json",
+      "game/data/world/interactables.json",
+      "game/data/world/location_connections.json",
+      "game/data/world/locations.json",
+      "game/data/world/quests.json",
+      "game/data/world/regions.json"
+    ],
+    "data_files_scanned": 6,
+    "literal_keys": [
+      "dialogue.choice.accept_oath",
+      "dialogue.choice.accept_quest",
+      "dialogue.choice.close",
+      "dialogue.choice.continue",
+      "dialogue.choice.later",
+      "dialogue.keeper.line1",
+      "dialogue.keeper.line2",
+      "dialogue.keeper.line3",
+      "dialogue.scout.active",
+      "dialogue.scout.done",
+      "dialogue.scout.intro",
+      "dialogue.scout.line2",
+      "quest.lantern.description",
+      "quest.lantern.objective.battle",
+      "quest.lantern.objective.chest",
+      "quest.lantern.objective.collect",
+      "quest.lantern.objective.prerequisite",
+      "quest.lantern.objective.talk",
+      "quest.lantern.objective.visit",
+      "quest.lantern.title",
+      "quest.oath.description",
+      "quest.oath.objective.talk",
+      "quest.oath.title",
+      "world.exit.haven.name",
+      "world.exit.map.name",
+      "world.exit.meadow.name",
+      "world.exit.spire.name",
+      "world.location.haven.description",
+      "world.location.haven.name",
+      "world.location.meadow.description",
+      "world.location.meadow.name",
+      "world.location.spire.description",
+      "world.location.spire.name",
+      "world.npc.keeper.name",
+      "world.npc.scout.name",
+      "world.prompt.battle",
+      "world.prompt.open",
+      "world.prompt.return_map",
+      "world.prompt.talk",
+      "world.prompt.travel",
+      "world.region.vale.description",
+      "world.region.vale.name",
+      "world.treasure.meadow.name",
+      "world.trigger.meadow.name",
+      "world.trigger.spire.name"
+    ]
   }
 }

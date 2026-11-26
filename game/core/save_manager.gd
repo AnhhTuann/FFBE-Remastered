@@ -17,6 +17,8 @@ const BATTLE_PROGRESS_VERSION := 3
 
 var _settings: Dictionary = {}
 var _fail_next_atomic_write: bool = false
+var _fail_next_migration_backup: bool = false
+var _read_only_paths: Dictionary = {}
 
 
 func _ready() -> void:
@@ -66,6 +68,60 @@ func fail_next_atomic_write() -> void:
 
 func clear_write_failure() -> void:
 	_fail_next_atomic_write = false
+
+
+func fail_next_migration_backup() -> void:
+	## Test-only fault injection for the pre-migration backup path.
+	_fail_next_migration_backup = true
+
+
+func clear_migration_backup_failure() -> void:
+	_fail_next_migration_backup = false
+
+
+## PlayerState marks its own save path read-only when a future/invalid save is
+## detected. The guard lives in the writer so a direct SaveManager call cannot
+## overwrite bytes that must remain untouched for owner recovery.
+func set_path_read_only(path: String, enabled: bool) -> void:
+	if enabled:
+		_read_only_paths[path] = true
+	else:
+		_read_only_paths.erase(path)
+
+
+func is_path_read_only(path: String) -> bool:
+	return bool(_read_only_paths.get(path, false))
+
+
+func _path_guard_error(path: String) -> Error:
+	if not is_path_read_only(path):
+		return OK
+	DebugLog.warn("Refusing write to read-only save path %s" % path)
+	return ERR_FILE_NO_PERMISSION
+
+
+## Prompt 06 writes a one-generation pre-migration copy before an older player
+## state is normalized. It uses the same `user://` path namespace and never
+## touches backups from other prompts.
+func backup_for_migration(path: String) -> Error:
+	var guard: Error = _path_guard_error(path)
+	if guard != OK:
+		return guard
+	if _fail_next_migration_backup:
+		_fail_next_migration_backup = false
+		return ERR_FILE_CANT_WRITE
+	if not FileAccess.file_exists(path):
+		return OK
+	var original: String = FileAccess.get_file_as_string(path)
+	var backup_path: String = path + ".mig.bak"
+	var file: FileAccess = FileAccess.open(backup_path, FileAccess.WRITE)
+	if file == null:
+		return FileAccess.get_open_error()
+	if original.is_empty() or not file.store_string(original):
+		file.close()
+		return ERR_FILE_CANT_WRITE
+	file.close()
+	return OK
 
 
 func default_battle_progress() -> Dictionary:
@@ -343,14 +399,21 @@ func validate_state(data: Dictionary) -> bool:
 
 
 func atomic_write(path: String, data: Dictionary) -> Error:
+	var guard: Error = _path_guard_error(path)
+	if guard != OK:
+		return guard
 	if _fail_next_atomic_write:
 		_fail_next_atomic_write = false
 		return ERR_FILE_CANT_WRITE
+	var serialized: String = JSON.stringify(data, "  ")
+	var parser := JSON.new()
+	if parser.parse(serialized) != OK or not (parser.data is Dictionary):
+		return ERR_INVALID_DATA
 	var temp_path: String = path + ".tmp"
 	var file: FileAccess = FileAccess.open(temp_path, FileAccess.WRITE)
 	if file == null:
 		return FileAccess.get_open_error()
-	if not file.store_string(JSON.stringify(data, "  ")):
+	if not file.store_string(serialized):
 		file.close()
 		return ERR_FILE_CANT_WRITE
 	file.close()
@@ -362,8 +425,9 @@ func atomic_write(path: String, data: Dictionary) -> Error:
 	var target_name: String = path.get_file()
 	var backup_name: String = target_name + ".bak"
 	var temp_name: String = temp_path.get_file()
+	var had_target: bool = directory.file_exists(target_name)
 
-	if directory.file_exists(target_name):
+	if had_target:
 		if directory.file_exists(backup_name):
 			var remove_error: Error = directory.remove(backup_name)
 			if remove_error != OK:
@@ -372,7 +436,11 @@ func atomic_write(path: String, data: Dictionary) -> Error:
 		if backup_error != OK:
 			return backup_error
 
-	return directory.rename(temp_name, target_name)
+	var rename_error: Error = directory.rename(temp_name, target_name)
+	if rename_error != OK and had_target and directory.file_exists(backup_name):
+		# Never leave the target absent after the backup has been rotated.
+		directory.rename(backup_name, target_name)
+	return rename_error
 
 
 func _read_json_with_fallback(path: String) -> Dictionary:

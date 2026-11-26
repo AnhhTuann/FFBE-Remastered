@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored world-map navigation graph. Bidirectional edges are resolved by WorldLocationRepository.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "source_data_imported": false,
+    "evidence_class": "REMASTERED_DESIGN"
+  },
+  "connections": [
+    {
+      "id": "connection:GL:7101@haven_meadow",
+      "kind": "connection",
+      "region": "GL",
+      "native_id": "7101",
+      "form": "haven_meadow",
+      "from": "loc:GL:1101@haven",
+      "to": "loc:GL:1102@meadow",
+      "requirement": {"location_id": "loc:GL:1102@meadow"},
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "connection:GL:7102@meadow_spire",
+      "kind": "connection",
+      "region": "GL",
+      "native_id": "7102",
+      "form": "meadow_spire",
+      "from": "loc:GL:1102@meadow",
+      "to": "loc:GL:1103@spire",
+      "requirement": {"location_id": "loc:GL:1103@spire"},
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    }
+  ]
+}

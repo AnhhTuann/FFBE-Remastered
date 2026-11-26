@@ -4,6 +4,9 @@ extends Node
 ## this service owns owned units, inventory, resources, trust, parties and locale.
 ## It remains in the version-3 filename so version-2 slot and battle-progress
 ## saves stay untouched; the in-file format is version 4 with additive v4 sections.
+## Prompt 06 adds an additive `world` section without bumping the format version:
+## v1-v4 saves are normalized through `_ensure_world_state()` and a migration
+## backup is made before any on-disk state is rewritten.
 ## Fresh and migrated profiles anchor economy.last_settled_unix at creation time
 ## so an epoch-zero save cannot claim historical offline rewards.
 
@@ -13,13 +16,29 @@ signal load_failed(message: String)
 const PLAYER_STATE_PATH := "user://player_state_v3.json"
 const PLAYER_STATE_VERSION := 4
 const SUPPORTED_LOCALES: Array[String] = ["vi", "en", "ja"]
+const WORLD_REGION_ID := "region:GL:1001@vale"
+const WORLD_START_LOCATION := "loc:GL:1101@haven"
+
+## Sticky load states. Once a future/invalid save is detected the profile is
+## locked: no commit, reward claim, quest/inventory mutation, migration, reset
+## or backup may overwrite the on-disk bytes while the owner can still recover.
+const SAVE_STATUS_NORMAL := "NORMAL"
+const SAVE_STATUS_MIGRATING := "MIGRATING"
+const SAVE_STATUS_READ_ONLY_FUTURE_VERSION := "READ_ONLY_FUTURE_VERSION"
+const SAVE_STATUS_LOAD_FAILED := "LOAD_FAILED"
 
 var data: Dictionary = {}
 var progression: RefCounted = null
 var inventory: RefCounted = null
 var build_resolver: RefCounted = null
 var last_error: String = ""
+var save_status: String = SAVE_STATUS_NORMAL
+var read_only_reason: String = ""
 var _loading: bool = false
+var _transaction_depth: int = 0
+var _pending_battle_result: Dictionary = {}
+var _pending_battle_context: Dictionary = {}
+var _pending_battle_kind: String = ""
 
 
 func _ready() -> void:
@@ -28,6 +47,85 @@ func _ready() -> void:
 	DebugLog.info("PlayerState ready (format version %d, %d owned units)" % [
 		PLAYER_STATE_VERSION, (data.get("owned_units", []) as Array).size()
 	])
+
+
+func get_save_status() -> String:
+	return save_status
+
+
+func set_save_status(status: String, reason: String = "") -> void:
+	save_status = status
+	read_only_reason = reason
+	# MIGRATING is an in-memory phase: it may still write the one-generation
+	# .mig.bak copy. Only terminal failure states lock the target bytes.
+	var locked: bool = status == SAVE_STATUS_READ_ONLY_FUTURE_VERSION or status == SAVE_STATUS_LOAD_FAILED
+	SaveManager.call("set_path_read_only", PLAYER_STATE_PATH, locked)
+
+
+func _write_guard_error() -> Error:
+	if save_status == SAVE_STATUS_NORMAL:
+		return OK
+	last_error = read_only_reason if not read_only_reason.is_empty() else "save.error.read_only"
+	return ERR_FILE_NO_PERMISSION
+
+
+func is_write_allowed() -> bool:
+	return _write_guard_error() == OK
+
+
+func get_pending_battle_result() -> Dictionary:
+	return _pending_battle_result.duplicate(true)
+
+
+func get_pending_battle_context() -> Dictionary:
+	return _pending_battle_context.duplicate(true)
+
+
+func get_pending_battle_kind() -> String:
+	return _pending_battle_kind
+
+
+func has_pending_battle_settlement() -> bool:
+	return not _pending_battle_result.is_empty()
+
+
+## Replays the failed settlement with its preserved result and context. No new
+## battle is started and no reward is granted twice: the normal claim/receipt
+## identity checks still apply. A world settlement keeps its trigger/location
+## context; an ordinary battle reward has none and replays the claim directly.
+func retry_pending_battle_settlement() -> Dictionary:
+	if _pending_battle_result.is_empty():
+		return {"ok": false, "reason": "no_pending_settlement", "message": "battle.reward_unavailable"}
+	var outcome: Dictionary
+	if _pending_battle_kind == "world":
+		outcome = settle_world_battle(_pending_battle_result, _pending_battle_context)
+	else:
+		outcome = claim_battle_reward(_pending_battle_result)
+	# A duplicate receipt means the preserved settlement is already committed.
+	# Clear it here too because the early no-op returns before the normal clear.
+	if bool(outcome.get("ok", false)):
+		clear_pending_battle_result()
+	return outcome
+
+
+func clear_pending_battle_result() -> void:
+	_pending_battle_result = {}
+	_pending_battle_context = {}
+	_pending_battle_kind = ""
+
+
+## Explicit recovery is only possible when the on-disk save is no longer a
+## future version. It never resets a future save by overwriting it.
+func recover_from_load_failure() -> Error:
+	var result: Dictionary = SaveManager.call("_read_json_with_fallback", PLAYER_STATE_PATH)
+	if bool(result.get("ok", false)) and result.get("data") is Dictionary:
+		var stored: Dictionary = result["data"]
+		if int(stored.get("version", 1)) > PLAYER_STATE_VERSION:
+			last_error = "save.error.newer"
+			return ERR_FILE_NO_PERMISSION
+	set_save_status(SAVE_STATUS_NORMAL, "")
+	last_error = ""
+	return OK
 
 
 func rebuild_systems() -> void:
@@ -110,7 +208,29 @@ func default_state(now_unix: int = -1) -> Dictionary:
 		"economy": {"last_settled_unix": anchor, "claims": {}},
 		"shops": {},
 		"crafting": {},
+		"world": default_world_state(),
 		"legacy": {}
+	}
+
+
+## Prompt 06 world state is additive. Every field has a conservative default so
+## an old save can be backfilled without resetting progress from Prompts 01-05.1.
+func default_world_state() -> Dictionary:
+	return {
+		"version": 1,
+		"current_region": WORLD_REGION_ID,
+		"current_location": WORLD_START_LOCATION,
+		"discovered_locations": [WORLD_START_LOCATION],
+		"unlocked_locations": [WORLD_START_LOCATION],
+		"completed_locations": [],
+		"quests": {},
+		"flags": {},
+		"dialogue_choices": {},
+		"interactions": {},
+		"opened_treasures": [],
+		"defeated_one_time_encounters": [],
+		"processed_battle_runs": {},
+		"last_battle_result": {}
 	}
 
 
@@ -185,21 +305,51 @@ func _default_inventory() -> Dictionary:
 
 func load_state(now_unix: int = -1) -> Dictionary:
 	var anchor: int = _resolve_timestamp(now_unix)
+	set_save_status(SAVE_STATUS_MIGRATING, "")
 	_loading = true
 	var result: Variant = SaveManager.call("_read_json_with_fallback", PLAYER_STATE_PATH)
 	_loading = false
 	if result is Dictionary and bool((result as Dictionary).get("ok", false)):
 		var raw: Variant = (result as Dictionary).get("data", {})
 		if raw is Dictionary:
-			var migrated := migrate_state(raw as Dictionary, anchor)
+			var raw_state: Dictionary = raw as Dictionary
+			# Check before any backup or normalization: a future save must stay
+			# byte-identical, including its .mig.bak and .tmp companions.
+			var raw_world_variant: Variant = raw_state.get("world", {})
+			if int(raw_state.get("version", 1)) > PLAYER_STATE_VERSION \
+					or (raw_world_variant is Dictionary and int((raw_world_variant as Dictionary).get("version", 1)) > 1):
+				last_error = "save.error.newer"
+				set_save_status(SAVE_STATUS_READ_ONLY_FUTURE_VERSION, last_error)
+				load_failed.emit(last_error)
+				return default_state(anchor)
+			if _needs_migration_backup(raw_state):
+				var backup_error: Error = SaveManager.call("backup_for_migration", PLAYER_STATE_PATH)
+				if backup_error != OK:
+					last_error = "save.error.migration_backup"
+					set_save_status(SAVE_STATUS_LOAD_FAILED, last_error)
+					load_failed.emit(last_error)
+					return default_state(anchor)
+			var migrated := migrate_state(raw_state, anchor)
+			if save_status == SAVE_STATUS_READ_ONLY_FUTURE_VERSION:
+				load_failed.emit(last_error)
+				return default_state(anchor)
 			if validate_state(migrated):
+				set_save_status(SAVE_STATUS_NORMAL, "")
 				last_error = ""
 				return migrated
 			last_error = "save.error.invalid"
+			set_save_status(SAVE_STATUS_LOAD_FAILED, last_error)
 			load_failed.emit(last_error)
 			return default_state(anchor)
-	last_error = "save.error.corrupt"
-	load_failed.emit(last_error)
+	# A fresh profile has nothing to recover and must remain writable. Only a
+	# present but unreadable save is locked for owner recovery.
+	if FileAccess.file_exists(PLAYER_STATE_PATH) or FileAccess.file_exists(PLAYER_STATE_PATH + ".bak"):
+		last_error = "save.error.corrupt"
+		set_save_status(SAVE_STATUS_LOAD_FAILED, last_error)
+		load_failed.emit(last_error)
+	else:
+		last_error = ""
+		set_save_status(SAVE_STATUS_NORMAL, "")
 	return default_state(anchor)
 
 
@@ -224,9 +374,69 @@ func migrate_state(raw: Dictionary, now_unix: int = -1) -> Dictionary:
 				return {}
 		version += 1
 		working["version"] = version
+	var future_world_variant: Variant = working.get("world", {})
+	if future_world_variant is Dictionary and int((future_world_variant as Dictionary).get("version", 1)) > 1:
+		last_error = "save.error.newer"
+		return {}
 	if not working.has("claimed_rewards"):
 		working["claimed_rewards"] = {}
-	return _ensure_economy_anchor(working, anchor)
+	return _ensure_economy_anchor(_ensure_world_state(working), anchor)
+
+
+## Version 4 remains the file format. Older v1-v4 saves are normalized in memory
+## and a `.mig.bak` copy is written before the first committed world mutation.
+func _needs_migration_backup(raw: Dictionary) -> bool:
+	var version: int = int(raw.get("version", 1))
+	return version <= PLAYER_STATE_VERSION and (version < PLAYER_STATE_VERSION or not raw.has("world"))
+
+
+func _ensure_world_state(target: Dictionary) -> Dictionary:
+	var defaults: Dictionary = default_world_state()
+	var section_variant: Variant = target.get("world", null)
+	var section: Dictionary = section_variant if section_variant is Dictionary else {}
+	for key: String in defaults.keys():
+		if not section.has(key) or section[key] == null:
+			section[key] = (defaults[key] as Array).duplicate(true) if defaults[key] is Array else (
+				defaults[key].duplicate(true) if defaults[key] is Dictionary else defaults[key]
+			)
+	for id: String in [WORLD_START_LOCATION]:
+		if not (section["discovered_locations"] as Array).has(id):
+			(section["discovered_locations"] as Array).append(id)
+		if not (section["unlocked_locations"] as Array).has(id):
+			(section["unlocked_locations"] as Array).append(id)
+	if str(section.get("current_location", "")).is_empty():
+		section["current_location"] = WORLD_START_LOCATION
+	if str(section.get("current_region", "")).is_empty():
+		section["current_region"] = WORLD_REGION_ID
+	for array_key: String in [
+		"discovered_locations", "unlocked_locations", "completed_locations",
+		"opened_treasures", "defeated_one_time_encounters"
+	]:
+		if not section[array_key] is Array:
+			section[array_key] = []
+	for dict_key: String in [
+		"quests", "flags", "dialogue_choices", "interactions",
+		"processed_battle_runs", "last_battle_result"
+	]:
+		if not section[dict_key] is Dictionary:
+			section[dict_key] = {}
+	target["world"] = section
+	return target
+
+
+## All world managers stage mutations on `data` and call this once. A failed
+## atomic write restores the complete pre-transaction snapshot.
+func commit_world(section: String, snapshot: Dictionary) -> Dictionary:
+	var error: Error = commit(section)
+	if error != OK:
+		data = snapshot
+		return {"ok": false, "reason": "save_failed", "message": "save.failed"}
+	return {"ok": true, "reason": "", "message": "save.saved"}
+
+
+func get_world_state() -> Dictionary:
+	var state_variant: Variant = data.get("world", {})
+	return state_variant.duplicate(true) if state_variant is Dictionary else default_world_state()
 
 
 ## Additive v4 economy anchor. It only fills a missing/zero unclaimed timestamp;
@@ -342,10 +552,28 @@ func validate_state(state: Dictionary) -> bool:
 		return false
 	for section: String in [
 		"claimed_rewards", "reward_claims", "mission_progress", "battle_runs",
-		"espers", "summon", "economy", "shops", "crafting"
+		"espers", "summon", "economy", "shops", "crafting", "world"
 	]:
 		if not (state.get(section, {}) is Dictionary):
 			return false
+	var world_variant: Variant = state.get("world", {})
+	if not world_variant is Dictionary or int((world_variant as Dictionary).get("version", 0)) != 1:
+		return false
+	for world_key: String in [
+		"discovered_locations", "unlocked_locations", "completed_locations",
+		"opened_treasures", "defeated_one_time_encounters"
+	]:
+		if not (world_variant as Dictionary).get(world_key, []) is Array:
+			return false
+	for world_key: String in [
+		"quests", "flags", "dialogue_choices", "interactions",
+		"processed_battle_runs", "last_battle_result"
+	]:
+		if not (world_variant as Dictionary).get(world_key, {}) is Dictionary:
+			return false
+	var profile_variant_check: Variant = state.get("profile", {})
+	if not profile_variant_check is Dictionary:
+		return false
 	var economy_variant: Variant = state.get("economy", {})
 	if economy_variant is Dictionary and (economy_variant as Dictionary).has("last_settled_unix"):
 		if int((economy_variant as Dictionary).get("last_settled_unix", -1)) < 0:
@@ -367,14 +595,10 @@ func validate_state(state: Dictionary) -> bool:
 func save() -> Error:
 	if _loading:
 		return OK
-	if not validate_state(data):
-		return ERR_INVALID_DATA
-	var error: Error = SaveManager.call("atomic_write", PLAYER_STATE_PATH, data)
-	if error != OK:
-		last_error = "save.error.invalid"
-		return error
-	last_error = ""
-	return OK
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return guard
+	return _commit_internal()
 
 
 func commit(section: String) -> Error:
@@ -384,7 +608,53 @@ func commit(section: String) -> Error:
 	return error
 
 
+func _commit_internal() -> Error:
+	if not validate_state(data):
+		last_error = "save.error.invalid"
+		return ERR_INVALID_DATA
+	var error: Error = SaveManager.call("atomic_write", PLAYER_STATE_PATH, data)
+	if error != OK:
+		last_error = "save.error.invalid"
+		return error
+	last_error = ""
+	return OK
+
+
+## One gameplay action = one staged mutation, validation and single commit.
+## Public settlement helpers call this instead of nesting commits. A failed
+## action restores the full snapshot; a nested transaction is rejected rather
+## than silently creating a second on-disk write.
+func transaction(section: String, mutation: Callable) -> Dictionary:
+	if not mutation.is_valid():
+		return {"ok": false, "reason": "invalid_mutation", "message": "save.failed"}
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return {"ok": false, "reason": "read_only", "message": "save.error.read_only"}
+	if _transaction_depth > 0:
+		return {"ok": false, "reason": "nested_transaction", "message": "save.failed"}
+	var snapshot: Dictionary = data.duplicate(true)
+	_transaction_depth = 1
+	var staged: Variant
+	staged = mutation.call()
+	_transaction_depth = 0
+	if staged is Dictionary and not bool((staged as Dictionary).get("ok", true)):
+		data = snapshot
+		return staged
+	if not validate_state(data):
+		data = snapshot
+		return {"ok": false, "reason": "invalid_state", "message": "save.error.invalid"}
+	var error: Error = _commit_internal()
+	if error != OK:
+		data = snapshot
+		return {"ok": false, "reason": "save_failed", "message": "reward.save_failed"}
+	state_changed.emit(section)
+	return staged if staged is Dictionary else {"ok": true, "reason": ""}
+
+
 func reset_to_defaults() -> Error:
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return guard
 	data = default_state()
 	rebuild_systems()
 	return commit("reset")
@@ -407,6 +677,8 @@ func can_pay(cost: Dictionary) -> bool:
 
 
 func pay(cost: Dictionary) -> bool:
+	if _write_guard_error() != OK:
+		return false
 	if not can_pay(cost):
 		return false
 	var resources: Dictionary = data.get("resources", {})
@@ -417,6 +689,8 @@ func pay(cost: Dictionary) -> bool:
 
 
 func grant(reward: Dictionary) -> void:
+	if _write_guard_error() != OK:
+		return
 	var resources: Dictionary = data.get("resources", {})
 	for key: String in reward.keys():
 		resources[key] = get_resource(key) + maxi(int(reward[key]), 0)
@@ -439,6 +713,8 @@ func get_unit_instance(instance_id: String) -> Dictionary:
 
 
 func mutate_unit_instance(instance_id: String, patch: Dictionary) -> bool:
+	if _write_guard_error() != OK:
+		return false
 	var units_variant: Variant = data.get("owned_units", [])
 	if not units_variant is Array:
 		return false
@@ -456,6 +732,8 @@ func mutate_unit_instance(instance_id: String, patch: Dictionary) -> bool:
 
 
 func grant_unit(definition_id: String, source: String = "granted") -> String:
+	if _write_guard_error() != OK or _transaction_depth > 0:
+		return ""
 	var serial: int = maxi(int(data.get("next_unit_serial", 1)), 1)
 	var entry: Dictionary = _new_unit_dict(definition_id, serial, source)
 	var units_variant: Variant = data.get("owned_units", [])
@@ -488,6 +766,8 @@ func find_inventory_entry(uid: String) -> Dictionary:
 
 
 func next_equip_serial() -> int:
+	if _write_guard_error() != OK:
+		return -1
 	var serial: int = maxi(int(data.get("next_equip_serial", 1)), 1)
 	data["next_equip_serial"] = serial + 1
 	return serial
@@ -505,6 +785,8 @@ func get_party(party_id: String) -> Dictionary:
 
 
 func set_party(party_id: String, party: Dictionary) -> void:
+	if _write_guard_error() != OK:
+		return
 	var all_parties: Dictionary = parties()
 	all_parties[party_id] = party.duplicate(true)
 	data["parties"] = all_parties
@@ -519,6 +801,9 @@ func locale() -> String:
 
 
 func set_locale(locale: String) -> Error:
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return guard
 	var normalized := normalize_locale(locale)
 	var profile_variant: Variant = data.get("profile", {})
 	var previous: Dictionary = (profile_variant as Dictionary).duplicate(true) if profile_variant is Dictionary else {}
@@ -554,10 +839,29 @@ func battle_reward_key(result: Dictionary) -> String:
 
 
 func claim_battle_reward(result: Dictionary) -> Dictionary:
-	var snapshot: Dictionary = data.duplicate(true)
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return {"ok": false, "reason": "read_only", "key": "", "message": "save.error.read_only"}
+	_pending_battle_context = {}
+	_pending_battle_kind = "reward"
+	_pending_battle_result = result.duplicate(true)
+	var outcome: Dictionary = transaction("rewards", func() -> Dictionary:
+		return _stage_battle_reward(result)
+	)
+	if not outcome.has("key"):
+		outcome["key"] = str(_canonical_claim_keys(
+			result, str(result.get("encounter_id", "")), str(result.get("run_id", ""))
+		).get("repeat", ""))
+	if str(outcome.get("reason", "")) != "save_failed":
+		clear_pending_battle_result()
+	return outcome
+
+
+## Pure staging half of battle reward settlement. It never commits, so a world
+## settlement can include it in the same atomic transaction.
+func _stage_battle_reward(result: Dictionary) -> Dictionary:
 	if not bool(result.get("victory", false)):
 		return {"ok": false, "reason": "not_victory", "key": "", "message": "reward.not_victory"}
-
 	var encounter_id: String = str(result.get("encounter_id", ""))
 	var run_id: String = str(result.get("run_id", ""))
 	var claim_keys: Dictionary = _canonical_claim_keys(result, encounter_id, run_id)
@@ -573,30 +877,30 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 		if not claims.has(key):
 			new_claim_keys.append(key)
 	if new_claim_keys.is_empty():
-		return {"ok": false, "reason": "already_claimed", "key": repeat_key, "message": "reward.already_claimed"}
+		return {
+			"ok": false, "reason": "already_claimed", "key": repeat_key,
+			"message": "reward.already_claimed", "keys": claim_keys.duplicate(true)
+		}
 
 	var rewards_variant: Variant = result.get("rewards", {})
 	var rewards: Dictionary = rewards_variant if rewards_variant is Dictionary else {}
 	var grant: Dictionary = {}
+	var legacy: Dictionary = _snapshot_section(data, "claimed_rewards")
 
-	# Repeat, first-clear and each mission have independent claim keys. An
-	# already claimed first-clear must not suppress this run's repeat reward.
 	if not claims.has(repeat_key):
 		var repeat_variant: Variant = rewards.get("repeat", {})
 		if repeat_variant is Dictionary:
 			_collect_reward(repeat_variant, grant)
 		else:
 			_collect_reward(rewards, grant)
-		_remember_claim(claims, _snapshot_section(snapshot, "claimed_rewards"), repeat_key,
-			encounter_id, run_id, result)
+		_remember_claim(claims, legacy, repeat_key, encounter_id, run_id, result)
 
 	var first_key: String = str(claim_keys.get("first_clear", ""))
 	if not first_key.is_empty() and not claims.has(first_key):
 		var first_variant: Variant = rewards.get("first_clear", {})
 		if first_variant is Dictionary:
 			_collect_reward(first_variant, grant)
-		_remember_claim(claims, _snapshot_section(snapshot, "claimed_rewards"), first_key,
-			encounter_id, run_id, result)
+		_remember_claim(claims, legacy, first_key, encounter_id, run_id, result)
 
 	var claimed_missions: Array[Dictionary] = []
 	var missions_variant: Variant = rewards.get("missions", [])
@@ -612,8 +916,7 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 			var mission_reward: Variant = mission.get("reward", {})
 			if mission_reward is Dictionary:
 				_collect_reward(mission_reward, grant)
-			_remember_claim(claims, _snapshot_section(snapshot, "claimed_rewards"), key,
-				encounter_id, run_id, result)
+			_remember_claim(claims, legacy, key, encounter_id, run_id, result)
 			claimed_missions.append({
 				"id": mission_id,
 				"key": key,
@@ -621,15 +924,11 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 				"reward": mission_reward.duplicate(true) if mission_reward is Dictionary else {}
 			})
 
-	# Every mutation is staged here; `data` is only replaced after the complete
-	# snapshot is built, and a failed commit restores the whole snapshot.
-	var claimed_variant_current: Variant = data.get("claimed_rewards", {})
-	var claimed: Dictionary = claimed_variant_current if claimed_variant_current is Dictionary else {}
 	for key_variant: Variant in claim_keys.values():
 		var key: String = str(key_variant)
 		if not new_claim_keys.has(key):
 			continue
-		claimed[key] = {
+		legacy[key] = {
 			"encounter_id": encounter_id,
 			"run_id": run_id,
 			"seed": int(result.get("seed", 0)),
@@ -671,14 +970,9 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 		resources[key] = get_resource(key) + maxi(int(grant[key]), 0)
 	data["resources"] = resources
 	data["reward_claims"] = claims
-	data["claimed_rewards"] = claimed
+	data["claimed_rewards"] = legacy
 	data["mission_progress"] = mission_progress
 	data["battle_runs"] = runs
-
-	var error: Error = commit("rewards")
-	if error != OK:
-		data = snapshot
-		return {"ok": false, "reason": "save_failed", "key": repeat_key, "message": "reward.save_failed"}
 	return {
 		"ok": true,
 		"reason": "",
@@ -687,6 +981,211 @@ func claim_battle_reward(result: Dictionary) -> Dictionary:
 		"new_keys": new_claim_keys.duplicate(true),
 		"message": "reward.saved",
 		"rewards": grant
+	}
+
+
+## Prompt 06 quest and treasure rewards reuse the same staged, claim-keyed and
+## rollback-safe settlement path as combat rewards. `on_commit` lets the caller
+## stage related world-state changes in the same single atomic write.
+func claim_world_reward(
+	kind: String,
+	identity: String,
+	reward: Dictionary,
+	on_commit: Callable = Callable()
+) -> Dictionary:
+	if kind.is_empty() or identity.is_empty() or not (reward is Dictionary):
+		return {"ok": false, "reason": "invalid_reward", "message": "reward.invalid"}
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return {"ok": false, "reason": "read_only", "message": "save.error.read_only"}
+	var key: String = "world|%s|%s" % [kind, identity]
+	var claims_variant: Variant = data.get("reward_claims", {})
+	var claims: Dictionary = claims_variant if claims_variant is Dictionary else {}
+	if claims.has(key):
+		return {"ok": false, "reason": "already_claimed", "key": key, "message": "reward.already_claimed"}
+	var staged_callback: Callable = on_commit
+	var outcome: Dictionary = transaction("world_reward", func() -> Dictionary:
+		if staged_callback.is_valid():
+			var staged: Variant = staged_callback.call()
+			if staged is Dictionary and not bool((staged as Dictionary).get("ok", true)):
+				return staged
+		return _stage_world_claim(kind, identity, reward, key)
+	)
+	if not outcome.has("key"):
+		outcome["key"] = key
+	return outcome
+
+
+func _stage_world_claim(kind: String, identity: String, reward: Dictionary, key: String) -> Dictionary:
+	var grant: Dictionary = {}
+	_collect_reward(reward, grant)
+	var resources: Dictionary = get_resources()
+	for item_id: String in grant.keys():
+		resources[item_id] = get_resource(item_id) + maxi(int(grant[item_id]), 0)
+	data["resources"] = resources
+	var legacy_variant: Variant = data.get("claimed_rewards", {})
+	var legacy: Dictionary = legacy_variant if legacy_variant is Dictionary else {}
+	legacy[key] = {"kind": kind, "identity": identity, "rewards": grant.duplicate(true)}
+	var claims_variant: Variant = data.get("reward_claims", {})
+	var claims: Dictionary = claims_variant if claims_variant is Dictionary else {}
+	claims[key] = {
+		"key": key,
+		"kind": kind,
+		"identity": identity,
+		"rewards": grant.duplicate(true),
+		"canonical": true
+	}
+	data["claimed_rewards"] = legacy
+	data["reward_claims"] = claims
+	return {
+		"ok": true, "reason": "", "key": key,
+		"message": "reward.saved", "rewards": grant.duplicate(true)
+	}
+
+
+func transact_world(section: String, mutation: Callable) -> Dictionary:
+	return transaction(section, mutation)
+
+
+## Canonical settlement for a world encounter. Reward, encounter flag, run
+## receipt, world state and quest event are staged into one transaction and
+## committed during the battle, before the player returns to the map. A run
+## receipt is a hard idempotency boundary: no reward, world, interaction or quest
+## mutation is even staged when the same run is settled again.
+##
+## `repository` is an optional test seam; normal callers leave it null.
+func settle_world_battle(
+	result: Dictionary, context: Dictionary = {}, repository: RefCounted = null
+) -> Dictionary:
+	var run_id: String = str(result.get("run_id", ""))
+	var encounter_id: String = str(result.get("encounter_id", ""))
+	if run_id.is_empty() or encounter_id.is_empty():
+		return {"ok": false, "reason": "invalid_result", "message": "world.invalid_result"}
+
+	var world_variant: Variant = data.get("world", null)
+	var world: Dictionary = world_variant if world_variant is Dictionary else {}
+	var processed_variant: Variant = world.get("processed_battle_runs", {})
+	var processed: Dictionary = processed_variant if processed_variant is Dictionary else {}
+	if processed.has(run_id):
+		var prior_variant: Variant = processed[run_id]
+		var prior: Dictionary = prior_variant if prior_variant is Dictionary else {}
+		if not prior.is_empty() and str(prior.get("encounter_id", "")) != encounter_id:
+			return {"ok": false, "reason": "invalid_context", "message": "world.invalid_context"}
+		# Return before the write guard, pending-state capture and transaction.
+		# This is a true no-op even for a quest whose objective needs multiple wins.
+		return {
+			"ok": true, "reason": "", "duplicate": true,
+			"reward": {
+				"ok": false, "reason": "already_claimed", "key": "",
+				"message": "reward.already_claimed"
+			},
+			"world": {
+				"ok": true, "reason": "", "duplicate": true,
+				"one_time": bool(prior.get("one_time", false)),
+				"trigger_id": str(prior.get("trigger_id", ""))
+			},
+			"quest": {"ok": true, "reason": "", "duplicate": true, "touched": [], "completed": []}
+		}
+
+	var guard: Error = _write_guard_error()
+	if guard != OK:
+		return {"ok": false, "reason": "read_only", "message": "save.error.read_only"}
+	var settlement_context: Dictionary = context.duplicate(true)
+	if settlement_context.is_empty() and result.has("trigger_id"):
+		settlement_context["trigger_id"] = str(result.get("trigger_id", ""))
+		settlement_context["location_id"] = str(result.get("location_id", ""))
+	# Keep both halves until a write succeeds. A failed commit rolls data back but
+	# must not discard the context needed for a no-refight retry.
+	_pending_battle_context = settlement_context.duplicate(true)
+	_pending_battle_kind = "world"
+	_pending_battle_result = result.duplicate(true)
+	var quest_repo: QuestRepository = QuestRepository.new()
+	if repository != null and repository is QuestRepository:
+		quest_repo = repository as QuestRepository
+	var outcome: Dictionary = transaction("battle_settlement", func() -> Dictionary:
+		var reward_stage: Dictionary = _stage_battle_reward(result)
+		var reward_reason: String = str(reward_stage.get("reason", ""))
+		if not bool(reward_stage.get("ok", false)) \
+				and reward_reason != "not_victory" and reward_reason != "already_claimed":
+			return reward_stage
+		var world_stage: Dictionary = _stage_world_battle(result, settlement_context)
+		if not bool(world_stage.get("ok", false)):
+			return world_stage
+		var quest_stage: Dictionary = {"ok": true, "reason": "", "touched": [], "completed": []}
+		if bool(result.get("victory", false)) and not encounter_id.is_empty():
+			quest_stage = QuestSettlement.stage_event(data, {
+				"type": "defeat_encounter", "target": encounter_id, "count": 1
+			}, quest_repo)
+			if not bool(quest_stage.get("ok", false)):
+				return quest_stage
+		return {
+			"ok": true, "reason": "", "reward": reward_stage,
+			"world": world_stage, "quest": quest_stage
+		}
+	)
+	if str(outcome.get("reason", "")) != "save_failed":
+		clear_pending_battle_result()
+	if not outcome.has("key"):
+		outcome["key"] = str(((outcome.get("reward", {}) as Dictionary).get("key", "")))
+	return outcome
+
+
+func _stage_world_battle(result: Dictionary, context: Dictionary) -> Dictionary:
+	var run_id: String = str(result.get("run_id", ""))
+	var encounter_id: String = str(result.get("encounter_id", ""))
+	var trigger_id: String = str(context.get("trigger_id", result.get("trigger_id", "")))
+	var location_id: String = str(context.get("location_id", result.get("location_id", "")))
+	if run_id.is_empty() or encounter_id.is_empty():
+		return {"ok": false, "reason": "invalid_result", "message": "world.invalid_result"}
+	var one_time: bool = bool(result.get("one_time", false))
+	if not trigger_id.is_empty():
+		var trigger: Dictionary = ContentRepository.call("get_world_interactable", trigger_id)
+		if trigger.is_empty() or str(trigger.get("kind", "")) != "encounter_trigger":
+			return {"ok": false, "reason": "invalid_context", "message": "world.invalid_context"}
+		if str(trigger.get("encounter_id", "")) != encounter_id:
+			return {"ok": false, "reason": "invalid_context", "message": "world.invalid_context"}
+		var context_encounter: String = str(context.get("encounter_id", ""))
+		if not context_encounter.is_empty() and context_encounter != encounter_id:
+			return {"ok": false, "reason": "invalid_context", "message": "world.invalid_context"}
+		var area_id: String = str(trigger.get("area_id", ""))
+		if not location_id.is_empty() and not area_id.is_empty() and area_id != location_id:
+			return {"ok": false, "reason": "invalid_context", "message": "world.invalid_context"}
+		one_time = one_time or str(trigger.get("interaction_policy", "")) == "one_time"
+	var world_variant: Variant = data.get("world", null)
+	if not world_variant is Dictionary:
+		return {"ok": false, "reason": "invalid_state", "message": "world.invalid_state"}
+	var world: Dictionary = world_variant
+	var processed_variant: Variant = world.get("processed_battle_runs", {})
+	var processed: Dictionary = processed_variant if processed_variant is Dictionary else {}
+	var duplicate: bool = processed.has(run_id)
+	if not duplicate:
+		processed[run_id] = {
+			"run_id": run_id, "encounter_id": encounter_id,
+			"outcome": "victory" if bool(result.get("victory", false)) else "defeat",
+			"trigger_id": trigger_id, "one_time": one_time
+		}
+		var interactions_variant: Variant = world.get("interactions", {})
+		var interactions: Dictionary = interactions_variant if interactions_variant is Dictionary else {}
+		if not trigger_id.is_empty():
+			var previous: Dictionary = interactions.get(trigger_id, {})
+			interactions[trigger_id] = {
+				"count": int(previous.get("count", 0)) + 1,
+				"last_outcome": "victory" if bool(result.get("victory", false)) else "defeat"
+			}
+			world["interactions"] = interactions
+	world["processed_battle_runs"] = processed
+	world["last_battle_result"] = result.duplicate(true)
+	if bool(result.get("victory", false)) and one_time:
+		var defeated_variant: Variant = world.get("defeated_one_time_encounters", [])
+		var defeated: Array = defeated_variant if defeated_variant is Array else []
+		if not defeated.has(encounter_id):
+			defeated.append(encounter_id)
+			defeated.sort()
+		world["defeated_one_time_encounters"] = defeated
+	data["world"] = world
+	return {
+		"ok": true, "reason": "", "duplicate": duplicate,
+		"one_time": one_time, "trigger_id": trigger_id
 	}
 
 
@@ -736,7 +1235,11 @@ func _canonical_claim_keys(result: Dictionary, encounter_id: String, run_id: Str
 	if not repeat_key.is_empty() and not _is_canonical_claim_key(repeat_key):
 		return {}
 	if repeat_key.is_empty():
-		if not run_id.is_empty():
+		# A world encounter marked one_time is keyed by the stable encounter id,
+		# never by the attempt id: a retry or a fresh run cannot farm rewards.
+		if bool(result.get("one_time", false)) and not encounter_id.is_empty():
+			repeat_key = "battle|once|%s" % encounter_id
+		elif not run_id.is_empty():
 			repeat_key = "battle|run|%s" % run_id
 		elif not bool(policy.get("repeatable", true)) and not encounter_id.is_empty():
 			repeat_key = "battle|once|%s" % encounter_id
@@ -757,6 +1260,10 @@ func _canonical_claim_keys(result: Dictionary, encounter_id: String, run_id: Str
 		if not key.begins_with("mission:"):
 			continue
 		var mission_key: String = str(provided[key_variant])
+		if bool(result.get("one_time", false)) and not run_id.is_empty():
+			var run_suffix: String = "|%s" % run_id
+			if mission_key.ends_with(run_suffix):
+				mission_key = mission_key.substr(0, mission_key.length() - run_suffix.length())
 		if not _is_canonical_claim_key(mission_key):
 			return {}
 		keys[key] = mission_key

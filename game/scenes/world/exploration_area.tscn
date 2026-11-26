@@ -1,0 +1,117 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://world/exploration_area.gd" id="1_exploration"]
+[ext_resource type="PackedScene" path="res://scenes/world/dialogue_panel.tscn" id="2_dialogue_panel"]
+
+[node name="ExplorationArea" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_exploration")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -300.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+text = ""
+
+[node name="ControlsLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.0
+anchor_bottom = 0.0
+anchor_right = 1.0
+offset_left = 36.0
+offset_top = 56.0
+offset_right = -36.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+text = ""
+
+[node name="InteractableLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="PlayerMarker" type="ColorRect" parent="."]
+layout_mode = 1
+offset_left = 556.0
+offset_top = 546.0
+offset_right = 584.0
+offset_bottom = 574.0
+color = Color(1.0, 0.82, 0.25, 1)
+
+[node name="PromptLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 44.0
+offset_top = -116.0
+offset_right = 700.0
+offset_bottom = -84.0
+theme_override_font_sizes/font_size = 15
+text = ""
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 44.0
+offset_top = -80.0
+offset_right = 700.0
+offset_bottom = -48.0
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="DialoguePanel" parent="." instance=ExtResource("2_dialogue_panel")]
+visible = false
+
+[node name="PausePanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -110.0
+offset_right = 210.0
+offset_bottom = 110.0
+visible = false
+
+[node name="PauseLayout" type="VBoxContainer" parent="PausePanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PauseTitle" type="Label" parent="PausePanel/PauseLayout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+text = ""
+
+[node name="ResumeButton" type="Button" parent="PausePanel/PauseLayout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+text = ""
+
+[node name="ReturnButton" type="Button" parent="PausePanel/PauseLayout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+text = ""

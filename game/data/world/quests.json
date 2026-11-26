@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored synthetic quest chain. Rewards use only existing validated synthetic resource IDs.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "source_data_imported": false,
+    "evidence_class": "REMASTERED_DESIGN"
+  },
+  "quests": [
+    {
+      "id": "quest:GL:3100@oath",
+      "kind": "quest",
+      "region": "GL",
+      "native_id": "3100",
+      "form": "oath",
+      "name_key": "quest.oath.title",
+      "description_key": "quest.oath.description",
+      "prerequisites": {"quests": [], "flags": []},
+      "objectives": [
+        {
+          "id": "objective:GL:310001@talk_keeper",
+          "type": "talk_to",
+          "target": "npc:GL:2101@keeper",
+          "count": 1,
+          "description_key": "quest.oath.objective.talk"
+        }
+      ],
+      "rewards": {"gil": 200, "items": ["item:GL:940001@base"]},
+      "unlocks": ["loc:GL:1102@meadow"],
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "quest:GL:3101@lantern",
+      "kind": "quest",
+      "region": "GL",
+      "native_id": "3101",
+      "form": "lantern",
+      "name_key": "quest.lantern.title",
+      "description_key": "quest.lantern.description",
+      "prerequisites": {"quests": ["quest:GL:3100@oath"], "flags": []},
+      "objectives": [
+        {
+          "id": "objective:GL:310101@talk_scout",
+          "type": "talk_to",
+          "target": "npc:GL:2102@scout",
+          "count": 1,
+          "description_key": "quest.lantern.objective.talk"
+        },
+        {
+          "id": "objective:GL:310102@visit_meadow",
+          "type": "visit_location",
+          "target": "loc:GL:1102@meadow",
+          "count": 1,
+          "description_key": "quest.lantern.objective.visit"
+        },
+        {
+          "id": "objective:GL:310103@open_chest",
+          "type": "open_treasure",
+          "target": "treasure:GL:4101@meadow",
+          "count": 1,
+          "description_key": "quest.lantern.objective.chest"
+        },
+        {
+          "id": "objective:GL:310104@defeat_skirmish",
+          "type": "defeat_encounter",
+          "target": "encounter:GL:950001@skirmish",
+          "count": 1,
+          "description_key": "quest.lantern.objective.battle"
+        },
+        {
+          "id": "objective:GL:310105@collect_fragment",
+          "type": "collect",
+          "target": "fragment:GL:910101@base",
+          "count": 1,
+          "description_key": "quest.lantern.objective.collect"
+        },
+        {
+          "id": "objective:GL:310106@complete_oath",
+          "type": "complete_quest",
+          "target": "quest:GL:3100@oath",
+          "count": 1,
+          "description_key": "quest.lantern.objective.prerequisite"
+        }
+      ],
+      "rewards": {"gil": 1000, "items": ["item:GL:940001@base", "item:GL:940001@base"]},
+      "unlocks": ["loc:GL:1103@spire"],
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    }
+  ]
+}

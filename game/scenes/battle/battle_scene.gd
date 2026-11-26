@@ -75,6 +75,7 @@ var _tick_timer: Timer
 var _qa_freeze_frame: int = -1
 var _result_recorded: bool = false
 var _reward_status_key: String = "battle.reward_unavailable"
+var _retry_save_button: Button = null
 var _result_snapshot: Dictionary = {}
 var _title_label: Label
 var _pause_button: Button
@@ -83,6 +84,11 @@ var _party_source_key: String = ""
 var _run_id: String = ""
 var _seed_source: String = "independent"
 var _battle_blocked: bool = false
+var _world_context: Dictionary = {}
+var _world_one_time: bool = false
+var _qa_auto_return: bool = false
+var _return_scene_path: String = MAIN_MENU_PATH
+var _encounter_override: String = ""
 
 ## Run ids are presentation-scoped: retrying the same encounter always creates
 ## a new settlement identity even inside one process.
@@ -94,6 +100,12 @@ func _ready() -> void:
 	_build_ui()
 	if not LocaleManager.locale_changed.is_connected(_apply_locale):
 		LocaleManager.locale_changed.connect(_apply_locale)
+	_world_context = WorldContext.consume()
+	_qa_seed_world_context()
+	_encounter_override = str(_world_context.get("encounter_id", ""))
+	_return_scene_path = str(_world_context.get("return_scene", MAIN_MENU_PATH))
+	if _return_scene_path.is_empty():
+		_return_scene_path = MAIN_MENU_PATH
 	_qa_read_freeze_frame()
 	_start_battle(_preferred_encounter())
 	if _qa_mode():
@@ -309,10 +321,16 @@ func _build_ui() -> void:
 	_result_body = _result_overlay.find_child("BodyLabel", true, false) as Label
 	var result_retry := _result_overlay.find_child("PrimaryButton", true, false) as Button
 	var result_menu := _result_overlay.find_child("SecondaryButton", true, false) as Button
+	_retry_save_button = _result_overlay.find_child("TertiaryButton", true, false) as Button
 	result_retry.text = LocaleManager.t("battle.retry")
 	result_menu.text = LocaleManager.t("battle.return_menu")
+	if _retry_save_button != null:
+		_retry_save_button.text = LocaleManager.t("battle.retry_save")
+		_retry_save_button.visible = false
 	result_retry.pressed.connect(_on_retry_pressed)
 	result_menu.pressed.connect(_on_menu_pressed)
+	if _retry_save_button != null:
+		_retry_save_button.pressed.connect(_on_retry_save_pressed)
 	_result_overlay.visible = false
 	add_child(_result_overlay)
 
@@ -369,12 +387,16 @@ func _make_overlay(title_text: String) -> PanelContainer:
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 12)
 	buttons.add_child(hbox)
-	var primary := _button("", 170)
+	var primary := _button("", 120)
 	primary.name = "PrimaryButton"
 	hbox.add_child(primary)
-	var secondary := _button("", 190)
+	var secondary := _button("", 140)
 	secondary.name = "SecondaryButton"
 	hbox.add_child(secondary)
+	var tertiary := _button("", 150)
+	tertiary.name = "TertiaryButton"
+	tertiary.visible = false
+	hbox.add_child(tertiary)
 	return overlay
 
 
@@ -437,7 +459,41 @@ func _qa_mode() -> bool:
 	return OS.get_environment("FFBE_QA_MODE").strip_edges() == "1"
 
 
+## QA captures launch the battle scene directly. Seed the same world-context
+## contract that exploration_area supplies, so settlement, Retry gating and
+## Battle return are exercised by the captured window and not faked by a mock.
+func _qa_seed_world_context() -> void:
+	if not _qa_mode() or not _world_context.is_empty():
+		return
+	var trigger_id: String = OS.get_environment("FFBE_QA_WORLD_TRIGGER").strip_edges()
+	if trigger_id.is_empty():
+		return
+	var return_scene: String = OS.get_environment("FFBE_QA_RETURN_SCENE").strip_edges()
+	if return_scene.is_empty():
+		return_scene = WorldContext.EXPLORATION_PATH
+	_world_context = {
+		"trigger_id": trigger_id,
+		"location_id": OS.get_environment("FFBE_QA_WORLD_LOCATION").strip_edges(),
+		"encounter_id": OS.get_environment("FFBE_QA_ENCOUNTER").strip_edges(),
+		"return_scene": return_scene
+	}
+
+
+func _is_world_one_time_encounter(encounter_id: String) -> bool:
+	var trigger_id: String = str(_world_context.get("trigger_id", ""))
+	if trigger_id.is_empty() or encounter_id.is_empty():
+		return false
+	var trigger: Dictionary = ContentRepository.call("get_world_interactable", trigger_id)
+	if trigger.is_empty() or str(trigger.get("encounter_id", "")) != encounter_id:
+		return false
+	return str(trigger.get("interaction_policy", "")) == "one_time"
+
+
 func _preferred_encounter() -> String:
+	if not _encounter_override.is_empty() and ContentRepository.call(
+		"get_encounter", _encounter_override
+	).size() > 0:
+		return _encounter_override
 	if _qa_mode():
 		var requested: String = OS.get_environment("FFBE_QA_ENCOUNTER")
 		if not requested.is_empty() and ContentRepository.call("get_encounter", requested).size() > 0:
@@ -475,6 +531,12 @@ func _block_battle_start(reason_key: String) -> void:
 # ---------------------------------------------------------------------------
 
 func _start_battle(encounter_id: String) -> void:
+	# A pending settlement owns this screen until its write succeeds. Keep this
+	# guard at the function boundary so an internal caller cannot stop the
+	# clock, replace the manager or clear the result snapshot by restarting.
+	if has_pending_settlement():
+		_refresh_pending_settlement_ui()
+		return
 	if _tick_timer != null:
 		_tick_timer.stop()
 	var script: Script = load(BATTLE_MANAGER_SCRIPT) as Script
@@ -484,6 +546,13 @@ func _start_battle(encounter_id: String) -> void:
 	var encounter: Dictionary = (ContentRepository.call("get_encounter", encounter_id) as Dictionary).duplicate(true)
 	if encounter.is_empty():
 		encounter = (ContentRepository.call("get_encounter", DEFAULT_ENCOUNTER) as Dictionary).duplicate(true)
+	# One-time policy comes from the world trigger, not the combat fixture. A
+	# world-context boss must never mint a fresh per-run repeat reward key.
+	_world_one_time = _is_world_one_time_encounter(encounter_id)
+	if _world_one_time:
+		encounter["one_time"] = true
+	if _encounter_option != null:
+		_encounter_option.disabled = not _world_context.is_empty()
 
 	var combatants: Dictionary = {}
 	var package: Dictionary = ContentRepository.call("get_battle_package")
@@ -555,6 +624,7 @@ func _start_battle(encounter_id: String) -> void:
 		_encounter_option.select(_build_encounter_option_index(encounter_id))
 	_rebuild_cards()
 	_refresh()
+	_refresh_pending_settlement_ui()
 
 
 func _build_encounter_option_index(encounter_id: String) -> int:
@@ -805,6 +875,8 @@ func _apply_locale(_locale: String = "") -> void:
 		result_retry.text = LocaleManager.t("battle.retry")
 	if result_menu != null:
 		result_menu.text = LocaleManager.t("battle.return_menu")
+	if _retry_save_button != null:
+		_retry_save_button.text = LocaleManager.t("battle.retry_save")
 	var pause_title: Label = _pause_overlay.find_child("TitleLabel", true, false) as Label
 	var pause_body: Label = _pause_overlay.find_child("BodyLabel", true, false) as Label
 	var resume_button: Button = _pause_overlay.find_child("PrimaryButton", true, false) as Button
@@ -1152,6 +1224,9 @@ func _on_tick() -> void:
 		_executing = false
 		_record_result(state)
 		_show_result(state)
+		if _qa_auto_return:
+			_qa_auto_return = false
+			call_deferred("_on_menu_pressed")
 		return
 	if _qa_freeze_frame >= 0 and int(manager.call("summary").get("frame", 0)) >= _qa_freeze_frame:
 		_tick_timer.stop()
@@ -1217,13 +1292,31 @@ func _record_result(state: RefCounted) -> void:
 	var result_variant: Variant = state.get("result")
 	if result_variant is RefCounted:
 		var result_dict: Dictionary = result_variant.call("to_dict")
+		if _world_context.has("trigger_id"):
+			result_dict["trigger_id"] = str(_world_context.get("trigger_id", ""))
+		if _world_context.has("location_id"):
+			result_dict["location_id"] = str(_world_context.get("location_id", ""))
+		result_dict["one_time"] = bool(result_dict.get("one_time", false)) or _world_one_time \
+			or _is_world_one_time_encounter(str(result_dict.get("encounter_id", "")))
 		_result_snapshot = result_dict.duplicate(true)
-		var player_state: Node = get_node_or_null("/root/PlayerState")
+		# Resolve through the active SceneTree so a headless test can call this
+		# settlement hook before the battle scene is attached to a scene tree.
+		var player_state: Node = null
+		var loop: Variant = Engine.get_main_loop()
+		if loop is SceneTree:
+			player_state = (loop as SceneTree).root.get_node_or_null("PlayerState")
 		var claim: Dictionary = {}
-		if player_state != null and player_state.has_method("claim_battle_reward"):
-			claim = player_state.call("claim_battle_reward", result_dict)
+		if player_state != null:
+			if not _world_context.is_empty() and player_state.has_method("settle_world_battle"):
+				var settlement: Dictionary = player_state.call("settle_world_battle", result_dict, _world_context)
+				claim = settlement.get("reward", {})
+				if not bool(settlement.get("ok", false)):
+					claim = {"ok": false, "reason": str(settlement.get("reason", "save_failed"))}
+			elif player_state.has_method("claim_battle_reward"):
+				claim = player_state.call("claim_battle_reward", result_dict)
 		_reward_status_key = _claim_status_key(claim)
 		SaveManager.call("record_battle_result", result_dict, str(result_dict.get("run_id", _run_id)))
+		_refresh_pending_settlement_ui()
 
 
 func _show_result(state: RefCounted) -> void:
@@ -1254,6 +1347,10 @@ func _render_result() -> void:
 	else:
 		_result_title.text = LocaleManager.t("battle.defeat")
 	_result_title.modulate = Color(0.55, 1.0, 0.64) if victory else Color(1.0, 0.52, 0.52)
+	var result_retry: Button = _result_overlay.find_child("PrimaryButton", true, false) as Button
+	if result_retry != null:
+		result_retry.visible = not (victory and bool(_result_snapshot.get("one_time", false))) \
+			and not has_pending_settlement()
 	_result_body.text = LocaleManager.t("battle.result_detail", {
 		"name": str(_result_snapshot.get("encounter_name", "")),
 		"turns": int(_result_snapshot.get("turns", 0)),
@@ -1267,8 +1364,11 @@ func _render_result() -> void:
 	}) + "\n" + LocaleManager.t("battle.reward_status", {
 		"status": LocaleManager.t(_reward_status_key)
 	})
+	if victory and bool(_result_snapshot.get("one_time", false)):
+		_result_body.text += "\n" + LocaleManager.t("battle.one_time_cleared")
 	if not _party_source_key.is_empty():
 		_result_body.text += "\n" + LocaleManager.t(_party_source_key)
+	_refresh_pending_settlement_ui()
 
 
 func _active_party_id() -> String:
@@ -1330,6 +1430,62 @@ func _claim_status_key(claim: Dictionary) -> String:
 	return "battle.reward_unavailable"
 
 
+func _pending_player_state() -> Node:
+	var loop: Variant = Engine.get_main_loop()
+	if loop is SceneTree:
+		return (loop as SceneTree).root.get_node_or_null("PlayerState")
+	return null
+
+
+## A failed settlement must be resolved in place. Navigation, Retry and the
+## debug encounter selector are blocked until the preserved result is saved.
+func has_pending_settlement() -> bool:
+	var player_state: Node = _pending_player_state()
+	if player_state == null or not player_state.has_method("has_pending_battle_settlement"):
+		return false
+	return bool(player_state.call("has_pending_battle_settlement"))
+
+
+func can_leave_battle() -> bool:
+	return not has_pending_settlement()
+
+
+func _refresh_pending_settlement_ui() -> void:
+	var pending: bool = has_pending_settlement()
+	if _menu_button != null:
+		_menu_button.disabled = pending
+	if _result_overlay != null:
+		var result_retry: Button = _result_overlay.find_child("PrimaryButton", true, false) as Button
+		var result_menu: Button = _result_overlay.find_child("SecondaryButton", true, false) as Button
+		if result_retry != null:
+			result_retry.disabled = pending
+		if result_menu != null:
+			result_menu.disabled = pending
+	if _pause_overlay != null:
+		var pause_menu: Button = _pause_overlay.find_child("SecondaryButton", true, false) as Button
+		if pause_menu != null:
+			pause_menu.disabled = pending
+	if _retry_save_button != null:
+		_retry_save_button.text = LocaleManager.t("battle.retry_save")
+		_retry_save_button.visible = pending
+		_retry_save_button.disabled = false
+
+
+func _on_retry_save_pressed() -> void:
+	var player_state: Node = _pending_player_state()
+	if player_state == null or not player_state.has_method("retry_pending_battle_settlement"):
+		return
+	var outcome: Dictionary = player_state.call("retry_pending_battle_settlement")
+	var reward: Dictionary = outcome.get("reward", {})
+	if not bool(outcome.get("ok", false)):
+		reward = {"ok": false, "reason": str(outcome.get("reason", "save_failed"))}
+	_reward_status_key = _claim_status_key(reward)
+	if _result_overlay != null:
+		_result_overlay.visible = true
+		_render_result()
+	_refresh_pending_settlement_ui()
+
+
 # ---------------------------------------------------------------------------
 # Misc controls and QA hooks
 # ---------------------------------------------------------------------------
@@ -1350,18 +1506,58 @@ func _on_pause_pressed() -> void:
 
 
 func _on_encounter_selected(index: int) -> void:
-	if index < 0 or index >= _encounter_ids.size():
+	# The debug selector cannot swap a world encounter after settlement and
+	# cannot discard a settlement whose write has not succeeded yet.
+	if has_pending_settlement() or not _world_context.is_empty() \
+			or index < 0 or index >= _encounter_ids.size():
 		return
 	_start_battle(_encounter_ids[index])
 
 
+func retry_allowed() -> bool:
+	if has_pending_settlement():
+		return false
+	return not (bool(_result_snapshot.get("victory", false)) and bool(_result_snapshot.get("one_time", false)))
+
+
 func _on_retry_pressed() -> void:
+	if not retry_allowed():
+		return
+	if manager == null:
+		return
 	var current: String = str(manager.get("state").get("encounter_id"))
 	_start_battle(current)
 
 
+## Build the return payload for a world encounter. Kept separate from scene
+## navigation so the transition contract is directly testable headlessly.
+func _world_return_context() -> Dictionary:
+	if _return_scene_path == MAIN_MENU_PATH or not ResourceLoader.exists(_return_scene_path):
+		return {}
+	var payload: Dictionary = _world_context.duplicate(true)
+	payload["return_scene"] = _return_scene_path
+	if not _result_snapshot.is_empty():
+		payload["battle_result"] = _result_snapshot.duplicate(true)
+	return payload
+
+
 func _on_menu_pressed() -> void:
-	get_tree().change_scene_to_file(MAIN_MENU_PATH)
+	# A failed settlement is still owned by this screen. Leaving would discard
+	# the preserved result/context and silently lose the reward and quest progress.
+	if has_pending_settlement():
+		_refresh_pending_settlement_ui()
+		return
+	# A world encounter returns to its exploration area and carries the settled
+	# battle result back. Reward claiming happens only in _record_result(), so a
+	# retry or scene reload cannot grant the same run twice.
+	var payload: Dictionary = _world_return_context()
+	var destination: String = MAIN_MENU_PATH
+	if not payload.is_empty():
+		destination = _return_scene_path
+		WorldContext.write(payload)
+	else:
+		WorldContext.clear()
+	get_tree().change_scene_to_file(destination)
 
 
 func _on_battle_event(event: Dictionary) -> void:
@@ -1442,7 +1638,8 @@ func _qa_apply_scenario(scenario: String) -> void:
 			_choose_action(str(_party_cards[1].get("combatant").get("limit_ability")), "ability")
 			_submit_action(str(_party_cards[1].get("combatant").get("limit_ability")), "ability", str(_enemy_cards[0].get("combatant").get("id")))
 			_on_execute_pressed()
-		"victory":
+		"battle_victory", "battle_retry", "battle_return", "victory":
+			_qa_auto_return = scenario == "battle_return"
 			for enemy in state.get("enemies"):
 				enemy.set("hp", 1)
 			var basic: String = str(_party_cards[0].get("combatant").get("basic_attack"))
@@ -1454,7 +1651,7 @@ func _qa_apply_scenario(scenario: String) -> void:
 				_choose_action(basic, "ability")
 				_submit_action(basic, "ability", str(enemy_combatant.get("id")))
 			_on_execute_pressed()
-		"defeat":
+		"battle_defeat", "defeat":
 			for combatant in state.get("party"):
 				combatant.set("hp", 1)
 			var forced_ai: Dictionary = {

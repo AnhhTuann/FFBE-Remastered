@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored synthetic town, field and boss locations for the Prompt 06 vertical slice.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "source_data_imported": false,
+    "evidence_class": "REMASTERED_DESIGN"
+  },
+  "locations": [
+    {
+      "id": "loc:GL:1101@haven",
+      "kind": "location",
+      "region": "GL",
+      "native_id": "1101",
+      "form": "haven",
+      "region_id": "region:GL:1001@vale",
+      "location_kind": "town",
+      "name_key": "world.location.haven.name",
+      "description_key": "world.location.haven.description",
+      "background_ref": "style:haven",
+      "map_position": {"x": 0.24, "y": 0.60},
+      "unlock_requirements": {"quests": [], "flags": []},
+      "encounter_id": "",
+      "initial_unlocked": true,
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "loc:GL:1102@meadow",
+      "kind": "location",
+      "region": "GL",
+      "native_id": "1102",
+      "form": "meadow",
+      "region_id": "region:GL:1001@vale",
+      "location_kind": "field",
+      "name_key": "world.location.meadow.name",
+      "description_key": "world.location.meadow.description",
+      "background_ref": "style:glasswind_meadow",
+      "map_position": {"x": 0.53, "y": 0.41},
+      "unlock_requirements": {"quests": ["quest:GL:3100@oath"], "flags": []},
+      "encounter_id": "encounter:GL:950001@skirmish",
+      "initial_unlocked": false,
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "loc:GL:1103@spire",
+      "kind": "location",
+      "region": "GL",
+      "native_id": "1103",
+      "form": "spire",
+      "region_id": "region:GL:1001@vale",
+      "location_kind": "boss",
+      "name_key": "world.location.spire.name",
+      "description_key": "world.location.spire.description",
+      "background_ref": "style:hollow_spire",
+      "map_position": {"x": 0.78, "y": 0.24},
+      "unlock_requirements": {"quests": ["quest:GL:3101@lantern"], "flags": []},
+      "encounter_id": "encounter:GL:950002@boss",
+      "initial_unlocked": false,
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    }
+  ]
+}

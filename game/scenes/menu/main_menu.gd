@@ -3,6 +3,7 @@ extends Control
 ## Main menu. Static copy is resolved through LocaleManager so the language can
 ## change without restarting the application.
 
+const WORLD_MAP_PATH := "res://scenes/world/world_map.tscn"
 const BATTLE_PATH := "res://scenes/battle/battle_scene.tscn"
 const VIEWER_PATH := "res://scenes/viewer/character_viewer.tscn"
 const SETTINGS_PATH := "res://scenes/settings/settings.tscn"
@@ -12,6 +13,7 @@ const ECONOMY_PATH := "res://scenes/phase3/economy_hub.tscn"
 
 @onready var title_label: Label = $Layout/TitleLabel
 @onready var subtitle_label: Label = $Layout/SubtitleLabel
+@onready var world_button: Button = $Layout/WorldButton
 @onready var battle_button: Button = $Layout/BattleButton
 @onready var collection_button: Button = $Layout/CollectionButton
 @onready var party_button: Button = $Layout/PartyButton
@@ -23,6 +25,7 @@ const ECONOMY_PATH := "res://scenes/phase3/economy_hub.tscn"
 
 
 func _ready() -> void:
+	world_button.pressed.connect(func() -> void: _goto(WORLD_MAP_PATH))
 	battle_button.pressed.connect(_on_battle_pressed)
 	collection_button.pressed.connect(func() -> void: _goto(COLLECTION_PATH))
 	party_button.pressed.connect(func() -> void: _goto(PARTY_PATH))
@@ -32,7 +35,7 @@ func _ready() -> void:
 	quit_button.pressed.connect(_on_quit_pressed)
 	LocaleManager.locale_changed.connect(_apply_locale)
 	_apply_locale(LocaleManager.current_locale)
-	battle_button.grab_focus()
+	world_button.grab_focus()
 
 
 func t(key: String, args: Dictionary = {}) -> String:
@@ -42,6 +45,7 @@ func t(key: String, args: Dictionary = {}) -> String:
 func _apply_locale(_locale: String = "") -> void:
 	title_label.text = t("menu.title")
 	subtitle_label.text = t("menu.subtitle")
+	world_button.text = t("menu.world")
 	battle_button.text = t("menu.battle")
 	collection_button.text = t("menu.collection")
 	party_button.text = t("menu.party")

@@ -27,6 +27,7 @@ const TESTS := [
 	"test_hardening_layout_suite",
 	"test_hardening_ui_flow_suite",
 	"test_phase3_economy_suite",
+	"test_prompt06_world_suite",
 	"test_negative_control"
 ]
 
@@ -45,6 +46,7 @@ var _phase3_suite_script: Script = null
 var _hardening_layout_suite_script: Script = null
 var _hardening_ui_flow_suite_script: Script = null
 var _phase3_economy_suite_script: Script = null
+var _prompt06_world_suite_script: Script = null
 
 
 func _initialize() -> void:
@@ -58,8 +60,9 @@ func _initialize() -> void:
 	_hardening_layout_suite_script = load("res://tests/hardening_layout_test_suite.gd") as Script
 	_hardening_ui_flow_suite_script = load("res://tests/hardening_ui_flow_test_suite.gd") as Script
 	_phase3_economy_suite_script = load("res://tests/phase3_economy_test_suite.gd") as Script
+	_prompt06_world_suite_script = load("res://tests/prompt06_world_test_suite.gd") as Script
 
-	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null or _hardening_layout_suite_script == null or _hardening_ui_flow_suite_script == null or _phase3_economy_suite_script == null:
+	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null or _hardening_layout_suite_script == null or _hardening_ui_flow_suite_script == null or _phase3_economy_suite_script == null or _prompt06_world_suite_script == null:
 		push_error("FAIL services are unavailable")
 		quit(1)
 		return
@@ -68,7 +71,7 @@ func _initialize() -> void:
 	_repository.call("load_content")
 	for test_name: String in TESTS:
 		var result: Variant = null
-		if test_name == "test_hardening_ui_flow_suite":
+		if test_name == "test_hardening_ui_flow_suite" or test_name == "test_prompt06_world_suite":
 			result = await call(test_name)
 		else:
 			result = call(test_name)
@@ -131,6 +134,15 @@ func test_phase3_economy_suite() -> bool:
 		push_error("FAIL phase3 economy suite could not be constructed")
 		return false
 	return bool(suite.call("run"))
+
+
+func test_prompt06_world_suite() -> bool:
+	var suite: RefCounted = _prompt06_world_suite_script.new(self) as RefCounted
+	if suite == null:
+		push_error("FAIL prompt06 world suite could not be constructed")
+		return false
+	var result: Variant = await suite.call("run")
+	return result == true
 
 
 func test_negative_control() -> bool:
@@ -390,7 +402,7 @@ func _read_json_dict(path: String) -> Dictionary:
 
 
 func _clean_user_files() -> void:
-	for suffix: String in ["", ".bak", ".tmp"]:
+	for suffix: String in ["", ".bak", ".tmp", ".mig.bak"]:
 		_remove_absolute_if_exists("user://settings.json" + suffix)
 		_remove_absolute_if_exists("user://battle_progress.json" + suffix)
 		_remove_absolute_if_exists("user://player_state_v3.json" + suffix)

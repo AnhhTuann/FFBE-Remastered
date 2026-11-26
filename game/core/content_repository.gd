@@ -32,6 +32,12 @@ var _offline_default_rule_id: String = ""
 var _shops: Dictionary = {}
 var _crafting_recipes: Dictionary = {}
 var _resource_definition_ids: Dictionary = {}
+var _world_regions: Dictionary = {}
+var _world_locations: Dictionary = {}
+var _world_connections: Dictionary = {}
+var _world_interactables: Dictionary = {}
+var _world_dialogues: Dictionary = {}
+var _world_quests: Dictionary = {}
 
 const FIXTURE_MARKER := "SYNTHETIC_FIXTURE"
 const ALLOWED_EVIDENCE: Array[String] = ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"]
@@ -72,6 +78,12 @@ func load_content() -> Error:
 	var offline_rules_data: Dictionary = _read_json(str(files.get("offline_economy_rules", "")))
 	var shops_data: Dictionary = _read_json(str(files.get("shops", "")))
 	var crafting_recipes_data: Dictionary = _read_json(str(files.get("crafting_recipes", "")))
+	var world_regions_data: Dictionary = _read_json(str(files.get("world_regions", "")))
+	var world_locations_data: Dictionary = _read_json(str(files.get("world_locations", "")))
+	var world_connections_data: Dictionary = _read_json(str(files.get("world_connections", "")))
+	var world_interactables_data: Dictionary = _read_json(str(files.get("world_interactables", "")))
+	var world_dialogues_data: Dictionary = _read_json(str(files.get("world_dialogues", "")))
+	var world_quests_data: Dictionary = _read_json(str(files.get("world_quests", "")))
 	if units_data.is_empty() or animations_data.is_empty() or settings_data.is_empty() or battles_data.is_empty():
 		return ERR_FILE_NOT_FOUND
 	if unit_definitions_data.is_empty() or progression_rules_data.is_empty() or equipment_data.is_empty():
@@ -82,7 +94,16 @@ func load_content() -> Error:
 		return ERR_FILE_NOT_FOUND
 	if shops_data.is_empty() or crafting_recipes_data.is_empty():
 		return ERR_FILE_NOT_FOUND
-	for pack: Dictionary in [espers_data, summon_banners_data, offline_rules_data, shops_data, crafting_recipes_data]:
+	if world_regions_data.is_empty() or world_locations_data.is_empty() or world_connections_data.is_empty():
+		return ERR_FILE_NOT_FOUND
+	if world_interactables_data.is_empty() or world_dialogues_data.is_empty() or world_quests_data.is_empty():
+		return ERR_FILE_NOT_FOUND
+	for pack: Dictionary in [
+		espers_data, summon_banners_data, offline_rules_data, shops_data,
+		crafting_recipes_data, world_regions_data, world_locations_data,
+		world_connections_data, world_interactables_data, world_dialogues_data,
+		world_quests_data
+	]:
 		if not _fixture_gate(pack):
 			return ERR_INVALID_DATA
 	if str(unit_definitions_data.get("fixture_marker", "")) != "SYNTHETIC_FIXTURE":
@@ -190,6 +211,21 @@ func load_content() -> Error:
 	_offline_default_rule_id = str(offline_rules_data.get("default_rule_id", ""))
 	_shops = parsed_shops
 	_crafting_recipes = parsed_recipes
+	_world_regions = _validated_records(world_regions_data, "regions", "region")
+	_world_locations = _validated_records(world_locations_data, "locations", "location")
+	_world_connections = _validated_records(world_connections_data, "connections", "connection")
+	_world_interactables = _validated_world_records(
+		world_interactables_data, "interactables",
+		["npc", "treasure", "encounter_trigger", "exit"]
+	)
+	_world_dialogues = _validated_records(world_dialogues_data, "dialogues", "dialogue")
+	_world_quests = _validated_records(world_quests_data, "quests", "quest")
+	if _world_regions.is_empty() or _world_locations.is_empty() or _world_connections.is_empty():
+		return ERR_INVALID_DATA
+	if _world_interactables.is_empty() or _world_dialogues.is_empty() or _world_quests.is_empty():
+		return ERR_INVALID_DATA
+	if not _validate_world_data():
+		return ERR_INVALID_DATA
 
 	loaded = true
 	DebugLog.info("Loaded %d synthetic unit records" % _units.size())
@@ -397,6 +433,56 @@ func get_crafting_recipes() -> Dictionary:
 	return _crafting_recipes.duplicate(true)
 
 
+## Prompt 06 world data is read-only to callers; repositories own all mutable
+## discovery and progression state.
+func get_world_region(id: String) -> Dictionary:
+	return _lookup_definition(_world_regions, id)
+
+
+func get_world_regions() -> Dictionary:
+	return _world_regions.duplicate(true)
+
+
+func get_world_location(id: String) -> Dictionary:
+	return _lookup_definition(_world_locations, id)
+
+
+func get_world_locations() -> Dictionary:
+	return _world_locations.duplicate(true)
+
+
+func get_world_connection(id: String) -> Dictionary:
+	return _lookup_definition(_world_connections, id)
+
+
+func get_world_connections() -> Dictionary:
+	return _world_connections.duplicate(true)
+
+
+func get_world_interactable(id: String) -> Dictionary:
+	return _lookup_definition(_world_interactables, id)
+
+
+func get_world_interactables() -> Dictionary:
+	return _world_interactables.duplicate(true)
+
+
+func get_world_dialogue(id: String) -> Dictionary:
+	return _lookup_definition(_world_dialogues, id)
+
+
+func get_world_dialogues() -> Dictionary:
+	return _world_dialogues.duplicate(true)
+
+
+func get_world_quest(id: String) -> Dictionary:
+	return _lookup_definition(_world_quests, id)
+
+
+func get_world_quests() -> Dictionary:
+	return _world_quests.duplicate(true)
+
+
 func summary() -> Dictionary:
 	var policy_variant: Variant = _catalog.get("policy", {})
 	var policy: Dictionary = policy_variant if policy_variant is Dictionary else {}
@@ -417,6 +503,12 @@ func summary() -> Dictionary:
 		"offline_economy_rule_count": _offline_economy_rules.size(),
 		"shop_definition_count": _shops.size(),
 		"crafting_recipe_count": _crafting_recipes.size(),
+		"world_region_count": _world_regions.size(),
+		"world_location_count": _world_locations.size(),
+		"world_connection_count": _world_connections.size(),
+		"world_interactable_count": _world_interactables.size(),
+		"world_dialogue_count": _world_dialogues.size(),
+		"world_quest_count": _world_quests.size(),
 		"rights_gate": str(policy.get("rights_gate", "not_passed")),
 		"regions": ["GL", "JP"]
 	}
@@ -478,6 +570,13 @@ func _fixture_gate(pack: Dictionary) -> bool:
 	return true
 
 
+## The synthetic world IDs keep the compact `loc:` prefix while their record
+## `kind` stays readable as `location`. Normalize only this documented alias;
+## every other record must match its ID prefix exactly.
+func _canonical_kind(parsed_kind: String) -> String:
+	return "location" if parsed_kind == "loc" else parsed_kind
+
+
 func _validated_records(pack: Dictionary, section_key: String, expected_kind: String) -> Dictionary:
 	var entries_variant: Variant = pack.get(section_key, [])
 	if not entries_variant is Array or (entries_variant as Array).is_empty():
@@ -494,7 +593,7 @@ func _validated_records(pack: Dictionary, section_key: String, expected_kind: St
 		if parsed == null or not parsed.is_valid() or parsed.as_text() != id:
 			DebugLog.error("Malformed %s identity: %s" % [section_key, id])
 			return {}
-		if parsed.kind != expected_kind or str(entry.get("kind", "")) != expected_kind:
+		if _canonical_kind(parsed.kind) != expected_kind or str(entry.get("kind", "")) != expected_kind:
 			DebugLog.error("Wrong kind for %s identity: %s" % [section_key, id])
 			return {}
 		if str(entry.get("region", "")) != parsed.region:
@@ -519,6 +618,299 @@ func _validated_records(pack: Dictionary, section_key: String, expected_kind: St
 			return {}
 		result[id] = entry.duplicate(true)
 	return result
+
+
+func _validated_world_records(pack: Dictionary, section_key: String, expected_kinds: Array) -> Dictionary:
+	var entries_variant: Variant = pack.get(section_key, [])
+	if not entries_variant is Array or (entries_variant as Array).is_empty():
+		DebugLog.error("World pack has no %s records" % section_key)
+		return {}
+	var result: Dictionary = {}
+	for entry_variant: Variant in entries_variant:
+		if not entry_variant is Dictionary:
+			DebugLog.error("Non-object record in world %s" % section_key)
+			return {}
+		var entry: Dictionary = entry_variant
+		var id: String = str(entry.get("id", ""))
+		var parsed: ContentId = ContentId.parse(id)
+		if parsed == null or not parsed.is_valid() or parsed.as_text() != id:
+			DebugLog.error("Malformed world identity: %s" % id)
+			return {}
+		var kind: String = str(entry.get("kind", ""))
+		if not expected_kinds.has(kind) or _canonical_kind(parsed.kind) != kind:
+			DebugLog.error("Wrong kind for world identity: %s" % [id])
+			return {}
+		if str(entry.get("region", "")) != parsed.region:
+			DebugLog.error("Region mismatch for world identity: %s" % id)
+			return {}
+		if str(entry.get("native_id", "")) != parsed.native_id or str(entry.get("form", "")) != parsed.form:
+			DebugLog.error("Native ID/form mismatch for world identity: %s" % id)
+			return {}
+		if not ALLOWED_EVIDENCE.has(str(entry.get("verification_status", ""))):
+			DebugLog.error("Missing evidence label for world identity: %s" % id)
+			return {}
+		var provenance_variant: Variant = entry.get("provenance", {})
+		if not provenance_variant is Dictionary:
+			DebugLog.error("Missing provenance for world identity: %s" % id)
+			return {}
+		if str((provenance_variant as Dictionary).get("rights_gate", "")) != "not_passed":
+			DebugLog.error("Missing not_passed rights gate for world identity: %s" % id)
+			return {}
+		if result.has(id):
+			DebugLog.error("Duplicate world identity: %s" % id)
+			return {}
+		result[id] = entry.duplicate(true)
+	return result
+
+
+func _validate_world_data() -> bool:
+	for id: String in _world_regions.keys():
+		var entry: Dictionary = _world_regions[id]
+		if str(entry.get("name_key", "")).is_empty() or str(entry.get("description_key", "")).is_empty():
+			return false
+		if str(entry.get("background_ref", "")).is_empty():
+			return false
+		if not _world_locations.has(str(entry.get("start_location", ""))):
+			return false
+	for id: String in _world_locations.keys():
+		var entry: Dictionary = _world_locations[id]
+		if not _world_regions.has(str(entry.get("region_id", ""))):
+			return false
+		if not ["town", "field", "dungeon", "boss"].has(str(entry.get("location_kind", ""))):
+			return false
+		if str(entry.get("name_key", "")).is_empty() or str(entry.get("description_key", "")).is_empty():
+			return false
+		if str(entry.get("background_ref", "")).is_empty():
+			return false
+		if not _is_world_point(entry.get("map_position", null)):
+			return false
+		if not _is_world_requirements(entry.get("unlock_requirements", null)):
+			return false
+		var encounter_id: String = str(entry.get("encounter_id", ""))
+		if not encounter_id.is_empty():
+			var encounters: Dictionary = _battles.get("encounters", {})
+			if not encounters.has(encounter_id):
+				return false
+	for id: String in _world_connections.keys():
+		var entry: Dictionary = _world_connections[id]
+		var from_id: String = str(entry.get("from", ""))
+		var to_id: String = str(entry.get("to", ""))
+		if from_id == to_id or not _world_locations.has(from_id) or not _world_locations.has(to_id):
+			return false
+		if not _validate_location_requirement(entry.get("requirement", null)):
+			return false
+	for id: String in _world_interactables.keys():
+		var entry: Dictionary = _world_interactables[id]
+		if not _world_locations.has(str(entry.get("area_id", ""))):
+			return false
+		if not _is_world_point(entry.get("position", null)) or float(entry["position"]["x"]) < 0 or float(entry["position"]["x"]) > 1280:
+			return false
+		if float((entry["position"] as Dictionary).get("y", -1)) < 0 or float((entry["position"] as Dictionary).get("y", -1)) > 720:
+			return false
+		if int(entry.get("radius", 0)) <= 0:
+			return false
+		if str(entry.get("name_key", "")).is_empty() or str(entry.get("prompt_key", "")).is_empty():
+			return false
+		if not ["one_time", "repeatable"].has(str(entry.get("interaction_policy", ""))):
+			return false
+		if not _validate_location_requirement(entry.get("requirement", null)):
+			return false
+		var kind: String = str(entry.get("kind", ""))
+		if kind == "npc" and not _world_dialogues.has(str(entry.get("dialogue_id", ""))):
+			return false
+		if kind == "treasure" and not _is_world_reward(entry.get("reward", null)):
+			return false
+		if kind == "encounter_trigger":
+			var encounters: Dictionary = _battles.get("encounters", {})
+			if not encounters.has(str(entry.get("encounter_id", ""))):
+				return false
+		if kind == "exit":
+			var destination: String = str(entry.get("destination", ""))
+			if destination != "world_map" and not _world_locations.has(destination):
+				return false
+	for id: String in _world_dialogues.keys():
+		var entry: Dictionary = _world_dialogues[id]
+		if str(entry.get("speaker_key", "")).is_empty():
+			return false
+		var nodes_variant: Variant = entry.get("nodes", [])
+		if not nodes_variant is Array or (nodes_variant as Array).is_empty():
+			return false
+		var nodes: Dictionary = {}
+		for node_variant: Variant in nodes_variant:
+			if not node_variant is Dictionary:
+				return false
+			var node: Dictionary = node_variant
+			var node_id: String = str(node.get("id", ""))
+			if node_id.is_empty() or nodes.has(node_id):
+				return false
+			nodes[node_id] = node
+		if not nodes.has(str(entry.get("start_node", ""))):
+			return false
+		for node_id: String in nodes.keys():
+			var node: Dictionary = nodes[node_id]
+			for line_variant: Variant in (node.get("lines", []) as Array):
+				if not _validate_dialogue_line(line_variant):
+					return false
+			for choice_variant: Variant in (node.get("choices", []) as Array):
+				if not choice_variant is Dictionary:
+					return false
+				var choice: Dictionary = choice_variant
+				if str(choice.get("label_key", "")).is_empty() or not nodes.has(str(choice.get("next", ""))):
+					return false
+				if choice.has("when") and not _validate_dialogue_condition(choice.get("when")):
+					return false
+				for effect_variant: Variant in (choice.get("effects", []) as Array):
+					if not _validate_dialogue_effect(effect_variant):
+						return false
+			var next_id: String = str(node.get("next", ""))
+			if not next_id.is_empty() and not nodes.has(next_id):
+				return false
+	for id: String in _world_quests.keys():
+		var entry: Dictionary = _world_quests[id]
+		if str(entry.get("name_key", "")).is_empty() or str(entry.get("description_key", "")).is_empty():
+			return false
+		if not _is_world_requirements(entry.get("prerequisites", null)):
+			return false
+		for prereq: Variant in (entry.get("prerequisites", {}) as Dictionary).get("quests", []):
+			if not _world_quests.has(str(prereq)):
+				return false
+		var objectives_variant: Variant = entry.get("objectives", [])
+		if not objectives_variant is Array or (objectives_variant as Array).is_empty():
+			return false
+		var objective_ids: Dictionary = {}
+		for objective_variant: Variant in objectives_variant:
+			if not objective_variant is Dictionary:
+				return false
+			var objective: Dictionary = objective_variant
+			var objective_id: String = str(objective.get("id", ""))
+			if objective_id.is_empty() or objective_ids.has(objective_id):
+				return false
+			objective_ids[objective_id] = true
+			if not _validate_quest_objective(objective):
+				return false
+		if not _is_world_reward(entry.get("rewards", null)):
+			return false
+		for unlock_variant: Variant in (entry.get("unlocks", []) as Array):
+			if not _world_locations.has(str(unlock_variant)):
+				return false
+	return true
+
+
+func _is_world_point(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	var point: Dictionary = value
+	for axis: String in ["x", "y"]:
+		var axis_value: Variant = point.get(axis, null)
+		if typeof(axis_value) != TYPE_INT and typeof(axis_value) != TYPE_FLOAT:
+			return false
+	return true
+
+
+func _is_world_requirements(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	var requirements: Dictionary = value
+	return _is_string_array(requirements.get("quests", [])) and _is_string_array(requirements.get("flags", []))
+
+
+func _validate_location_requirement(value: Variant) -> bool:
+	if value == null:
+		return true
+	if not value is Dictionary:
+		return false
+	var location_id: String = str((value as Dictionary).get("location_id", ""))
+	return location_id.is_empty() or _world_locations.has(location_id)
+
+
+func _validate_dialogue_line(value: Variant) -> bool:
+	if value is String:
+		return not str(value).is_empty()
+	if not value is Dictionary:
+		return false
+	var line: Dictionary = value
+	if str(line.get("key", "")).is_empty():
+		return false
+	if line.has("when") and not _validate_dialogue_condition(line.get("when")):
+		return false
+	return true
+
+
+func _validate_dialogue_condition(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	var condition: Dictionary = value
+	match str(condition.get("type", "quest_status")):
+		"quest_status":
+			var quest_id: String = str(condition.get("quest_id", ""))
+			var status: String = str(condition.get("status", condition.get("quest_status", "")))
+			return _world_quests.has(quest_id) and ["not_started", "active", "completed"].has(status)
+		"flag":
+			return not str(condition.get("key", "")).is_empty()
+		_:
+			return false
+
+
+func _validate_dialogue_effect(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	var effect: Dictionary = value
+	match str(effect.get("type", "")):
+		"flag":
+			return not str(effect.get("key", "")).is_empty()
+		"quest_accept":
+			return _world_quests.has(str(effect.get("quest_id", "")))
+		"unlock_location":
+			return _world_locations.has(str(effect.get("location_id", "")))
+		"quest_event":
+			var event_variant: Variant = effect.get("event", null)
+			if not event_variant is Dictionary:
+				return false
+			var event: Dictionary = event_variant
+			return ["talk_to", "visit_location", "defeat_encounter", "open_treasure", "collect", "complete_quest"].has(
+				str(event.get("type", ""))
+			) and not str(event.get("target", "")).is_empty()
+		_:
+			return false
+
+
+func _validate_quest_objective(objective: Dictionary) -> bool:
+	if str(objective.get("description_key", "")).is_empty() or int(objective.get("count", 0)) <= 0:
+		return false
+	var target: String = str(objective.get("target", ""))
+	match str(objective.get("type", "")):
+		"talk_to":
+			var interactable: Dictionary = _world_interactables.get(target, {})
+			return interactable.get("kind", "") == "npc"
+		"visit_location":
+			return _world_locations.has(target)
+		"defeat_encounter":
+			var encounters: Dictionary = _battles.get("encounters", {})
+			return encounters.has(target)
+		"open_treasure":
+			var interactable: Dictionary = _world_interactables.get(target, {})
+			return interactable.get("kind", "") == "treasure"
+		"collect":
+			return _definition_exists(target)
+		"complete_quest":
+			return _world_quests.has(target)
+		_:
+			return false
+
+
+func _is_world_reward(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	var reward: Dictionary = value
+	if int(reward.get("gil", 0)) < 0:
+		return false
+	var items_variant: Variant = reward.get("items", [])
+	if not items_variant is Array:
+		return false
+	for item_variant: Variant in items_variant:
+		if not _definition_exists(str(item_variant)):
+			return false
+	return true
 
 
 func _validate_espers(espers: Dictionary) -> bool:

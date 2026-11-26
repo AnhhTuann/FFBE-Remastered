@@ -595,4 +595,18 @@ The project is successful when it has:
 - Transparent reporting of recovered, partial, unverified, and unavailable content.
 - A release package containing only content the project is permitted to distribute.
 
-**Immediate next milestone:** M0 — Project definition and source discovery, followed by M1 — Full Data and Asset Audit. Do not begin broad gameplay implementation until the audit and technical risks have been reviewed.
+## 18. Implementation checkpoint status
+
+The original M0–M9 roadmap remains the long-term charter. The delivered checkpoints are tracked separately because source-gated restoration work and synthetic vertical slices have different evidence requirements:
+
+| Checkpoint | Branch | Scope | Owner approval |
+|---|---|---|---|
+| Phase 1–3 / hardening | `phase-3-hardening` | Character viewer, battle slice, desktop UI, offline save and localization foundation | Published; see `docs/qa/phase3-hardening-report.md` |
+| Prompt 05 / 05.1 | `phase-4-esper-summon-economy` | Additive v4 economy, summon, shop, crafting and Esper systems with integrity hardening | Published as draft PR #8; approval pending |
+| Prompt 06 | `phase-5-world-exploration-story` | Synthetic World Map, exploration, dialogue, quests, treasure and battle-return vertical slice | Draft PR #9; approval pending |
+
+Prompt 06 adds `game/scenes/world/`, `game/world/` and six `game/data/world/` packs. The world state is additive inside `user://player_state_v3.json`; the top-level format remains v4 and v1–v4 saves are normalized with a migration backup. All records are `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN` with `rights_gate: not_passed`. No recovered FFBE story, map, art or audio was imported.
+
+Prompt 06 evidence and exit criteria are in [docs/qa/prompt06-final-report.md](docs/qa/prompt06-final-report.md). Architecture and record fields are in [docs/architecture/world-exploration.md](docs/architecture/world-exploration.md) and [docs/data-dictionary/world-story-schema.md](docs/data-dictionary/world-story-schema.md).
+
+**Immediate next milestone:** M0 — Project definition and source discovery, followed by M1 — Full Data and Asset Audit. Do not begin broad gameplay implementation until the audit and technical risks have been reviewed. Prompt 07 must not start until the owner approves the Prompt 06 checkpoint.
