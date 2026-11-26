@@ -14,14 +14,44 @@ func _init(p_state: Node) -> void:
 	state = p_state
 
 
-func _fail(reason: String, message: String) -> Dictionary:
-	return {"ok": false, "reason": reason, "message": message, "diagnostics": [message]}
+## Diagnostics are stable locale keys plus arguments. Presentation decides how
+## to localize them; rules code never emits display sentences.
+func _diag(key: String, args: Dictionary = {}) -> Dictionary:
+	return {"key": key, "args": args.duplicate(true)}
+
+
+func _fail(reason: String, message: String, diagnostics: Array[Dictionary] = []) -> Dictionary:
+	var entries: Array[Dictionary] = diagnostics.duplicate(true)
+	if entries.is_empty():
+		entries.append(_diag("party.error.resolve_failed", {"detail": message}))
+	return {"ok": false, "reason": reason, "message": message, "diagnostics": entries}
 
 
 func _ok(message: String, extras: Dictionary = {}) -> Dictionary:
 	var result: Dictionary = {"ok": true, "reason": "", "message": message, "diagnostics": []}
 	result.merge(extras, true)
 	return result
+
+
+## Category filters support include (`categories`) and exclude
+## (`excluded_categories`/`exclude_categories`) lists. An empty include list
+## means "all categories"; an explicit exclude always wins.
+func _categories_match(unit_categories: Array, filter_definition: Dictionary) -> bool:
+	var unit_values: Array[String] = []
+	for category: Variant in unit_categories:
+		unit_values.append(str(category))
+	var excluded_variant: Variant = filter_definition.get("excluded_categories", filter_definition.get("exclude_categories", []))
+	if excluded_variant is Array:
+		for category: Variant in excluded_variant:
+			if unit_values.has(str(category)):
+				return false
+	var included_variant: Variant = filter_definition.get("categories", [])
+	if not included_variant is Array or (included_variant as Array).is_empty():
+		return true
+	for category: Variant in included_variant:
+		if unit_values.has(str(category)):
+			return true
+	return false
 
 
 func resolve_unit(instance_id: String, party_id: String = "", include_vision_card: bool = true) -> Dictionary:
@@ -43,8 +73,9 @@ func resolve_unit(instance_id: String, party_id: String = "", include_vision_car
 
 	var percent: Dictionary = {}
 	var passives: Array[Dictionary] = []
-	var diagnostics: Array[String] = []
+	var diagnostics: Array[Dictionary] = []
 	var labels: Dictionary = {}
+	var applied_leader_skills: Dictionary = {}
 
 	for passive_variant: Variant in def.get("passive_abilities", []):
 		if passive_variant is Dictionary:
@@ -56,69 +87,84 @@ func resolve_unit(instance_id: String, party_id: String = "", include_vision_car
 		var uid: String = str(equipped[slot])
 		var entry: Dictionary = state.call("find_inventory_entry", uid)
 		if entry.is_empty():
-			diagnostics.append("Equipped item is missing from inventory: %s" % uid)
+			diagnostics.append(_diag("build.error.equipped_missing", {"uid": uid}))
 			continue
 		var item_def: Dictionary = _definition_for_entry(entry)
 		if item_def.is_empty():
-			diagnostics.append("Equipped item definition is unavailable: %s" % uid)
+			diagnostics.append(_diag("build.error.equipped_definition", {"uid": uid}))
 			continue
 		for stat: String in STATS:
 			stats[stat] += maxi(int(item_def.get("stats", {}).get(stat, 0)), 0)
+		if slot == "vision_card":
+			# A per-unit card is resolved once by _vision_card_uid(); do not let
+			# the generic equipment loop apply its flat stats a second time.
+			continue
 		for passive_variant: Variant in item_def.get("passives", []):
 			if passive_variant is Dictionary:
 				_add_passive(passive_variant, passives, percent, labels, diagnostics)
 		var restrictions: Dictionary = item_def.get("restrictions", {})
 		if not _restrictions_ok(restrictions, unit, def):
-			diagnostics.append("Equipped item restriction is not satisfied: %s" % uid)
+			diagnostics.append(_diag("build.error.restriction", {"uid": uid}))
 
 	if include_vision_card and not party_id.is_empty():
 		var party: Dictionary = state.call("get_party", party_id)
-		var vc_uid: String = str(party.get("vision_card", ""))
+		var vc_uid: String = _vision_card_uid(party, instance_id, unit)
 		if not vc_uid.is_empty():
 			var vc_entry: Dictionary = state.call("find_inventory_entry", vc_uid)
 			if vc_entry.is_empty():
-				diagnostics.append("Assigned vision card is missing: %s" % vc_uid)
+				diagnostics.append(_diag("build.error.vision_missing", {"uid": vc_uid}))
 			else:
 				var vc_def: Dictionary = _definition_for_entry(vc_entry)
-				var vc_level: int = maxi(int(vc_entry.get("level", 1)), 1)
-				for stat: String in STATS:
-					stats[stat] += maxi(int(vc_def.get("stats_per_level", {}).get(stat, 0)), 0) * vc_level
-				for passive_variant: Variant in vc_def.get("passives", []):
-					if not passive_variant is Dictionary:
-						continue
-					var passive: Dictionary = passive_variant
-					var categories: Array = passive.get("categories", [])
-					var categories_ok: bool = categories.is_empty()
-					for category: Variant in categories:
-						if def.get("categories", []).has(str(category)):
-							categories_ok = true
-							break
-					if categories_ok:
+				if vc_def.is_empty():
+					diagnostics.append(_diag("build.error.vision_definition", {"uid": vc_uid}))
+				else:
+					var vc_id: String = str(vc_def.get("id", ""))
+					if not vc_id.is_empty():
+						labels[vc_id] = str(vc_def.get("verification_status", "SYNTHETIC_FIXTURE"))
+					var vc_level: int = maxi(int(vc_entry.get("level", 1)), 1)
+					for stat: String in STATS:
+						stats[stat] += maxi(int(vc_def.get("stats_per_level", {}).get(stat, 0)), 0) * vc_level
+					for passive_variant: Variant in vc_def.get("passives", []):
+						if not passive_variant is Dictionary:
+							continue
+						var passive: Dictionary = passive_variant
+						if not _categories_match(def.get("categories", []), passive):
+							diagnostics.append(_diag("build.error.vision_category", {
+								"uid": vc_uid, "instance_id": instance_id
+							}))
+							continue
 						_add_passive(passive, passives, percent, labels, diagnostics, vc_level)
-					else:
-						diagnostics.append("Vision card category does not match this unit: %s" % vc_uid)
 
 	if not party_id.is_empty():
 		var party_data: Dictionary = state.call("get_party", party_id)
 		var slots: Array = party_data.get("slots", [])
 		var leader_slot: int = maxi(int(party_data.get("leader_slot", 0)), 0)
 		if leader_slot < slots.size() and str(slots[leader_slot]) == instance_id:
-			var leader: Dictionary = def.get("leader_skill", {})
-			if not leader.is_empty():
+			# Read the leader definition from owned state: a leader skill is only
+			# valid when its source unit is owned and resolvable.
+			var leader_unit: Dictionary = state.call("get_unit_instance", str(slots[leader_slot]))
+			var leader_def: Dictionary = state.call("definition_for", leader_unit)
+			var leader: Dictionary = leader_def.get("leader_skill", {})
+			var leader_id: String = str(leader.get("id", ""))
+			if not leader.is_empty() and not applied_leader_skills.has(leader_id):
 				var effect: Dictionary = leader.get("effect", {})
-				var categories: Array = effect.get("categories", [])
-				var applies: bool = categories.is_empty()
-				for category: Variant in categories:
-					if def.get("categories", []).has(str(category)):
-						applies = true
-						break
-				if applies:
+				if not _categories_match(def.get("categories", []), effect):
+					diagnostics.append(_diag("leader.error.category", {
+						"id": leader_id, "instance_id": instance_id
+					}))
+				else:
 					var stat_name: String = str(effect.get("stat", ""))
 					if STATS.has(stat_name):
 						_add_percent(percent, stat_name, int(effect.get("percent", 0)))
-						labels[str(leader.get("id", "leader_skill"))] = str(leader.get("label", "REMASTERED_DESIGN"))
+						var label: String = str(leader.get("label", ""))
+						labels[leader_id] = label if not label.is_empty() else "REMASTERED_DESIGN"
+						# One application per leader definition prevents a duplicate
+						# unit or repeated slot check from stacking the same skill.
+						applied_leader_skills[leader_id] = true
 					else:
-						diagnostics.append("Leader skill has an unknown stat: %s" % stat_name)
+						diagnostics.append(_diag("leader.error.unknown_stat", {
+							"id": leader_id, "stat": stat_name
+						}))
 
 	var cap_percent: int = maxi(int(ContentRepository.call("get_progression_rules").get("passive_stat_cap_percent", 400)), 0)
 	var final_stats: Dictionary = {}
@@ -172,7 +218,7 @@ func _add_passive(
 	passives: Array[Dictionary],
 	percent: Dictionary,
 	labels: Dictionary,
-	diagnostics: Array[String],
+	diagnostics: Array[Dictionary],
 	level_scale: int = 1
 ) -> void:
 	var passive_id: String = str(passive.get("id", ""))
@@ -183,7 +229,7 @@ func _add_passive(
 	if kind == "stat":
 		var stat_name: String = str(passive.get("stat", ""))
 		if not STATS.has(stat_name):
-			diagnostics.append("Passive has an unknown stat: %s" % stat_name)
+			diagnostics.append(_diag("build.error.passive_stat", {"id": passive_id, "stat": stat_name}))
 			return
 		var amount: int = maxi(int(passive.get("percent", 0)), 0)
 		if bool(passive.get("per_level", false)):
@@ -223,32 +269,68 @@ func _restrictions_ok(restrictions: Dictionary, unit: Dictionary, def: Dictionar
 	return true
 
 
+## Vision-card precedence is explicit: a card equipped on the unit wins over a
+## party assignment for that instance, which wins over the legacy party card.
+func _vision_card_uid(party: Dictionary, instance_id: String, unit: Dictionary) -> String:
+	var equipped_variant: Variant = unit.get("equipped", {})
+	if equipped_variant is Dictionary:
+		var unit_uid: String = str((equipped_variant as Dictionary).get("vision_card", ""))
+		if not unit_uid.is_empty():
+			return unit_uid
+	var assignments_variant: Variant = party.get("vision_card_assignments", {})
+	if assignments_variant is Dictionary and (assignments_variant as Dictionary).has(instance_id):
+		var assigned_uid: String = str((assignments_variant as Dictionary)[instance_id])
+		if not assigned_uid.is_empty():
+			return assigned_uid
+	return str(party.get("vision_card", ""))
+
+
+func _diagnostic_with_slot(entry: Dictionary, slot: int) -> Dictionary:
+	var args: Dictionary = (entry.get("args", {}) as Dictionary).duplicate(true) if entry.get("args", {}) is Dictionary else {}
+	args["slot"] = slot
+	return _diag(str(entry.get("key", "party.error.resolve_failed")), args)
+
+
 func resolve_party(party_id: String) -> Dictionary:
 	var party: Dictionary = state.call("get_party", party_id)
 	if party.is_empty():
-		return _fail("unknown_party", "Party not found: %s" % party_id)
+		return _fail("unknown_party", "Party not found: %s" % party_id, [
+			_diag("party.error.resolve_failed", {"party_id": party_id})
+		])
 	var slots: Array = party.get("slots", [])
 	if slots.size() != 5:
-		return _fail("invalid_party", "A party must contain exactly five slots")
+		return _fail("invalid_party", "A party must contain exactly five slots", [
+			_diag("party.error.slot_count", {"count": slots.size()})
+		])
 	var seen: Dictionary = {}
 	var units: Array[Dictionary] = []
-	var diagnostics: Array[String] = []
+	var diagnostics: Array[Dictionary] = []
 	for slot_index: int in range(slots.size()):
 		var instance_id: String = str(slots[slot_index])
 		if instance_id.is_empty():
-			diagnostics.append("Slot %d is empty" % (slot_index + 1))
+			diagnostics.append(_diag("party.error.empty_slot", {"slot": slot_index + 1}))
 			continue
 		if seen.has(instance_id):
-			diagnostics.append("Slot %d repeats instance %s" % [slot_index + 1, instance_id])
+			diagnostics.append(_diag("party.error.duplicate", {
+				"slot": slot_index + 1, "id": instance_id
+			}))
 			continue
 		seen[instance_id] = true
 		var resolved: Dictionary = resolve_unit(instance_id, party_id, true)
 		if not bool(resolved.get("ok", false)):
-			diagnostics.append("Slot %d: %s" % [slot_index + 1, str(resolved.get("message", "invalid unit"))])
+			diagnostics.append(_diag("party.error.unknown_instance", {
+				"slot": slot_index + 1, "id": instance_id,
+				"detail": str(resolved.get("message", "invalid unit"))
+			}))
 			continue
 		units.append(resolved)
-		for item: String in resolved.get("diagnostics", []):
-			diagnostics.append("Slot %d: %s" % [slot_index + 1, item])
+		for item_variant: Variant in resolved.get("diagnostics", []):
+			if item_variant is Dictionary:
+				diagnostics.append(_diagnostic_with_slot(item_variant, slot_index + 1))
+			else:
+				diagnostics.append(_diag("party.error.resolve_failed", {
+					"slot": slot_index + 1, "detail": str(item_variant)
+				}))
 	var valid: bool = units.size() == 5 and diagnostics.is_empty()
 	var totals: Dictionary = {}
 	for stat: String in STATS:

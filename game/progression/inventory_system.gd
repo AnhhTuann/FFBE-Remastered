@@ -166,9 +166,35 @@ func _uid_equipped_elsewhere(uid: String, except_instance_id: String = "") -> bo
 				return true
 	for party_id: String in state.call("parties").keys():
 		var party: Dictionary = state.call("get_party", party_id)
-		if str(party.get("vision_card", "")) == uid:
+		if _party_vc_in_use(party, uid, except_instance_id):
 			return true
 	return false
+
+
+func _party_vc_in_use(party: Dictionary, uid: String, except_instance_id: String = "") -> bool:
+	if uid.is_empty():
+		return false
+	if str(party.get("vision_card", "")) == uid:
+		return true
+	var assignments_variant: Variant = party.get("vision_card_assignments", {})
+	if assignments_variant is Dictionary:
+		for instance_id: Variant in (assignments_variant as Dictionary).keys():
+			if str(instance_id) == except_instance_id:
+				continue
+			if str((assignments_variant as Dictionary)[instance_id]) == uid:
+				return true
+	return false
+
+
+func _vision_card_entry(uid: String) -> Dictionary:
+	var entry: Dictionary = _entry(uid)
+	if entry.is_empty() or bool(entry.get("locked", false)):
+		return {}
+	if not str(entry.get("definition_id", "")).begins_with("vision_card:"):
+		return {}
+	if definition_for(uid).is_empty():
+		return {}
+	return entry
 
 
 func _passes_restrictions(def: Dictionary, instance_id: String, slot: String) -> bool:
@@ -315,6 +341,80 @@ func unassign_vision_card(party_id: String) -> Dictionary:
 	party.erase("vision_card")
 	state.call("set_party", party_id, party)
 	return _commit("party", snapshot, "Vision card unassigned", {"uid": uid, "party_id": party_id})
+
+
+## Per-unit assignment has the highest BuildResolver precedence. The same card
+## can never be assigned to two units or reused as a party card at once.
+func assign_vision_card_to_unit(instance_id: String, uid: String) -> Dictionary:
+	var unit: Dictionary = state.call("get_unit_instance", instance_id)
+	if unit.is_empty():
+		return _fail("unknown_instance", "Owned unit not found")
+	var entry: Dictionary = _vision_card_entry(uid)
+	if entry.is_empty():
+		return _fail("wrong_type", "Vision card is unavailable or locked")
+	if _uid_equipped_elsewhere(uid, instance_id):
+		return _fail("already_assigned", "Vision card is already assigned")
+	var snapshot: Dictionary = _snapshot()
+	var equipped: Dictionary = (unit.get("equipped", {}) as Dictionary).duplicate(true)
+	equipped["vision_card"] = uid
+	unit["equipped"] = equipped
+	if not state.call("mutate_unit_instance", instance_id, unit):
+		_restore(snapshot)
+		return _fail("mutation_failed", "Could not assign vision card")
+	return _commit("equipment", snapshot, "Vision card assigned to unit", {
+		"uid": uid, "instance_id": instance_id
+	})
+
+
+func unassign_vision_card_from_unit(instance_id: String) -> Dictionary:
+	var unit: Dictionary = state.call("get_unit_instance", instance_id)
+	if unit.is_empty():
+		return _fail("unknown_instance", "Owned unit not found")
+	var equipped: Dictionary = (unit.get("equipped", {}) as Dictionary).duplicate(true)
+	if not equipped.has("vision_card"):
+		return _fail("empty_slot", "Unit has no vision card")
+	var uid: String = str(equipped["vision_card"])
+	equipped.erase("vision_card")
+	unit["equipped"] = equipped
+	var snapshot: Dictionary = _snapshot()
+	if not state.call("mutate_unit_instance", instance_id, unit):
+		_restore(snapshot)
+		return _fail("mutation_failed", "Could not unassign vision card")
+	return _commit("equipment", snapshot, "Vision card unassigned from unit", {
+		"uid": uid, "instance_id": instance_id
+	})
+
+
+func assign_vision_card_to_party_unit(party_id: String, instance_id: String, uid: String) -> Dictionary:
+	var party: Dictionary = state.call("get_party", party_id)
+	if party.is_empty():
+		return _fail("unknown_party", "Party not found")
+	var slots_variant: Variant = party.get("slots", [])
+	if not (slots_variant is Array) or not (slots_variant as Array).has(instance_id):
+		return _fail("not_in_party", "Unit is not in this party")
+	var unit: Dictionary = state.call("get_unit_instance", instance_id)
+	if unit.is_empty():
+		return _fail("unknown_instance", "Owned unit not found")
+	var entry: Dictionary = _vision_card_entry(uid)
+	if entry.is_empty():
+		return _fail("wrong_type", "Vision card is unavailable or locked")
+	if _uid_equipped_elsewhere(uid, instance_id):
+		return _fail("already_assigned", "Vision card is already assigned")
+	var snapshot: Dictionary = _snapshot()
+	var equipped: Dictionary = (unit.get("equipped", {}) as Dictionary).duplicate(true)
+	equipped["vision_card"] = uid
+	unit["equipped"] = equipped
+	if not state.call("mutate_unit_instance", instance_id, unit):
+		_restore(snapshot)
+		return _fail("mutation_failed", "Could not assign vision card")
+	var assignments_variant: Variant = party.get("vision_card_assignments", {})
+	var assignments: Dictionary = assignments_variant if assignments_variant is Dictionary else {}
+	assignments[instance_id] = uid
+	party["vision_card_assignments"] = assignments
+	state.call("set_party", party_id, party)
+	return _commit("party", snapshot, "Vision card assigned to party unit", {
+		"uid": uid, "party_id": party_id, "instance_id": instance_id
+	})
 
 
 func toggle_lock(uid: String) -> Dictionary:

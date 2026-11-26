@@ -126,7 +126,9 @@ func set_locale(locale: String, persist: bool = true) -> Error:
 	if is_inside_tree():
 		var player_state := get_node_or_null("/root/PlayerState")
 		if player_state != null and player_state.has_method("set_locale"):
-			player_state.call("set_locale", normalized)
+			var player_error: Error = player_state.call("set_locale", normalized)
+			if player_error != OK:
+				return player_error
 	locale_changed.emit(normalized)
 	return OK
 

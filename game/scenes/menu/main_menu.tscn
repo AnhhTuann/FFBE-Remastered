@@ -52,6 +52,11 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 44)
 text = ""
 
+[node name="EconomyButton" type="Button" parent="Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = ""
+
 [node name="ViewerButton" type="Button" parent="Layout"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 44)

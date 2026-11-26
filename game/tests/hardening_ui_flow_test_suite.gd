@@ -150,7 +150,7 @@ func _snapshot_environment() -> void:
 	for key: String in [
 		"FFBE_QA_INSTANCE_ID", "FFBE_QA_PARTY_ID", "FFBE_QA_LOCALE",
 		"FFBE_QA_ENCOUNTER", "FFBE_QA_SEED", "FFBE_QA_FREEZE_FRAME",
-		"FFBE_QA_SCENARIO"
+		"FFBE_QA_SCENARIO", "FFBE_QA_MODE"
 	]:
 		_env_snapshot[key] = OS.get_environment(key)
 
@@ -195,6 +195,7 @@ func _restore_files() -> void:
 
 
 func _seed_synthetic_state() -> void:
+	OS.set_environment("FFBE_QA_MODE", "1")
 	OS.set_environment("FFBE_QA_INSTANCE_ID", V1)
 	OS.set_environment("FFBE_QA_PARTY_ID", QA_PARTY)
 	OS.set_environment("FFBE_QA_LOCALE", "")
@@ -531,6 +532,24 @@ func test_equipment_and_vision_card() -> bool:
 		if not _press(vision, _t("vision.assign")):
 			return false
 		_eq(str(_party(QA_PARTY).get("vision_card", "")), VC_ARCANE, "assign button writes party card")
+
+	# Prompt 05 launch gating requires the whole party build to resolve. The
+	# arcane card is mage-only while this party leader is a synthetic warrior,
+	# so restore the category-compatible card before launching the battle.
+	var refreshed_list := vision.get("_list") as ItemList
+	var gl_index := -1
+	if refreshed_list != null:
+		for index: int in range(refreshed_list.item_count):
+			if str(refreshed_list.get_item_metadata(index)) == VC_GL:
+				gl_index = index
+				break
+	_ok(gl_index >= 0, "synthetic standard vision card listed for restore")
+	if gl_index >= 0:
+		refreshed_list.item_selected.emit(gl_index)
+		if not _press(vision, _t("vision.assign")):
+			return false
+		_eq(str(_party(QA_PARTY).get("vision_card", "")), VC_GL,
+			"category-compatible vision card restored before launch")
 	if not _press(vision, _t("common.back")):
 		return false
 	party = await _wait_for_scene(PARTY_PATH, 60)
@@ -645,8 +664,8 @@ func test_party_battle_and_rewards() -> bool:
 	_ok(bool(result_dict.get("victory", false)), "battle completes in victory")
 	_ok(bool((battle.get("_result_overlay") as Control).visible), "result overlay shown")
 	var result_snapshot: Dictionary = battle.get("_result_snapshot")
-	var reward_key := str(state.call("battle_reward_key", result_snapshot))
-	_ok(((_data().get("claimed_rewards", {}) as Dictionary).has(reward_key)), "victory reward marked claimed")
+	var reward_key := "battle|run|%s" % str(result_snapshot.get("run_id", ""))
+	_ok(((_data().get("reward_claims", {}) as Dictionary).has(reward_key)), "victory reward marked claimed")
 	_ok(int(state.call("get_resource", "gil")) > gil_before, "victory gil credited")
 	var progress: Dictionary = saves.call("load_battle_progress")
 	var progress_data: Dictionary = progress.get("progress", {})
@@ -687,10 +706,10 @@ func test_save_migration_and_refusal() -> bool:
 
 	var v2_player := _read_json_dict("res://data/save_fixtures/v2_player_state.json")
 	_ok(not v2_player.is_empty(), "v2 player fixture readable")
-	var migrated_v3: Dictionary = state.call("migrate_state", v2_player)
-	_eq(int(migrated_v3.get("version", 0)), 3, "PlayerState migrates v2 fixture to v3")
-	var legacy: Dictionary = migrated_v3.get("legacy", {})
-	_ok(legacy.has("battle_progress") and legacy.has("settings_summary"), "v2 metadata preserved in v3 legacy")
+	var migrated_v4: Dictionary = state.call("migrate_state", v2_player)
+	_eq(int(migrated_v4.get("version", 0)), 4, "PlayerState migrates v2 fixture to v4")
+	var legacy: Dictionary = migrated_v4.get("legacy", {})
+	_ok(legacy.has("battle_progress") and legacy.has("settings_summary"), "v2 metadata preserved in v4 legacy")
 	var v1_player := {
 		"version": 1,
 		"selected_unit": V1,
@@ -698,13 +717,13 @@ func test_save_migration_and_refusal() -> bool:
 		"battle_progress": {"attempts": 1}
 	}
 	var migrated_chain: Dictionary = state.call("migrate_state", v1_player)
-	_eq(int(migrated_chain.get("version", 0)), 3, "PlayerState migrates v1 through v2 to v3")
+	_eq(int(migrated_chain.get("version", 0)), 4, "PlayerState migrates v1 through v2 to v4")
 	_ok(((migrated_chain.get("profile", {}) as Dictionary).get("favorites", []) as Array).has(V1),
 		"v1 favorites survive chained migration")
 
 	var future_save := {"version": 12, "profile": {"selected_unit_id": V1, "favorites": []}}
 	_ok((saves.call("migrate_to_current", future_save) as Dictionary).is_empty(), "SaveManager refuses newer save")
-	var future_player := {"version": 4, "profile": {"locale": "en", "favorites": [], "last_unit_id": V1}}
+	var future_player := {"version": 12, "profile": {"locale": "en", "favorites": [], "last_unit_id": V1}}
 	_ok((state.call("migrate_state", future_player) as Dictionary).is_empty(), "PlayerState refuses newer save")
 	_eq(str(state.get("last_error")), "save.error.newer", "newer-save refusal reports stable error")
 

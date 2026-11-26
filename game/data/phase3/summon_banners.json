@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_label": "REMASTERED_DESIGN",
+  "description": "Project-authored synthetic summon fixtures. All pool weights, guarantees, costs and rates below are invented for offline testing and are NOT FFBE values.",
+  "rate_notice": "SYNTHETIC_FIXTURE: project-authored rates only; no original banner name, rate, guarantee or pool is reproduced.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "allowed_evidence_classes": ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"],
+    "source_data_imported": false
+  },
+  "banners": [
+    {
+      "id": "summon:GL:970001@base",
+      "kind": "summon",
+      "region": "GL",
+      "native_id": "970001",
+      "form": "base",
+      "display_name_key": "summon.synthetic_dawn_selection.name",
+      "name_key": "summon.synthetic_dawn_selection.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "rate_label": "SYNTHETIC_FIXTURE",
+      "cost": {"lapis": 200},
+      "pool": [
+        "unit:GL:910101@base",
+        "unit:GL:910102@base",
+        "unit:GL:910105@base"
+      ],
+      "weights": {
+        "mode": "per_unit",
+        "unit:GL:910101@base": 60,
+        "unit:GL:910102@base": 30,
+        "unit:GL:910105@base": 10
+      },
+      "pity": {"threshold": 6, "reset_after_guarantee": true, "label": "REMASTERED_DESIGN"},
+      "guarantee": {
+        "type": "unit_id",
+        "unit_id": "unit:GL:910105@base",
+        "within": 6,
+        "label": "REMASTERED_DESIGN",
+        "note": "synthetic guarantee; no original guarantee reproduced"
+      },
+      "seed_policy": {
+        "mode": "receipt_bound",
+        "algorithm": "rng_seeded_from_seed_banner_id_receipt",
+        "label": "REMASTERED_DESIGN"
+      }
+    },
+    {
+      "id": "summon:GL:970002@base",
+      "kind": "summon",
+      "region": "GL",
+      "native_id": "970002",
+      "form": "base",
+      "display_name_key": "summon.synthetic_token_draw.name",
+      "name_key": "summon.synthetic_token_draw.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "rate_label": "SYNTHETIC_FIXTURE",
+      "cost": {"item:GL:800001@base": 1},
+      "pool": [
+        "unit:GL:910101@base",
+        "unit:GL:910103@base",
+        "unit:GL:910101@brave_shift"
+      ],
+      "weights": {
+        "mode": "per_unit",
+        "unit:GL:910101@base": 50,
+        "unit:GL:910103@base": 45,
+        "unit:GL:910101@brave_shift": 5
+      },
+      "pity": {"threshold": 8, "reset_after_guarantee": true, "label": "REMASTERED_DESIGN"},
+      "guarantee": {
+        "type": "unit_id",
+        "unit_id": "unit:GL:910101@brave_shift",
+        "within": 8,
+        "label": "REMASTERED_DESIGN",
+        "note": "synthetic guarantee; no original guarantee reproduced"
+      },
+      "seed_policy": {
+        "mode": "receipt_bound",
+        "algorithm": "rng_seeded_from_seed_banner_id_receipt",
+        "label": "REMASTERED_DESIGN"
+      }
+    },
+    {
+      "id": "summon:JP:970003@base",
+      "kind": "summon",
+      "region": "JP",
+      "native_id": "970003",
+      "form": "base",
+      "display_name_key": "summon.synthetic_guard_selection.name",
+      "name_key": "summon.synthetic_guard_selection.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "rate_label": "SYNTHETIC_FIXTURE",
+      "cost": {"lapis": 200},
+      "pool": ["unit:JP:910104@base"],
+      "weights": {"mode": "per_unit", "unit:JP:910104@base": 100},
+      "pity": {"threshold": 4, "reset_after_guarantee": true, "label": "REMASTERED_DESIGN"},
+      "guarantee": {
+        "type": "unit_id",
+        "unit_id": "unit:JP:910104@base",
+        "within": 4,
+        "label": "REMASTERED_DESIGN",
+        "note": "synthetic guarantee; no original guarantee reproduced"
+      },
+      "seed_policy": {
+        "mode": "receipt_bound",
+        "algorithm": "rng_seeded_from_seed_banner_id_receipt",
+        "label": "REMASTERED_DESIGN"
+      }
+    }
+  ]
+}

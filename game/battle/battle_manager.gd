@@ -26,7 +26,10 @@ var item_defs: Dictionary = {}
 var schedule: Array[ScheduledHit] = []
 var schedule_index: int = 0
 var item_uses: Dictionary = {}
+var ability_uses: Dictionary = {}
 var last_player_actions: Array[Dictionary] = []
+
+static var _manager_counter: int = 0
 
 
 func _init(
@@ -34,7 +37,9 @@ func _init(
 	p_combatants: Dictionary,
 	p_abilities: Dictionary,
 	p_items: Dictionary,
-	seed_value: int = 1
+	seed_value: Variant = null,
+	seed_source: String = "independent",
+	run_id: String = ""
 ) -> void:
 	encounter_def = p_encounter.duplicate(true)
 	combatant_defs = p_combatants.duplicate(true)
@@ -45,7 +50,9 @@ func _init(
 	state.encounter_id = str(encounter_def.get("id", ""))
 	state.encounter_name = str(encounter_def.get("name", ""))
 	state.boss = bool(encounter_def.get("boss", false))
-	state.seed = seed_value
+	state.seed = int(seed_value) if seed_value != null else _next_default_seed()
+	state.seed_source = _normalize_seed_source(seed_source)
+	state.run_id = run_id if not run_id.is_empty() else _new_run_id("manager")
 	state.ability_defs = ability_defs.duplicate(true)
 
 	for unit_id: String in encounter_def.get("party", []):
@@ -68,6 +75,27 @@ func _init(
 	reward_resolver = RewardResolver.new()
 
 
+## Godot 4.7 exposes a monotonic microsecond clock, not OS.get_unix_time_us().
+## Combining it with a process counter keeps independent seeds and run ids
+## unique across retries without relying on wall-clock precision.
+static func _clock_usec() -> int:
+	return Time.get_ticks_usec()
+
+
+static func _next_default_seed() -> int:
+	_manager_counter += 1
+	return (_clock_usec() ^ (_manager_counter * 2654435761)) & 0x7FFFFFFFFFFFFFFF
+
+
+static func _new_run_id(prefix: String) -> String:
+	_manager_counter += 1
+	return "run:%s:%d:%d" % [prefix, _clock_usec(), _manager_counter]
+
+
+func _normalize_seed_source(source: String) -> String:
+	return "qa_deterministic" if source == "qa_deterministic" else "independent"
+
+
 func start_battle() -> Dictionary:
 	clock.reset()
 	rng.reset(state.seed)
@@ -80,10 +108,13 @@ func start_battle() -> Dictionary:
 	schedule.clear()
 	schedule_index = 0
 	item_uses.clear()
+	ability_uses.clear()
 	_emit("battle_start", {
 		"message": "Battle started: %s" % state.encounter_name,
 		"encounter_id": state.encounter_id,
 		"seed": state.seed,
+		"seed_source": state.seed_source,
+		"run_id": state.run_id,
 		"boss": state.boss
 	})
 	return state.snapshot()
@@ -126,18 +157,23 @@ func validate_action(
 	if source_type == "ability":
 		var ability: Dictionary = ability_defs.get(ability_id, {})
 		var mp_cost: int = int(ability.get("mp_cost", 0))
-		if actor.mp < mp_cost:
+		if actor.mp - queue.reserved_mp(actor.id) < mp_cost:
 			return _invalid("insufficient_mp")
+		var uses_limit: int = maxi(int(ability.get("uses_per_battle", 0)), 0)
+		if uses_limit > 0:
+			var used: int = int(ability_uses.get(ability_id, 0)) + queue.queued_ability_uses(ability_id)
+			if used >= uses_limit:
+				return _invalid("ability_exhausted")
 		var gate: Dictionary = status_manager.can_act(actor, str(ability.get("kind", "")))
 		if not bool(gate.get("ok", false)):
 			return _invalid(str(gate.get("reason", "action_blocked")))
 		if bool(ability.get("is_limit_burst", false)):
 			if str(ability_id) != actor.limit_ability:
 				return _invalid("wrong_limit_burst")
-			if not limit_manager.can_use(actor):
+			if queue.has_lb_reservation(actor.id) or not limit_manager.can_use(actor):
 				return _invalid("lb_not_ready")
 	elif source_type == "item":
-		var used: int = int(item_uses.get(ability_id, 0))
+		var used: int = int(item_uses.get(ability_id, 0)) + queue.queued_item_uses(ability_id)
 		if used >= maxi(int(item_defs[ability_id].get("uses_per_battle", 1)), 1):
 			return _invalid("item_exhausted")
 
@@ -165,7 +201,24 @@ func queue_action(
 		return validation
 	var action: BattleAction = validation["action"]
 	action.label = _action_label(action)
-	queue.add(action)
+	var reserved: bool = queue.add(action, {
+		"state": state,
+		"ability_defs": ability_defs,
+		"item_defs": item_defs,
+		"status_manager": status_manager,
+		"limit_manager": limit_manager,
+		"item_uses": item_uses,
+		"ability_uses": ability_uses
+	})
+	if not reserved:
+		var reason := "queue_reservation_failed"
+		_emit("action_rejected", {
+			"message": "Action rejected: %s" % reason,
+			"actor_id": actor_id,
+			"ability_id": ability_id,
+			"reason": reason
+		})
+		return {"ok": false, "reason": reason}
 	_emit("action_queued", {
 		"message": "%s queued %s" % [state.find_combatant(actor_id).display_name, action.label],
 		"action": action.to_dict(),
@@ -199,36 +252,66 @@ func begin_execution() -> Dictionary:
 		_begin_enemy_phase()
 		return {"ok": true, "scheduled": schedule.size(), "skipped_player": true}
 
-	last_player_actions = queue.to_array()
+	last_player_actions = []
 	var valid_actions: Array[BattleAction] = []
 	for action: BattleAction in queue.actions:
 		var definition: Dictionary = _source_definition(action.source_type, action.ability_id)
+		var actor: CombatantState = state.find_combatant(action.actor_id)
+		if actor == null or not actor.is_alive():
+			_cancel_action(action, "actor_down")
+			continue
+		var gate: Dictionary = status_manager.can_act(actor, str(definition.get("kind", "")))
+		if not bool(gate.get("ok", false)):
+			_cancel_action(action, str(gate.get("reason", "action_blocked")))
+			continue
 		if action.source_type == "ability":
-			var actor: CombatantState = state.find_combatant(action.actor_id)
-			if actor == null or not actor.is_alive():
-				continue
-			var gate: Dictionary = status_manager.can_act(actor, str(definition.get("kind", "")))
-			if not bool(gate.get("ok", false)):
-				_emit("unsupported_effect", {"message": "%s cannot act: %s" % [actor.display_name, gate.get("reason", "")], "reason": gate.get("reason", "")})
+			var mp_cost: int = int(definition.get("mp_cost", 0))
+			var uses_limit: int = maxi(int(definition.get("uses_per_battle", 0)), 0)
+			var reserved_uses: int = 0
+			if uses_limit > 0:
+				reserved_uses = int(ability_uses.get(action.ability_id, 0)) + 1
+				if reserved_uses > uses_limit:
+					_cancel_action(action, "ability_exhausted")
+					continue
+				ability_uses[action.ability_id] = reserved_uses
+			if actor.mp < mp_cost:
+				if uses_limit > 0:
+					ability_uses[action.ability_id] = reserved_uses - 1
+				_cancel_action(action, "insufficient_mp")
 				continue
 			if bool(definition.get("is_limit_burst", false)):
 				var lb: Dictionary = limit_manager.consume(actor)
+				if not bool(lb.get("ok", false)):
+					if uses_limit > 0:
+						ability_uses[action.ability_id] = reserved_uses - 1
+					_cancel_action(action, str(lb.get("reason", "lb_not_ready")))
+					continue
 				_emit("limit_burst", lb)
-			actor.spend_mp(int(definition.get("mp_cost", 0)))
-			_emit_animation(actor.id, "skill" if int(definition.get("mp_cost", 0)) > 0 or bool(definition.get("is_limit_burst", false)) else "attack")
+			if mp_cost > 0 and not actor.spend_mp(mp_cost):
+				if uses_limit > 0:
+					ability_uses[action.ability_id] = reserved_uses - 1
+				_cancel_action(action, "insufficient_mp")
+				continue
+			_emit_animation(actor.id, "skill" if mp_cost > 0 or bool(definition.get("is_limit_burst", false)) else "attack")
 		elif action.source_type == "item":
-			item_uses[action.ability_id] = int(item_uses.get(action.ability_id, 0)) + 1
+			var used_item: int = int(item_uses.get(action.ability_id, 0)) + 1
+			var item_limit: int = maxi(int(definition.get("uses_per_battle", 1)), 1)
+			if used_item > item_limit:
+				_cancel_action(action, "item_exhausted")
+				continue
+			item_uses[action.ability_id] = used_item
 		_emit("action_started", {
-			"message": "%s uses %s" % [state.find_combatant(action.actor_id).display_name, action.label],
+			"message": "%s uses %s" % [actor.display_name, action.label],
 			"action": action.to_dict()
 		})
 		valid_actions.append(action)
+		last_player_actions.append(action.to_dict())
 
 	queue.clear()
 	var staged := ActionQueue.new()
 	for action: BattleAction in valid_actions:
 		staged.add(action)
-	schedule = staged.build_schedule(state, ability_defs, item_defs, clock.frame)
+	schedule = staged.build_schedule(state, ability_defs, item_defs, clock.frame, status_manager)
 	schedule.sort_custom(_sort_schedule)
 	schedule_index = 0
 	state.phase = "player_execution"
@@ -305,6 +388,8 @@ func summary() -> Dictionary:
 		"rng_state": rng.snapshot(),
 		"phase": state.phase,
 		"turn": state.turn,
+		"run_id": state.run_id,
+		"seed_source": state.seed_source,
 		"chain": chain_manager.snapshot(),
 		"event_count": state.events.size()
 	}
@@ -351,9 +436,11 @@ func _begin_enemy_phase() -> void:
 		var actions: Array[BattleAction] = enemy_ai.decide_actions(enemy, state, rng, clock.frame)
 		for action: BattleAction in actions:
 			var definition: Dictionary = ability_defs.get(action.ability_id, {})
-			if enemy.mp < int(definition.get("mp_cost", 0)):
+			var mp_cost: int = int(definition.get("mp_cost", 0))
+			if enemy.mp < mp_cost:
 				continue
-			enemy.spend_mp(int(definition.get("mp_cost", 0)))
+			if mp_cost > 0 and not enemy.spend_mp(mp_cost):
+				continue
 			action.label = str(definition.get("name", action.ability_id))
 			enemy_actions.append(action)
 			staged.add(action)
@@ -371,7 +458,7 @@ func _begin_enemy_phase() -> void:
 			"targets": target_names
 		})
 
-	schedule = staged.build_schedule(state, ability_defs, item_defs, clock.frame)
+	schedule = staged.build_schedule(state, ability_defs, item_defs, clock.frame, status_manager)
 	schedule.sort_custom(_sort_schedule)
 	schedule_index = 0
 	_emit("execution_started", {"message": "Enemy actions scheduled", "scheduled": schedule.size()})
@@ -400,8 +487,12 @@ func finish(victory: bool) -> void:
 	result.outcome = "victory" if victory else "defeat"
 	result.turns = state.turn
 	result.seed = state.seed
+	result.seed_source = state.seed_source
+	result.run_id = state.run_id
 	result.boss = state.boss
-	result.rewards = reward_resolver.resolve(encounter_def, victory)
+	var policy_variant: Variant = encounter_def.get("reward_policy", {})
+	result.reward_policy = policy_variant.duplicate(true) if policy_variant is Dictionary else {}
+	result.rewards = reward_resolver.resolve(encounter_def, victory, state.turn, state.run_id)
 	result.defeated_enemies = defeated
 	state.result = result
 	turn_manager.finish(result.outcome)
@@ -447,6 +538,16 @@ func _sort_schedule(left: ScheduledHit, right: ScheduledHit) -> bool:
 	if left.hit_index != right.hit_index:
 		return left.hit_index < right.hit_index
 	return left.effect_index < right.effect_index
+
+
+func _cancel_action(action: BattleAction, reason: String) -> void:
+	_emit("action_cancelled", {
+		"message": "%s cancelled: %s" % [action.label if not action.label.is_empty() else action.ability_id, reason],
+		"actor_id": action.actor_id,
+		"ability_id": action.ability_id,
+		"reason": reason,
+		"action": action.to_dict()
+	})
 
 
 func _invalid(reason: String) -> Dictionary:

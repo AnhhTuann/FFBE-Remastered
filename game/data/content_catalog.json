@@ -13,6 +13,11 @@
     "equipment": "res://data/phase3/equipment.json",
     "advanced_abilities": "res://data/phase3/advanced_abilities.json",
     "mechanic_labels": "res://data/phase3/mechanic_labels.json",
-    "imported_manifest": "res://data/phase3/imported_manifest.json"
+    "imported_manifest": "res://data/phase3/imported_manifest.json",
+    "espers": "res://data/phase3/espers.json",
+    "summon_banners": "res://data/phase3/summon_banners.json",
+    "offline_economy_rules": "res://data/phase3/offline_economy_rules.json",
+    "shops": "res://data/phase3/shops.json",
+    "crafting_recipes": "res://data/phase3/crafting_recipes.json"
   }
 }

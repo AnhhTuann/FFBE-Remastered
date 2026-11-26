@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_label": "REMASTERED_DESIGN",
+  "description": "Project-authored synthetic crafting recipes. Inputs, outputs and durations are invented for offline testing; no FFBE recipe is reproduced.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "allowed_evidence_classes": ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"],
+    "source_data_imported": false
+  },
+  "recipes": [
+    {
+      "id": "recipe:GL:990001@base",
+      "kind": "recipe",
+      "region": "GL",
+      "native_id": "990001",
+      "form": "base",
+      "name_key": "recipe.synthetic_guard_forge.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "inputs": {"material:GL:900101@base": 3, "gil": 3000},
+      "outputs": {"equip:GL:500003@shield": 1},
+      "duration_seconds": 120,
+      "requirements": {"required_flags": [], "min_level": 1},
+      "receipt_prefix": "synthetic-craft-guard",
+      "label": "REMASTERED_DESIGN"
+    },
+    {
+      "id": "recipe:GL:990002@base",
+      "kind": "recipe",
+      "region": "GL",
+      "native_id": "990002",
+      "form": "base",
+      "name_key": "recipe.synthetic_spr_infusion.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "inputs": {"material:GL:900101@base": 2, "material:GL:900102@base": 1, "gil": 2000},
+      "outputs": {"materia:GL:600003@base": 1, "material:GL:900103@base": 1},
+      "duration_seconds": 60,
+      "requirements": {"required_flags": ["craft_synthetic_advanced"], "min_level": 1},
+      "receipt_prefix": "synthetic-craft-spr",
+      "label": "REMASTERED_DESIGN"
+    },
+    {
+      "id": "recipe:JP:990003@base",
+      "kind": "recipe",
+      "region": "JP",
+      "native_id": "990003",
+      "form": "base",
+      "name_key": "recipe.synthetic_material_exchange.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "inputs": {"gil": 1000},
+      "outputs": {"material:GL:900101@base": 2},
+      "duration_seconds": 30,
+      "requirements": {"required_flags": [], "min_level": 1},
+      "receipt_prefix": "synthetic-craft-exchange",
+      "label": "REMASTERED_DESIGN"
+    }
+  ]
+}

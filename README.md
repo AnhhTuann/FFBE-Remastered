@@ -147,9 +147,9 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the detailed architecture, milestones
 
 ## Current status
 
-**Planning only.** The repository documentation is being established. No game implementation, complete data import, or playable build is implied.
+The repository contains a playable, offline Godot 4.7 desktop slice built entirely from synthetic fixtures and remastered design data. Phase 3 added character progression, inventory, equipment, abilities, Limit Bursts and desktop UI hardening. Prompt 05 adds additive v4 save migration, battle-run identity, transactional rewards, Leader Skills, per-unit Vision Cards, synthetic Esper progression, seeded summons, capped offline economy, shop and crafting foundations, and `vi` / `en` / `ja` localization.
 
-The first delivery milestone is source discovery followed by a reproducible Full Data and Asset Audit for Global and Japan.
+No original FFBE or Elvlin data, art, banner rates, guarantees or historical pools are imported or claimed. The rights gate remains `not_passed`; all runtime gameplay content is labelled `SYNTHETIC_FIXTURE` or `REMASTERED_DESIGN`. See [docs/qa/prompt05-final-report.md](docs/qa/prompt05-final-report.md) for milestone evidence and [docs/qa/phase3-hardening-report.md](docs/qa/phase3-hardening-report.md) for the preceding checkpoint.
 
 ## Legal and distribution notice
 

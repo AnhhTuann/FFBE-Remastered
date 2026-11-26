@@ -26,6 +26,7 @@ const TESTS := [
 	"test_phase3_suite",
 	"test_hardening_layout_suite",
 	"test_hardening_ui_flow_suite",
+	"test_phase3_economy_suite",
 	"test_negative_control"
 ]
 
@@ -43,6 +44,7 @@ var _battle_suite_script: Script = null
 var _phase3_suite_script: Script = null
 var _hardening_layout_suite_script: Script = null
 var _hardening_ui_flow_suite_script: Script = null
+var _phase3_economy_suite_script: Script = null
 
 
 func _initialize() -> void:
@@ -55,8 +57,9 @@ func _initialize() -> void:
 	_phase3_suite_script = load("res://tests/phase3_test_suite.gd") as Script
 	_hardening_layout_suite_script = load("res://tests/hardening_layout_test_suite.gd") as Script
 	_hardening_ui_flow_suite_script = load("res://tests/hardening_ui_flow_test_suite.gd") as Script
+	_phase3_economy_suite_script = load("res://tests/phase3_economy_test_suite.gd") as Script
 
-	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null or _hardening_layout_suite_script == null or _hardening_ui_flow_suite_script == null:
+	if _repository == null or _saves == null or _locale == null or _content_id_script == null or _validator_script == null or _battle_suite_script == null or _phase3_suite_script == null or _hardening_layout_suite_script == null or _hardening_ui_flow_suite_script == null or _phase3_economy_suite_script == null:
 		push_error("FAIL services are unavailable")
 		quit(1)
 		return
@@ -120,6 +123,14 @@ func test_hardening_ui_flow_suite() -> bool:
 		return false
 	var result: Variant = await suite.call("run")
 	return result == true
+
+
+func test_phase3_economy_suite() -> bool:
+	var suite: RefCounted = _phase3_economy_suite_script.new(self) as RefCounted
+	if suite == null:
+		push_error("FAIL phase3 economy suite could not be constructed")
+		return false
+	return bool(suite.call("run"))
 
 
 func test_negative_control() -> bool:

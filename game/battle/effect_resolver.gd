@@ -32,8 +32,9 @@ func apply(
 	var effect: Dictionary = scheduled.effect
 	var effect_type: String = str(effect.get("type", ""))
 	var actor: CombatantState = state.find_combatant(action.actor_id)
-	if actor == null:
-		return [_unsupported("actor_unavailable", "Unknown actor: %s" % action.actor_id)]
+	var legality: Dictionary = _actor_legality(actor, scheduled)
+	if not bool(legality.get("ok", false)):
+		return [_cancelled(str(legality.get("reason", "actor_unavailable")), actor)]
 
 	match effect_type:
 		"damage":
@@ -189,3 +190,28 @@ func _as_event(event_type: String, result: Dictionary) -> Dictionary:
 
 func _unsupported(reason: String, message: String) -> Dictionary:
 	return _event("unsupported_effect", message, {"reason": reason})
+
+
+## The schedule is built before hits resolve, but a faster earlier hit can down
+## or disable a later actor. Re-check immediately before every effect so a
+## cancelled command never changes state.
+func _actor_legality(actor: CombatantState, scheduled: ScheduledHit) -> Dictionary:
+	if actor == null:
+		return {"ok": false, "reason": "actor_unavailable"}
+	if not actor.is_alive():
+		return {"ok": false, "reason": "actor_down"}
+	if status_manager == null:
+		return {"ok": true, "reason": ""}
+	var kind: String = str(scheduled.effect.get("kind", ""))
+	var gate: Dictionary = status_manager.can_act(actor, kind)
+	if not bool(gate.get("ok", false)):
+		return {"ok": false, "reason": str(gate.get("reason", "action_blocked"))}
+	return {"ok": true, "reason": ""}
+
+
+func _cancelled(reason: String, actor: CombatantState) -> Dictionary:
+	var name: String = actor.display_name if actor != null else "unknown"
+	return _event("action_cancelled", "%s cannot act: %s" % [name, reason], {
+		"reason": reason,
+		"actor_id": actor.id if actor != null else ""
+	})

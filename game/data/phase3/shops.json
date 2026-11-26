@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_label": "REMASTERED_DESIGN",
+  "description": "Project-authored synthetic shop stock. Prices, limits and inventories are invented for offline testing and are not FFBE shop data.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "allowed_evidence_classes": ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"],
+    "source_data_imported": false
+  },
+  "shops": [
+    {
+      "id": "shop:GL:980001@base",
+      "kind": "shop",
+      "region": "GL",
+      "native_id": "980001",
+      "form": "base",
+      "name_key": "shop.synthetic_supply_post.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "stock": [
+        {
+          "stock_id": "synthetic_material_pack",
+          "definition_id": "material:GL:900101@base",
+          "cost": {"gil": 2500},
+          "limit": 3,
+          "refresh": "never",
+          "required_flags": []
+        },
+        {
+          "stock_id": "synthetic_guard_shield",
+          "definition_id": "equip:GL:500003@shield",
+          "cost": {"gil": 12000, "material:GL:900102@base": 2},
+          "limit": 1,
+          "refresh": "never",
+          "required_flags": ["shop_synthetic_advanced"]
+        }
+      ]
+    },
+    {
+      "id": "shop:JP:980002@base",
+      "kind": "shop",
+      "region": "JP",
+      "native_id": "980002",
+      "form": "base",
+      "name_key": "shop.synthetic_guard_depot.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "stock": [
+        {
+          "stock_id": "synthetic_defense_materia",
+          "definition_id": "materia:JP:600004@base",
+          "cost": {"gil": 6000},
+          "limit": 2,
+          "refresh": "never",
+          "required_flags": []
+        }
+      ]
+    }
+  ]
+}

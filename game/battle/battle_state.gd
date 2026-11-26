@@ -7,7 +7,9 @@ var encounter_id: String = ""
 var encounter_name: String = ""
 var ability_defs: Dictionary = {}
 var boss: bool = false
-var seed: int = 1
+var seed: int = 0
+var seed_source: String = "independent"
+var run_id: String = ""
 var turn: int = 0
 var phase: String = "idle"
 var party: Array[CombatantState] = []
@@ -66,6 +68,8 @@ func snapshot() -> Dictionary:
 		"encounter_name": encounter_name,
 		"boss": boss,
 		"seed": seed,
+		"seed_source": seed_source,
+		"run_id": run_id,
 		"turn": turn,
 		"phase": phase,
 		"chain_count": chain_count,

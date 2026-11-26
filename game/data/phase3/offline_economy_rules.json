@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_label": "REMASTERED_DESIGN",
+  "description": "Project-authored offline settlement rules. Caps, rates and party modifiers are synthetic design values, not FFBE server values.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "allowed_evidence_classes": ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"],
+    "source_data_imported": false
+  },
+  "default_rule_id": "offline_rule:GL:995001@base",
+  "rules": [
+    {
+      "id": "offline_rule:GL:995001@base",
+      "kind": "offline_rule",
+      "region": "GL",
+      "native_id": "995001",
+      "form": "base",
+      "name_key": "offline.synthetic_rest_site.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "cap_seconds": 28800,
+      "rates_per_hour": {"gil": 1000, "material:GL:900101@base": 2},
+      "cap_per_resource": {"gil": 8000, "material:GL:900101@base": 16},
+      "minimum_interval_seconds": 60,
+      "party_modifiers": [
+        {"id": "synthetic_full_party", "min_members": 5, "multiplier_percent": 110, "label": "REMASTERED_DESIGN"},
+        {"id": "synthetic_small_party", "max_members": 2, "multiplier_percent": 90, "label": "REMASTERED_DESIGN"}
+      ],
+      "label": "REMASTERED_DESIGN",
+      "note": "Synthetic offline settlement; no original offline economy reproduced."
+    }
+  ]
+}

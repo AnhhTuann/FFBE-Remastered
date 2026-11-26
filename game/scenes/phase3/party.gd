@@ -403,7 +403,7 @@ func _preview() -> void:
 		parts.append(t("common.enabled") + "=" + str(resolved.get("valid", false)))
 		var totals: Variant = resolved.get("totals", resolved.get("stats", {}))
 		parts.append(t("common.stats") + "=" + _dict_text(totals))
-		parts.append(LocaleManager.diagnostic_text(_labels_text(resolved.get("diagnostics", []))))
+		parts.append(LocaleManager.diagnostic_text(_resolution_diagnostics(resolved.get("diagnostics", []))))
 		_last_preview = " ".join(parts)
 	_refresh()
 	_set_status(_last_preview)
@@ -414,12 +414,44 @@ func _launch() -> void:
 	if not diagnostics.is_empty():
 		_set_status(t("party.invalid") + ": " + " ".join(diagnostics))
 		return
+	var parties_before: Dictionary = (PlayerState.data.get("parties", {}) as Dictionary).duplicate(true)
+	var active_before: String = str(PlayerState.data.get("active_party", ""))
 	PlayerState.set_party(_party_id, _working)
 	PlayerState.data["active_party"] = _party_id
-	PlayerState.call("commit", "parties")
+	var resolved: Dictionary = {}
+	if PlayerState.build_resolver != null and PlayerState.build_resolver.has_method("resolve_party"):
+		resolved = _as_dict(PlayerState.build_resolver.call("resolve_party", _party_id))
+	if resolved.is_empty() or not bool(resolved.get("ok", false)) or not bool(resolved.get("valid", false)):
+		PlayerState.data["parties"] = parties_before
+		PlayerState.data["active_party"] = active_before
+		_set_status(t("party.error.resolve_failed", {"id": _party_id}) + " " \
+			+ _resolution_diagnostics(resolved.get("diagnostics", [])))
+		return
+	var commit_error: Error = PlayerState.call("commit", "parties")
+	if commit_error != OK:
+		PlayerState.data["parties"] = parties_before
+		PlayerState.data["active_party"] = active_before
+		_set_status(LocaleManager.diagnostic_text("error=%d" % commit_error))
+		return
 	var error: Error = get_tree().change_scene_to_file(BATTLE_PATH)
 	if error != OK:
 		_set_status(LocaleManager.diagnostic_text("error=%d" % error))
+
+
+func _resolution_diagnostics(value: Variant) -> String:
+	if not value is Array or (value as Array).is_empty():
+		return t("party.error.resolve_failed", {"id": _party_id})
+	var parts: Array[String] = []
+	for entry_variant: Variant in value:
+		if entry_variant is Dictionary:
+			var entry: Dictionary = entry_variant
+			var key: String = str(entry.get("key", "party.error.resolve_failed"))
+			var args_variant: Variant = entry.get("args", {})
+			var args: Dictionary = args_variant if args_variant is Dictionary else {}
+			parts.append(t(key, args))
+		else:
+			parts.append(str(entry_variant))
+	return " ".join(parts)
 
 
 func _as_dict(value: Variant) -> Dictionary:
