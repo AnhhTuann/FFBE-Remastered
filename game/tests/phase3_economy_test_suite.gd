@@ -57,12 +57,18 @@ func run() -> bool:
 
 	_run("test_catalog_gate")
 	_run("test_invalid_identities_rejected")
+	_run("test_player_state_timestamp_contract")
 	_run("test_esper_system")
 	_run("test_summon_system")
+	_run("test_summon_receipt_validation")
 	_run("test_summon_commit_rollback")
 	_run("test_economy_system")
 	_run("test_shop_system")
+	_run("test_shop_receipt_and_uid_integrity")
+	_run("test_shop_commit_rollback")
 	_run("test_crafting_system")
+	_run("test_crafting_output_rollback")
+	_run("test_crafting_save_reload")
 	_run("test_end_to_end_flow")
 
 	state.set("data", original_data)
@@ -155,14 +161,24 @@ func _system(path: String) -> RefCounted:
 	return system
 
 
-func _fresh() -> void:
-	var data: Dictionary = state.call("default_state") as Dictionary
+func _save_manager() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("SaveManager") if tree != null else null
+
+
+func _fresh(now_unix: int = 0) -> void:
+	var data: Dictionary = state.call("default_state", now_unix) as Dictionary
 	if not (data.get("espers") is Dictionary):
 		data["espers"] = {"owned": {}, "active_by_party": {}, "claims": {}}
 	if not (data.get("summon") is Dictionary):
 		data["summon"] = {"pity": {}, "history": [], "claims": {}}
-	if not (data.get("economy") is Dictionary):
-		data["economy"] = {"last_settled_unix": 0, "claims": {}}
+	var economy_variant: Variant = data.get("economy", {})
+	var economy: Dictionary = economy_variant if economy_variant is Dictionary else {}
+	if not economy.has("last_settled_unix"):
+		economy["last_settled_unix"] = now_unix
+	if not (economy.get("claims") is Dictionary):
+		economy["claims"] = {}
+	data["economy"] = economy
 	if not (data.get("shops") is Dictionary):
 		data["shops"] = {"purchases": {}, "claims": {}}
 	if not (data.get("crafting") is Dictionary):
@@ -179,7 +195,9 @@ func _section(section: String) -> Dictionary:
 
 func _fingerprint() -> String:
 	var data: Dictionary = _data()
-	return JSON.stringify({
+	# Rollback restores from JSON, which normalizes integers to floats. Round-trip
+	# both sides here so a restored snapshot compares equal to the live state.
+	var payload: String = JSON.stringify({
 		"resources": data.get("resources", {}),
 		"owned_units": data.get("owned_units", []),
 		"inventory": data.get("inventory", {}),
@@ -193,6 +211,10 @@ func _fingerprint() -> String:
 		"crafting": data.get("crafting", {}),
 		"flags": data.get("flags", {})
 	})
+	var parser := JSON.new()
+	if parser.parse(payload) == OK and parser.data is Dictionary:
+		return JSON.stringify(parser.data)
+	return payload
 
 
 func _assert_unchanged(before: String, label: String) -> void:
@@ -321,11 +343,17 @@ func test_invalid_identities_rejected() -> bool:
 	var bad_weight: Dictionary = _copy_via_json(banner)
 	bad_weight["weights"]["unit:GL:910101@base"] = 0
 	_ok(not bool(_repo().call("_validate_banners", {"bad": bad_weight})), "non-positive weight rejected")
+	var bad_threshold: Dictionary = _copy_via_json(banner)
+	bad_threshold["pity"]["threshold"] = int(banner["guarantee"]["within"]) + 1
+	_ok(not bool(_repo().call("_validate_banners", {"bad": bad_threshold})), "pity/guarantee mismatch rejected")
 	var shop: Dictionary = _repo().call("get_shop", SHOP_1)
 	_ok(bool(_repo().call("_validate_shops", {SHOP_1: shop})), "valid shop stock references")
 	var bad_shop: Dictionary = _copy_via_json(shop)
 	bad_shop["stock"][0]["definition_id"] = "equip:GL:999999@base"
 	_ok(not bool(_repo().call("_validate_shops", {"bad": bad_shop})), "unknown stock definition rejected")
+	var wrong_region_shop: Dictionary = _copy_via_json(shop)
+	wrong_region_shop["stock"][0]["definition_id"] = "materia:JP:600004@base"
+	_ok(not bool(_repo().call("_validate_shops", {"bad": wrong_region_shop})), "region-mismatched stock rejected")
 	var recipe: Dictionary = _repo().call("get_crafting_recipe", RECIPE_1)
 	_ok(bool(_repo().call("_validate_recipes", {RECIPE_1: recipe})), "valid recipe references")
 	var bad_recipe: Dictionary = _copy_via_json(recipe)
@@ -340,10 +368,84 @@ func _with_id(entry: Dictionary, id: String) -> Dictionary:
 	return copy
 
 
+# --- player state timestamp contract ---------------------------------------------
+
+func test_player_state_timestamp_contract() -> bool:
+	# Explicit now_unix values keep migration and fresh-profile checks deterministic.
+	var fresh: Dictionary = state.call("default_state", 5000) as Dictionary
+	_eq(int((fresh.get("economy", {}) as Dictionary).get("last_settled_unix", -1)), 5000,
+		"fresh profile anchors offline clock")
+	_eq(int((fresh.get("economy", {}) as Dictionary).get("claims", {}).size()), 0,
+		"fresh profile has no retroactive claim")
+
+	var v1: Dictionary = {
+		"version": 1,
+		"resources": {"gil": 1234},
+		"owned_units": [],
+		"inventory": {},
+		"parties": {},
+		"claimed_rewards": {},
+		"profile": {"locale": "en"}
+	}
+	var migrated_v1: Dictionary = state.call("migrate_state", v1, 5000) as Dictionary
+	_eq(int(migrated_v1.get("version", 0)), 4, "v1 migrates to v4")
+	_eq(int((migrated_v1.get("resources", {}) as Dictionary).get("gil", 0)), 1234, "v1 resources preserved")
+	_eq(int((migrated_v1.get("economy", {}) as Dictionary).get("last_settled_unix", -1)), 5000,
+		"v1 migration anchors offline clock")
+	_ok(bool(state.call("validate_state", migrated_v1)), "v1 migrated state validates")
+
+	var v3: Dictionary = {
+		"version": 3,
+		"profile": {"locale": "ja", "favorites": ["unit:GL:910101@base"], "last_unit_id": ""},
+		"resources": {"gil": 4321},
+		"owned_units": [],
+		"inventory": {"equipment": []},
+		"parties": {"default": {"slots": [], "leader_slot": 0}},
+		"claimed_rewards": {"legacy|one": {"gil": 10}},
+		"legacy": {"battle_progress": {"attempts": 2}}
+	}
+	var migrated_v3: Dictionary = state.call("migrate_state", v3, 5000) as Dictionary
+	_eq(int(migrated_v3.get("version", 0)), 4, "v3 migrates to v4")
+	_eq(int((migrated_v3.get("resources", {}) as Dictionary).get("gil", 0)), 4321, "v3 resources preserved")
+	_ok((migrated_v3.get("reward_claims", {}) as Dictionary).has("legacy|one"), "v3 legacy claim preserved")
+	_eq(int(((migrated_v3.get("battle_runs", {}) as Dictionary).get("legacy", {}) as Dictionary).get("attempts", 0)), 2,
+		"v3 legacy battle progress preserved")
+	_eq(int((migrated_v3.get("economy", {}) as Dictionary).get("last_settled_unix", -1)), 5000,
+		"v3 migration anchors offline clock")
+	_eq((migrated_v3.get("economy", {}) as Dictionary).get("claims", {}).size(), 0,
+		"migration grants no retroactive offline claim")
+	_ok(bool(state.call("validate_state", migrated_v3)), "v3 migrated state validates")
+
+	var v4: Dictionary = migrated_v3.duplicate(true)
+	v4["economy"] = {
+		"last_settled_unix": 12345,
+		"claims": {"offline|1000|12345": {"resources": {"gil": 1}}}
+	}
+	var preserved_v4: Dictionary = state.call("migrate_state", v4, 5000) as Dictionary
+	_eq(int((preserved_v4.get("economy", {}) as Dictionary).get("last_settled_unix", -1)), 12345,
+		"existing v4 timestamp is not reset")
+	_ok(((preserved_v4.get("economy", {}) as Dictionary).get("claims", {}) as Dictionary).has("offline|1000|12345"),
+		"existing v4 claim is preserved")
+	_eq(int((preserved_v4.get("resources", {}) as Dictionary).get("gil", 0)), 4321,
+		"existing v4 resources are preserved")
+
+	_fresh(0)
+	state.call("grant", {"gil": 777})
+	_eq(state.call("save"), OK, "save contract writes player state")
+	_ok(FileAccess.file_exists(PLAYER_STATE_PATH), "save uses version-3 path")
+	var reloaded: Dictionary = state.call("load_state", 0) as Dictionary
+	_eq(int(reloaded.get("version", 0)), 4, "reloaded state keeps internal version 4")
+	_eq(int((reloaded.get("resources", {}) as Dictionary).get("gil", 0)),
+		int((_data().get("resources", {}) as Dictionary).get("gil", 0)), "reload preserves resources")
+	_eq(int((reloaded.get("economy", {}) as Dictionary).get("last_settled_unix", -1)), 0,
+		"explicit zero anchor survives reload")
+	return true
+
+
 # --- esper system ---------------------------------------------------------------
 
 func test_esper_system() -> bool:
-	_fresh()
+	_fresh(0)
 	var esper: RefCounted = _system("res://systems/esper_system.gd")
 	_eq((esper.call("definitions") as Dictionary).size(), 3, "esper definitions exposed")
 	_ok(not (esper.call("definition", ESPER_1) as Dictionary).is_empty(), "esper definition getter")
@@ -356,7 +458,7 @@ func test_esper_system() -> bool:
 	before = _fingerprint()
 	_result_fail(esper.call("unlock", ESPER_1), "insufficient_resources", "unaffordable esper")
 	_assert_unchanged(before, "unaffordable esper")
-	_fresh()
+	_fresh(0)
 
 	var result: Dictionary = esper.call("unlock", ESPER_1)
 	_result_ok(result, "esper unlocked")
@@ -418,7 +520,7 @@ func test_esper_system() -> bool:
 # --- summon system --------------------------------------------------------------
 
 func test_summon_system() -> bool:
-	_fresh()
+	_fresh(0)
 	var summon: RefCounted = _system("res://systems/summon_system.gd")
 	_eq((summon.call("banners") as Dictionary).size(), 3, "banners exposed")
 	_ok(not (summon.call("banner", BANNER_1) as Dictionary).is_empty(), "banner getter")
@@ -429,6 +531,9 @@ func test_summon_system() -> bool:
 	_ok(str(first.get("unit_id", "")).begins_with("unit:GL:"), "summoned synthetic GL unit")
 	_eq(_resource("lapis"), 800, "one summon charged once")
 	_ok(str(first.get("key", "")) == "summon|%s|receipt-alpha" % BANNER_1, "summon claim key format")
+	_eq(int(first.get("guarantee_within", -1)),
+		int(((summon.call("banner", BANNER_1) as Dictionary).get("guarantee", {}) as Dictionary).get("within", -1)),
+		"engine guarantee uses fixture within")
 	var before_fingerprint: String = _fingerprint()
 	var repeated: Dictionary = summon.call("summon", BANNER_1, 4242, "receipt-alpha")
 	_result_fail(repeated, "already_claimed", "same receipt idempotent")
@@ -439,17 +544,17 @@ func test_summon_system() -> bool:
 	_eq(_resource("lapis"), 600, "second summon charged once")
 	_eq((summon.call("history") as Array).size(), 2, "history records both summons")
 
-	_fresh()
+	_fresh(0)
 	state.call("grant", {"lapis": 1000})
 	var deterministic: Dictionary = summon.call("summon", BANNER_1, 4242, "receipt-alpha")
 	_eq(str(deterministic.get("unit_id", "")), str(first.get("unit_id", "")), "same seed/receipt yields same unit")
 	_eq(str(deterministic.get("instance_id", "")), str(first.get("instance_id", "")), "same seed/receipt yields same instance")
-	_fresh()
+	_fresh(0)
 	state.call("grant", {"lapis": 1000})
 	var changed_seed: Dictionary = summon.call("summon", BANNER_1, 4243, "receipt-alpha")
 	_ok(bool(changed_seed.get("ok", false)), "different seed still succeeds")
 
-	_fresh()
+	_fresh(0)
 	state.call("grant", {"lapis": 20})
 	before_fingerprint = _fingerprint()
 	_result_fail(summon.call("summon", BANNER_1, 1, "receipt-poor"), "insufficient_resources", "poor summon rejected")
@@ -457,7 +562,7 @@ func test_summon_system() -> bool:
 	_result_fail(summon.call("summon", "summon:GL:999999@base", 1, "receipt-bad"), "unknown_banner", "unknown banner rejected")
 	_assert_unchanged(before_fingerprint, "unknown banner")
 
-	_fresh()
+	_fresh(0)
 	state.call("grant", {"lapis": 2000})
 	for index: int in range(6):
 		var draw: Dictionary = summon.call("summon", BANNER_1, 900 + index, "pity-%d" % index)
@@ -481,15 +586,38 @@ func test_summon_system() -> bool:
 	return true
 
 
-func test_summon_commit_rollback() -> bool:
-	_fresh()
+func test_summon_receipt_validation() -> bool:
+	_fresh(0)
 	var summon: RefCounted = _system("res://systems/summon_system.gd")
 	state.call("grant", {"lapis": 1000})
 	var before: String = _fingerprint()
-	var save_manager: Node = null
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree != null:
-		save_manager = tree.root.get_node_or_null("SaveManager")
+	_result_fail(summon.call("summon", BANNER_1, 4242, ""), "invalid_receipt", "empty summon receipt")
+	_result_fail(summon.call("summon", BANNER_1, 4242, "   "), "invalid_receipt", "whitespace summon receipt")
+	_result_fail(summon.call("summon", BANNER_1, 4242, "r".repeat(129)), "invalid_receipt", "oversized summon receipt")
+	_assert_unchanged(before, "invalid summon receipts")
+
+	var padded: Dictionary = summon.call("summon", BANNER_1, 4242, "  receipt-padded  ")
+	_result_ok(padded, "padded summon receipt normalized")
+	_eq(str(padded.get("key", "")), "summon|%s|receipt-padded" % BANNER_1, "normalized summon key")
+	_eq(str((_section("summon").get("claims", {}) as Dictionary).get(
+		"summon|%s|receipt-padded" % BANNER_1, {}).get("receipt", "")), "receipt-padded",
+		"normalized receipt stored once")
+	var after_pad: String = _fingerprint()
+	_result_fail(summon.call("summon", BANNER_1, 4242, "receipt-padded"), "already_claimed",
+		"normalized receipt cannot charge twice")
+	_assert_unchanged(after_pad, "normalized receipt idempotency")
+
+	var max_receipt: Dictionary = summon.call("summon", BANNER_1, 4242, "m".repeat(128))
+	_result_ok(max_receipt, "maximum-length receipt accepted")
+	return true
+
+
+func test_summon_commit_rollback() -> bool:
+	_fresh(0)
+	var summon: RefCounted = _system("res://systems/summon_system.gd")
+	state.call("grant", {"lapis": 1000})
+	var before: String = _fingerprint()
+	var save_manager: Node = _save_manager()
 	if save_manager == null:
 		_ok(false, "summon rollback fixture has SaveManager")
 		return true
@@ -508,7 +636,7 @@ func test_summon_commit_rollback() -> bool:
 # --- offline economy system -----------------------------------------------------
 
 func test_economy_system() -> bool:
-	_fresh()
+	_fresh(0)
 	var economy: RefCounted = _system("res://systems/economy_system.gd")
 	_eq((economy.call("rules") as Dictionary).size(), 1, "offline rule exposed")
 	_data()["economy"]["last_settled_unix"] = 1000
@@ -542,16 +670,25 @@ func test_economy_system() -> bool:
 	_result_fail(economy.call("settle", 100), "no_pending_time", "negative delta rejected")
 	_assert_unchanged(_fingerprint(), "negative settlement")
 
-	_fresh()
+	_fresh(0)
 	var cap_preview: Dictionary = economy.call("status", 1000000)
-	_eq(int(cap_preview.get("pending_seconds", 0)), 28800, "offline time capped")
+	_eq(int(cap_preview.get("pending_seconds", 0)), 28800, "offline reward time capped")
+	_eq(int(cap_preview.get("elapsed_seconds", 0)), 1000000, "full elapsed period reported")
+	_eq(bool(cap_preview.get("capped", false)), true, "capped flag reported")
+	_eq(int(cap_preview.get("consumed_until", 0)), 1000000, "capped claim consumes elapsed end")
+	_eq(str(cap_preview.get("claim_key", "")), "offline|0|1000000", "capped claim key uses elapsed end")
 	_eq(int((cap_preview.get("resources", {}) as Dictionary).get("gil", 0)), 8000, "gil capped per resource")
 	_eq(int((cap_preview.get("resources", {}) as Dictionary).get("material:GL:900101@base", 0)), 16, "material capped per resource")
 	var capped: Dictionary = economy.call("settle", 1000000)
 	_result_ok(capped, "capped settlement succeeds")
-	_eq(int(_section("economy").get("last_settled_unix", 0)), 28800, "only capped window consumed")
+	_eq(int(_section("economy").get("last_settled_unix", 0)), 1000000, "whole away period consumed once")
+	var after_capped: String = _fingerprint()
+	_result_fail(economy.call("settle", 1000000), "already_claimed", "same away period not reclaimed")
+	_assert_unchanged(after_capped, "repeated capped settlement")
+	_result_ok(economy.call("settle", 1007200), "new away period after cap settles")
+	_eq(int(_section("economy").get("last_settled_unix", 0)), 1007200, "next session starts at new timestamp")
 
-	_fresh()
+	_fresh(0)
 	var party: Dictionary = state.call("get_party", "default")
 	party["slots"] = [party["slots"][0], party["slots"][1]]
 	state.call("set_party", "default", party)
@@ -564,16 +701,16 @@ func test_economy_system() -> bool:
 # --- shop system ---------------------------------------------------------------
 
 func test_shop_system() -> bool:
-	_fresh()
+	_fresh(0)
 	var shops: RefCounted = _system("res://systems/shop_system.gd")
 	_eq((shops.call("shops") as Dictionary).size(), 2, "shops exposed")
 	_eq((shops.call("stock", SHOP_1) as Array).size(), 2, "stock exposed")
 	_data()["resources"]["gil"] = 100000
 	var before: String = _fingerprint()
-	_result_fail(shops.call("buy", "shop:GL:999999@base", STOCK_MATERIAL, 1), "unknown_shop", "unknown shop rejected")
-	_result_fail(shops.call("buy", SHOP_1, "missing_stock", 1), "unknown_stock", "unknown stock rejected")
-	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 0), "invalid_quantity", "zero quantity rejected")
-	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 100), "invalid_quantity", "quantity above cap rejected")
+	_result_fail(shops.call("buy", "shop:GL:999999@base", STOCK_MATERIAL, 1, "bad-shop"), "unknown_shop", "unknown shop rejected")
+	_result_fail(shops.call("buy", SHOP_1, "missing_stock", 1, "bad-stock"), "unknown_stock", "unknown stock rejected")
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 0, "zero-qty"), "invalid_quantity", "zero quantity rejected")
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 100, "large-qty"), "invalid_quantity", "quantity above cap rejected")
 	_assert_unchanged(before, "invalid shop purchases")
 
 	var bought: Dictionary = shops.call("buy", SHOP_1, STOCK_MATERIAL, 2, "receipt-1")
@@ -617,10 +754,63 @@ func test_shop_system() -> bool:
 	return true
 
 
+func test_shop_receipt_and_uid_integrity() -> bool:
+	_fresh(0)
+	var shops: RefCounted = _system("res://systems/shop_system.gd")
+	_data()["resources"]["gil"] = 20000
+	var before: String = _fingerprint()
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, ""), "invalid_receipt", "empty shop receipt")
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, "   "), "invalid_receipt", "whitespace shop receipt")
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, "s".repeat(129)), "invalid_receipt", "oversized shop receipt")
+	_assert_unchanged(before, "invalid shop receipts")
+
+	var padded: Dictionary = shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, "  shop-padded  ")
+	_result_ok(padded, "padded shop receipt normalized")
+	_eq(str(padded.get("key", "")), "shop|%s|%s|shop-padded" % [SHOP_1, STOCK_MATERIAL],
+		"normalized shop claim key")
+	var after_pad: String = _fingerprint()
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, "shop-padded"), "already_claimed",
+		"normalized shop receipt cannot charge twice")
+	_assert_unchanged(after_pad, "normalized shop receipt idempotency")
+
+	_fresh(0)
+	_data()["resources"]["gil"] = 50000
+	var materia_before: int = state.call("inventory_section", "materia").size()
+	var multi: Dictionary = shops.call("buy", SHOP_2, STOCK_MATERIA, 2, "jp-multi")
+	_result_ok(multi, "multi-quantity shop purchase succeeds")
+	var uids: Array = multi.get("uids", [])
+	_eq(uids.size(), 2, "two item UIDs granted")
+	_ok(str(uids[0]) != str(uids[1]), "multi-quantity UIDs are unique")
+	_eq(state.call("inventory_section", "materia").size(), materia_before + 2, "JP materia added once per unit")
+	for uid_variant: Variant in uids:
+		_ok(str(uid_variant).begins_with("owned:JP:600004:"), "JP UID keeps shop region")
+	return true
+
+
+func test_shop_commit_rollback() -> bool:
+	_fresh(0)
+	var shops: RefCounted = _system("res://systems/shop_system.gd")
+	_data()["resources"]["gil"] = 50000
+	var save_manager: Node = _save_manager()
+	if save_manager == null:
+		_ok(false, "shop rollback fixture has SaveManager")
+		return true
+	var before: String = _fingerprint()
+	save_manager.call("fail_next_atomic_write")
+	_result_fail(shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, "shop-fault"), "save_failed",
+		"shop commit failure rejected")
+	_eq(_fingerprint(), before, "failed shop commit restores full state")
+	_eq((_section("shops").get("claims", {}) as Dictionary).size(), 0, "failed shop purchase records no claim")
+	_eq((_section("shops").get("purchases", {}) as Dictionary).size(), 0, "failed shop purchase records no stock use")
+	_result_ok(shops.call("buy", SHOP_1, STOCK_MATERIAL, 1, "shop-after-fault"),
+		"shop succeeds after fault consumed")
+	return true
+
+
 # --- crafting system -----------------------------------------------------------
 
 func test_crafting_system() -> bool:
-	_fresh()
+	_fresh(0)
 	var crafting: RefCounted = _system("res://systems/crafting_system.gd")
 	_eq((crafting.call("recipes") as Dictionary).size(), 3, "recipes exposed")
 	var before: String = _fingerprint()
@@ -632,7 +822,7 @@ func test_crafting_system() -> bool:
 	_result_fail(crafting.call("start", RECIPE_1, 1000), "insufficient_resources", "unaffordable recipe rejected")
 	_assert_unchanged(_fingerprint(), "unaffordable recipe")
 
-	_fresh()
+	_fresh(0)
 	var started: Dictionary = crafting.call("start", RECIPE_1, 1000)
 	_result_ok(started, "crafting started")
 	var job: Dictionary = started.get("job", {})
@@ -640,7 +830,7 @@ func test_crafting_system() -> bool:
 	_eq(int(job.get("ready_at", 0)), 1120, "job ready time from synthetic duration")
 	_eq(_resource("gil"), 497000, "crafting inputs charged")
 	_eq(_resource("material:GL:900101@base"), 117, "crafting material charged")
-	var status: Dictionary = crafting.call("status")
+	var status: Dictionary = crafting.call("status", 1000)
 	_ok((status.get("jobs", {}) as Dictionary).has("craft:1"), "status lists active job")
 	var early: Dictionary = crafting.call("settle", 1119)
 	_eq((early.get("changed", []) as Array).size(), 0, "early settle changes nothing")
@@ -649,12 +839,12 @@ func test_crafting_system() -> bool:
 	_result_ok(crafting.call("settle", 1121), "repeat settle is a no-op")
 
 	var equipment_before: int = state.call("inventory_section", "equipment").size()
-	var claimed: Dictionary = crafting.call("claim", "craft:1")
+	var claimed: Dictionary = crafting.call("claim", "craft:1", 1120)
 	_result_ok(claimed, "claimable job claimed")
 	_eq(state.call("inventory_section", "equipment").size(), equipment_before + 1, "craft output added to inventory")
 	_ok(_section("crafting").get("claims", {}).has("craft|craft:1|claim"), "craft claim key format")
 	var after_claim: String = _fingerprint()
-	_result_fail(crafting.call("claim", "craft:1"), "already_claimed", "repeat craft claim rejected")
+	_result_fail(crafting.call("claim", "craft:1", 1120), "already_claimed", "repeat craft claim rejected")
 	_assert_unchanged(after_claim, "repeat craft claim")
 	_result_fail(crafting.call("claim", "craft:999"), "unknown_job", "unknown craft job rejected")
 
@@ -676,7 +866,7 @@ func test_crafting_system() -> bool:
 	_data()["flags"]["craft_synthetic_advanced"] = true
 	_result_ok(crafting.call("start", RECIPE_2, 3000), "gated recipe starts after flag")
 	_result_ok(crafting.call("settle", 3060), "gated job settles")
-	var recipe_claim: Dictionary = crafting.call("claim", "craft:3")
+	var recipe_claim: Dictionary = crafting.call("claim", "craft:3", 3060)
 	_result_ok(recipe_claim, "gated recipe claimed")
 	_ok((recipe_claim.get("granted", {}) as Dictionary).has("material:GL:900103@base"), "recipe material output granted")
 
@@ -684,13 +874,84 @@ func test_crafting_system() -> bool:
 	_result_ok(exchange, "JP recipe starts")
 	_result_ok(crafting.call("settle", 4030), "JP recipe settles")
 	var material_900101: int = _resource("material:GL:900101@base")
-	_result_ok(crafting.call("claim", "craft:4"), "JP recipe claimed")
+	_result_ok(crafting.call("claim", "craft:4", 4030), "JP recipe claimed")
 	_eq(_resource("material:GL:900101@base"), material_900101 + 2, "JP recipe resource output granted")
 	return true
 
 
+func test_crafting_output_rollback() -> bool:
+	_fresh(0)
+	var crafting: RefCounted = _system("res://systems/crafting_system.gd")
+	var save_manager: Node = _save_manager()
+	if save_manager == null:
+		_ok(false, "crafting rollback fixture has SaveManager")
+		return true
+	var before_start: String = _fingerprint()
+	save_manager.call("fail_next_atomic_write")
+	_result_fail(crafting.call("start", RECIPE_1, 1000), "save_failed", "crafting start commit failure rejected")
+	_eq(_fingerprint(), before_start, "failed craft start restores input resources")
+	_result_ok(crafting.call("start", RECIPE_1, 1000), "crafting start succeeds after fault consumed")
+
+	_result_ok(crafting.call("settle", 1120), "job settled for grant checks")
+	var tampered: Dictionary = _data()
+	((tampered.get("crafting", {}) as Dictionary).get("jobs", {}) as Dictionary)["craft:1"]["outputs"] = {
+		"item:GL:999999@base": 1
+	}
+	state.set("data", tampered)
+	var before_grant: String = _fingerprint()
+	_result_fail(crafting.call("claim", "craft:1", 1120), "invalid_definition", "invalid craft output rejected")
+	_assert_unchanged(before_grant, "invalid craft output")
+
+	_fresh(0)
+	_result_ok(crafting.call("start", RECIPE_1, 1000), "crafting restart for commit failure")
+	_result_ok(crafting.call("settle", 1120), "restarted job settled")
+	var before_claim: String = _fingerprint()
+	save_manager.call("fail_next_atomic_write")
+	_result_fail(crafting.call("claim", "craft:1", 1120), "save_failed", "craft claim commit failure rejected")
+	_eq(_fingerprint(), before_claim, "failed craft claim restores full state")
+	_result_ok(crafting.call("claim", "craft:1", 1120), "craft claim succeeds after fault consumed")
+
+	_result_ok(crafting.call("start", RECIPE_1, 2000), "second craft job started")
+	var before_cancel: String = _fingerprint()
+	save_manager.call("fail_next_atomic_write")
+	_result_fail(crafting.call("cancel", "craft:2", 2010), "save_failed", "craft refund commit failure rejected")
+	_eq(_fingerprint(), before_cancel, "failed craft refund restores full state")
+	_result_ok(crafting.call("cancel", "craft:2", 2010), "craft refund succeeds after fault consumed")
+	return true
+
+
+func test_crafting_save_reload() -> bool:
+	_fresh(0)
+	var crafting: RefCounted = _system("res://systems/crafting_system.gd")
+	var claimed_job: Dictionary = crafting.call("start", RECIPE_1, 1000)
+	var claim_id: String = str(claimed_job.get("key", ""))
+	_result_ok(crafting.call("settle", 1120), "claimed job settled")
+	_result_ok(crafting.call("claim", claim_id, 1120), "claimed job granted")
+
+	var cancelled_job: Dictionary = crafting.call("start", RECIPE_1, 2000)
+	var cancel_id: String = str(cancelled_job.get("key", ""))
+	_result_ok(crafting.call("cancel", cancel_id, 2010), "cancelled job refunded")
+
+	_eq(state.call("save"), OK, "crafting save/reload fixture saves")
+	var reloaded: Dictionary = state.call("load_state", 0) as Dictionary
+	_ok(not reloaded.is_empty(), "crafting state reloads")
+	var jobs: Dictionary = ((reloaded.get("crafting", {}) as Dictionary).get("jobs", {}) as Dictionary)
+	_eq(str((jobs.get(claim_id, {}) as Dictionary).get("status", "")), "claimed", "claimed job status reloaded")
+	_eq(str((jobs.get(cancel_id, {}) as Dictionary).get("status", "")), "cancelled", "cancelled job status reloaded")
+	var claims: Dictionary = (reloaded.get("crafting", {}) as Dictionary).get("claims", {})
+	_ok(claims.has("craft|%s|claim" % claim_id), "craft claim survives reload")
+	_ok(claims.has("craft|%s|refund" % cancel_id), "refund claim survives reload")
+
+	state.set("data", reloaded)
+	var after_reload: String = _fingerprint()
+	_result_fail(crafting.call("claim", claim_id, 3000), "already_claimed", "reloaded claim not repeated")
+	_result_fail(crafting.call("cancel", cancel_id, 3000), "job_ready", "reloaded refund not repeated")
+	_assert_unchanged(after_reload, "reloaded craft idempotency")
+	return true
+
+
 func test_end_to_end_flow() -> bool:
-	_fresh()
+	_fresh(0)
 	state.call("grant", {"gil": 1000000, "lapis": 2000, "material:GL:900101@base": 200})
 
 	# Battle result -> separated reward buckets -> idempotent settlement.
@@ -718,7 +979,7 @@ func test_end_to_end_flow() -> bool:
 	_result_ok(craft_start, "E2E crafting start")
 	var craft_id: String = str(craft_start.get("key", ""))
 	_result_ok(crafting.call("settle", 300), "E2E crafting settle")
-	_result_ok(crafting.call("claim", craft_id), "E2E crafting claim")
+	_result_ok(crafting.call("claim", craft_id, 300), "E2E crafting claim")
 	var summon: RefCounted = _system("res://systems/summon_system.gd")
 	_result_ok(summon.call("summon", BANNER_1, 4242, "e2e-summon"), "E2E summon")
 

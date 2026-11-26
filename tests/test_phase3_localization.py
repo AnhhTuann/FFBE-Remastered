@@ -18,9 +18,9 @@ REPORT_PATH = ROOT / "data/validation/localization-coverage.json"
 TOOL_PATH = ROOT / "tools/localization/coverage_report.py"
 TOKEN_MANIFEST_PATH = ROOT / "game/data/phase3/localization_tokens.json"
 LOCALES = ("en", "ja", "vi")
-EXPECTED_KEY_COUNT = 741
-EXPECTED_DYNAMIC_MAPPING_COUNT = 304
-EXPECTED_DYNAMIC_KEY_COUNT = 279
+EXPECTED_KEY_COUNT = 742
+EXPECTED_DYNAMIC_MAPPING_COUNT = 305
+EXPECTED_DYNAMIC_KEY_COUNT = 280
 
 VI_TERMS = (
     "Nhân vật",
@@ -214,6 +214,8 @@ class Phase3LocalizationTest(unittest.TestCase):
             "common.diagnostic",
             "common.failed",
             "reason.already_claimed",
+            "reason.invalid_receipt",
+            "reason.region_mismatch",
             "reason.insufficient_resources",
             "verification.synthetic_fixture",
             "mechanic.name.brave_shift",

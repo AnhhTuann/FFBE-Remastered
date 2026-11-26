@@ -336,9 +336,14 @@ func _pity_counts(banner: Dictionary) -> Dictionary:
 	var rule_map := {}
 	if rule is Dictionary:
 		rule_map = rule as Dictionary
-	var limit := _first_int(rule_map, ["threshold", "within", "max"], 0)
-	if limit <= 0 and guarantee is Dictionary:
-		limit = _first_int(guarantee as Dictionary, ["within"], 0)
+	# guarantee.within is the engine's actual guarantee; pity.threshold is only
+	# a legacy display fallback and the repository requires them to agree.
+	var guarantee_map := {}
+	if guarantee is Dictionary:
+		guarantee_map = guarantee as Dictionary
+	var limit := _first_int(guarantee_map, ["within"], 0)
+	if limit <= 0:
+		limit = _first_int(rule_map, ["threshold", "within", "max"], 0)
 	var current := 0
 	var section: Variant = PlayerState.data.get("summon", {})
 	if section is Dictionary:

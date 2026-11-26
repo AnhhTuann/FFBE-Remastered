@@ -23,7 +23,7 @@
       "mechanic_note": 21,
       "provenance": 4,
       "rarity": 5,
-      "reason": 74,
+      "reason": 75,
       "region": 3,
       "resource": 25,
       "role": 5,
@@ -229,6 +229,7 @@
       "reason.invalid_pool",
       "reason.invalid_pot",
       "reason.invalid_quantity",
+      "reason.invalid_receipt",
       "reason.invalid_seed",
       "reason.invalid_slot",
       "reason.invalid_time",
@@ -320,9 +321,9 @@
     ],
     "manifest_errors": [],
     "manifest_file": "game/data/phase3/localization_tokens.json",
-    "mapping_count": 304,
+    "mapping_count": 305,
     "missing_keys": [],
-    "reference_count": 279
+    "reference_count": 280
   },
   "fallback_locale": "en",
   "invalid_dictionary_count": 0,
@@ -331,8 +332,8 @@
     "keys_without_japanese_glyphs": [],
     "locale": "ja",
     "note": "Japanese values must contain kana or kanji, not romaji placeholders.",
-    "strings_checked": 741,
-    "strings_with_japanese_glyphs": 741
+    "strings_checked": 742,
+    "strings_with_japanese_glyphs": 742
   },
   "locales": [
     "en",
@@ -755,7 +756,7 @@
     "en": {
       "dictionary_file": "game/data/localization/en.json",
       "empty_value_keys": [],
-      "key_count": 741,
+      "key_count": 742,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1169,7 +1170,7 @@
     "ja": {
       "dictionary_file": "game/data/localization/ja.json",
       "empty_value_keys": [],
-      "key_count": 741,
+      "key_count": 742,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1583,7 +1584,7 @@
     "vi": {
       "dictionary_file": "game/data/localization/vi.json",
       "empty_value_keys": [],
-      "key_count": 741,
+      "key_count": 742,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -2131,9 +2132,9 @@
   },
   "status": "pass",
   "tool_version": "1.1.0",
-  "union_key_count": 741,
+  "union_key_count": 742,
   "vietnamese_diacritics": {
-    "coverage": 0.9649,
+    "coverage": 0.965,
     "keys_without_diacritics": [
       "awakening.ex",
       "awakening.nv",
@@ -2164,7 +2165,7 @@
     ],
     "locale": "vi",
     "note": "Brand tokens such as NV, EX, TMR, STMR, LB, SLB, gil, UID and digits are expected without diacritics.",
-    "strings_checked": 741,
-    "strings_with_diacritics": 715
+    "strings_checked": 742,
+    "strings_with_diacritics": 716
   }
 }

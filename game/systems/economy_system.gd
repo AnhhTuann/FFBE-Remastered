@@ -3,7 +3,9 @@ extends RefCounted
 
 ## Prompt 05 synthetic offline economy. All caps, rates and party modifiers
 ## come from SYNTHETIC_FIXTURE data. status() is read-only; settle() grants once
-## per absolute claim window and commits exactly once.
+## per away period and commits exactly once. A capped period pays at most
+## cap_seconds but consumes the full elapsed interval on success, so repeated
+## settle() calls with the same now_unix cannot mint another capped claim.
 
 const EVIDENCE_LABEL := "REMASTERED_DESIGN"
 const CURRENCY_KEYS: Array[String] = ["gil", "lapis", "trust_moogles"]
@@ -58,17 +60,25 @@ func settle(now_unix: int) -> Dictionary:
 	claims[claim_key] = {
 		"window_start": int(window.get("window_start", 0)),
 		"window_end": int(window.get("window_end", 0)),
+		"consumed_until": int(window.get("consumed_until", window.get("window_end", 0))),
+		"elapsed_seconds": int(window.get("elapsed_seconds", 0)),
+		"reward_seconds": int(window.get("reward_seconds", 0)),
+		"capped": bool(window.get("capped", false)),
 		"resources": reward.duplicate(true),
 		"evidence": EVIDENCE_LABEL
 	}
 	section["claims"] = claims
-	section["last_settled_unix"] = int(window.get("window_end", 0))
+	section["last_settled_unix"] = int(window.get("consumed_until", window.get("window_end", 0)))
 	data["economy"] = section
 	return _commit("economy", snapshot, "economy.settle.ok", {
 		"key": claim_key,
 		"granted": reward,
 		"window_start": int(window.get("window_start", 0)),
 		"window_end": int(window.get("window_end", 0)),
+		"consumed_until": int(window.get("consumed_until", window.get("window_end", 0))),
+		"elapsed_seconds": int(window.get("elapsed_seconds", 0)),
+		"reward_seconds": int(window.get("reward_seconds", 0)),
+		"capped": bool(window.get("capped", false)),
 		"modifier": str(window.get("modifier", ""))
 	})
 
@@ -98,8 +108,12 @@ func _window(now_unix: int) -> Dictionary:
 		return _ok("economy.status.ready", {
 			"rule_id": rule_id,
 			"pending_seconds": 0,
+			"reward_seconds": 0,
+			"elapsed_seconds": 0,
+			"capped": false,
 			"window_start": last_settled,
 			"window_end": last_settled,
+			"consumed_until": last_settled,
 			"resources": {},
 			"modifier": "",
 			"claim_key": "offline|%d|%d" % [last_settled, last_settled],
@@ -111,14 +125,21 @@ func _window(now_unix: int) -> Dictionary:
 		return _ok("economy.status.ready", {
 			"rule_id": rule_id,
 			"pending_seconds": 0,
+			"reward_seconds": 0,
+			"elapsed_seconds": elapsed,
+			"capped": elapsed > cap_seconds,
 			"window_start": last_settled,
 			"window_end": last_settled,
+			"consumed_until": last_settled,
 			"resources": {},
 			"modifier": "",
 			"claim_key": "offline|%d|%d" % [last_settled, last_settled],
 			"reason": "minimum_interval"
 		})
-	var window_end: int = last_settled + pending
+	# The reward window is capped, but the whole away period is consumed on a
+	# successful settle. window_end therefore equals the elapsed-period end and
+	# becomes the next last_settled_unix; reward_seconds records the paid cap.
+	var window_end: int = now_unix
 	var modifier_id: String = ""
 	var multiplier: int = 100
 	var modifiers: Array = rule.get("party_modifiers", []) if rule.get("party_modifiers", []) is Array else []
@@ -152,8 +173,12 @@ func _window(now_unix: int) -> Dictionary:
 		"reason": "",
 		"rule_id": rule_id,
 		"pending_seconds": pending,
+		"reward_seconds": pending,
+		"elapsed_seconds": elapsed,
+		"capped": elapsed > cap_seconds,
 		"window_start": last_settled,
 		"window_end": window_end,
+		"consumed_until": window_end,
 		"resources": reward,
 		"modifier": modifier_id,
 		"multiplier_percent": multiplier,

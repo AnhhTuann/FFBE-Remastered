@@ -115,6 +115,16 @@ class Prompt05EconomyDataTest(unittest.TestCase):
             self.assertNotIn("featured", blob.replace("featured_unit_ids", ""), "banner must be synthetic")
             self.assertIn("seed_policy", banner)
 
+    def test_summon_pity_display_matches_engine_guarantee(self) -> None:
+        banners = self.packs["summon_banners"]["banners"]
+        values = list(banners.values()) if isinstance(banners, dict) else banners
+        self.assertGreater(len(values), 0)
+        for banner in values:
+            threshold = int(banner["pity"]["threshold"])
+            within = int(banner["guarantee"]["within"])
+            self.assertGreater(threshold, 0, banner["id"])
+            self.assertEqual(threshold, within, banner["id"])
+
     def test_summon_pools_reference_existing_unit_definitions(self) -> None:
         known = set(self.unit_definitions["units"].keys()) if isinstance(
             self.unit_definitions["units"], dict
@@ -164,6 +174,18 @@ class Prompt05EconomyDataTest(unittest.TestCase):
                 self.assertGreater(len(cost), 0)
                 self.assertTrue(all(int(value) >= 0 for value in cost.values()))
                 self.assertGreaterEqual(int(item.get("limit", 0)), 0)
+
+    def test_shop_stock_regions_match_shop_region(self) -> None:
+        shops = self.packs["shops"]["shops"]
+        values = list(shops.values()) if isinstance(shops, dict) else shops
+        for shop in values:
+            for item in shop.get("stock", []):
+                definition = str(item.get("definition_id", ""))
+                match = CID_RE.fullmatch(definition)
+                if match:
+                    self.assertEqual(match["region"], shop["region"], definition)
+                # `refresh` is metadata only; no runtime refresh cadence is implemented.
+                self.assertIsInstance(item.get("refresh"), str, item["stock_id"])
 
     def test_crafting_recipes_have_bounded_inputs_outputs_and_duration(self) -> None:
         recipes = self.packs["crafting_recipes"]["recipes"]

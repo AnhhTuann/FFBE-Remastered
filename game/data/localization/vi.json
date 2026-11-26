@@ -522,6 +522,7 @@
   "reason.invalid_pool": "Kho không hợp lệ",
   "reason.invalid_pot": "Yêu cầu bình không hợp lệ",
   "reason.invalid_quantity": "Số lượng không hợp lệ",
+  "reason.invalid_receipt": "Biên lai không hợp lệ",
   "reason.invalid_seed": "Hạt giống không hợp lệ",
   "reason.invalid_slot": "Khe không hợp lệ",
   "reason.invalid_time": "Thời điểm không hợp lệ",

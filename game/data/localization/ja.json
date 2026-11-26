@@ -522,6 +522,7 @@
   "reason.invalid_pool": "プールが無効です",
   "reason.invalid_pot": "壺の指定が無効です",
   "reason.invalid_quantity": "数量が無効です",
+  "reason.invalid_receipt": "受領番号が無効です",
   "reason.invalid_seed": "シードが無効です",
   "reason.invalid_slot": "無効なスロットです",
   "reason.invalid_time": "時刻が無効です",

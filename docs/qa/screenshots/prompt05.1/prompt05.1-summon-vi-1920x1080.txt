@@ -1,0 +1,18 @@
+name=prompt05.1-summon-vi-1920x1080
+scene=res://scenes/phase3/summon.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=
+instance_id=
+party_id=
+encounter=
+seed=12345
+freeze_frame=
+offline_seconds=
+now_unix=1764000000
+window_id=182452231
+geometry=WINDOW=182452231 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=862 stddev=0.11426
+runtime_error_lines=0
+log_basename=prompt05.1-summon-vi-1920x1080.log

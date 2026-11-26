@@ -1,0 +1,18 @@
+name=prompt05.1-economy-vi-1920x1080
+scene=res://scenes/phase3/economy_hub.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=100000
+now_unix=1764000000
+window_id=182452231
+geometry=WINDOW=182452231 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=636 stddev=0.128094
+runtime_error_lines=0
+log_basename=prompt05.1-economy-vi-1920x1080.log

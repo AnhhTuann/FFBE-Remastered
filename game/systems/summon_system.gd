@@ -7,6 +7,7 @@ extends RefCounted
 ## internally, so a successful summon performs no second commit.
 
 const HISTORY_LIMIT := 200
+const MAX_RECEIPT_LENGTH := 128
 const EVIDENCE_LABEL := "REMASTERED_DESIGN"
 
 var state: Node = null
@@ -35,14 +36,28 @@ func cost(banner_id: String) -> Dictionary:
 	return _clamped_cost(value) if value is Dictionary else {}
 
 
+## Receipts are idempotency identities, not free text. Surrounding whitespace is
+## normalized away; empty and oversized receipts are rejected before any charge.
+func normalize_receipt(receipt: String) -> String:
+	var trimmed: String = receipt.strip_edges()
+	if trimmed.is_empty() or trimmed.length() > MAX_RECEIPT_LENGTH:
+		return ""
+	return trimmed
+
+
 func summon(banner_id: String, seed: int, receipt: String = "") -> Dictionary:
+	var normalized: String = normalize_receipt(receipt)
+	if normalized.is_empty():
+		return _fail("invalid_receipt", "reason.invalid_receipt", {
+			"key": "", "receipt_length": receipt.length(), "max_length": MAX_RECEIPT_LENGTH
+		})
 	var def: Dictionary = banner(banner_id)
 	if def.is_empty():
 		return _fail("unknown_banner", "summon.unknown", {"key": banner_id})
 	var cost_map: Dictionary = cost(banner_id)
 	if cost_map.is_empty():
 		return _fail("invalid_cost", "summon.cost", {"key": banner_id})
-	var claim_key: String = "summon|%s|%s" % [banner_id, receipt]
+	var claim_key: String = "summon|%s|%s" % [banner_id, normalized]
 	var data: Dictionary = state.get("data")
 	var section: Dictionary = _read_section(data, "summon")
 	var claims: Dictionary = _read_section(section, "claims")
@@ -53,7 +68,7 @@ func summon(banner_id: String, seed: int, receipt: String = "") -> Dictionary:
 
 	var safe_seed: int = maxi(seed, 0)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = safe_seed + banner_id.hash() + receipt.hash()
+	rng.seed = safe_seed + banner_id.hash() + normalized.hash()
 	var pity: Dictionary = _read_section(section, "pity")
 	var previous_pity: int = clampi(int(pity.get(banner_id, 0)), 0, 1000000)
 	var pity_after_draw: int = previous_pity + 1
@@ -88,7 +103,7 @@ func summon(banner_id: String, seed: int, receipt: String = "") -> Dictionary:
 	var claim_record: Dictionary = {
 		"banner_id": banner_id,
 		"seed": safe_seed,
-		"receipt": receipt,
+		"receipt": normalized,
 		"unit_id": chosen,
 		"pity_before": previous_pity,
 		"pity_after": new_pity,
@@ -101,7 +116,7 @@ func summon(banner_id: String, seed: int, receipt: String = "") -> Dictionary:
 	history.append({
 		"banner_id": banner_id,
 		"seed": safe_seed,
-		"receipt": receipt,
+		"receipt": normalized,
 		"unit_id": chosen,
 		"guaranteed": guaranteed,
 		"source": "synthetic_summon"
@@ -130,6 +145,7 @@ func summon(banner_id: String, seed: int, receipt: String = "") -> Dictionary:
 		"guaranteed": guaranteed,
 		"pity": new_pity,
 		"pity_rule": maxi(int(pity_rule.get("threshold", 0)), 0),
+		"guarantee_within": maxi(int(guarantee.get("within", 0)), 0),
 		"evidence": EVIDENCE_LABEL
 	})
 

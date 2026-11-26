@@ -927,7 +927,7 @@ func test_invalid_transactions_preserve_resources() -> bool:
 func test_save_v2_to_v4_migration() -> bool:
 	var fixture: Dictionary = _read_json_dict("res://data/save_fixtures/v2_player_state.json")
 	_eq(int(fixture.get("version", 0)), 2, "fixture is a version 2 save")
-	var migrated: Dictionary = state.call("migrate_state", fixture)
+	var migrated: Dictionary = state.call("migrate_state", fixture, 5000)
 	_eq(int(fixture.get("version", 0)), 2, "migration does not mutate fixture")
 	_eq(int(migrated.get("version", 0)), 4, "v2 migrated to v4")
 	_ok(bool(state.call("validate_state", migrated)), "migrated state validates")
@@ -952,8 +952,13 @@ func test_save_v2_to_v4_migration() -> bool:
 	_ok((migrated.get("parties", {}) as Dictionary).has("default"), "new v3 parties field")
 	_eq((((migrated.get("parties", {}) as Dictionary).get("default", {}) as Dictionary).get("slots", []) as Array).size(), 5, "party slots present")
 	_ok((migrated.get("claimed_rewards", {}) as Dictionary).is_empty(), "legacy claimed rewards field retained")
-	for section: String in ["reward_claims", "mission_progress", "espers", "summon", "economy", "shops", "crafting"]:
+	for section: String in ["reward_claims", "mission_progress", "espers", "summon", "shops", "crafting"]:
 		_ok((migrated.get(section, {}) as Dictionary).is_empty(), "v4 section backfilled: %s" % section)
+	# Economy is additive v4 data: it is initialized with a safe timestamp
+	# anchor and an empty claim set, not left as an epoch-zero retroactive claim.
+	var economy: Dictionary = migrated.get("economy", {})
+	_eq(int(economy.get("last_settled_unix", -1)), 5000, "v4 economy anchored during migration")
+	_ok((economy.get("claims", {}) as Dictionary).is_empty(), "v4 economy has no migrated claim")
 	var runs: Dictionary = migrated.get("battle_runs", {})
 	_ok(runs is Dictionary, "v4 battle_runs section backfilled")
 	_ok(runs.has("legacy"), "legacy battle progress mapped into battle_runs")

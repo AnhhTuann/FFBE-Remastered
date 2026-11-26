@@ -4,6 +4,8 @@ extends Node
 ## this service owns owned units, inventory, resources, trust, parties and locale.
 ## It remains in the version-3 filename so version-2 slot and battle-progress
 ## saves stay untouched; the in-file format is version 4 with additive v4 sections.
+## Fresh and migrated profiles anchor economy.last_settled_unix at creation time
+## so an epoch-zero save cannot claim historical offline rewards.
 
 signal state_changed(section: String)
 signal load_failed(message: String)
@@ -40,7 +42,20 @@ func rebuild_systems() -> void:
 		build_resolver = build_script.new(self)
 
 
-func default_state() -> Dictionary:
+## Resolves an explicit test timestamp, then the QA away-period anchor, then
+## the real clock. Explicit values always win so regression tests stay deterministic.
+func _resolve_timestamp(now_unix: int) -> int:
+	if now_unix >= 0:
+		return now_unix
+	var qa_now: String = OS.get_environment("FFBE_QA_NOW_UNIX")
+	var qa_away: String = OS.get_environment("FFBE_QA_OFFLINE_SECONDS")
+	if qa_now.is_valid_int() and qa_away.is_valid_int():
+		return maxi(0, qa_now.to_int() - maxi(0, qa_away.to_int()))
+	return maxi(0, int(Time.get_unix_time_from_system()))
+
+
+func default_state(now_unix: int = -1) -> Dictionary:
+	var anchor: int = _resolve_timestamp(now_unix)
 	var resources: Dictionary = {
 		"gil": 500000,
 		"lapis": 0,
@@ -92,7 +107,7 @@ func default_state() -> Dictionary:
 		"battle_runs": {},
 		"espers": {},
 		"summon": {},
-		"economy": {},
+		"economy": {"last_settled_unix": anchor, "claims": {}},
 		"shops": {},
 		"crafting": {},
 		"legacy": {}
@@ -168,28 +183,30 @@ func _default_inventory() -> Dictionary:
 	}
 
 
-func load_state() -> Dictionary:
+func load_state(now_unix: int = -1) -> Dictionary:
+	var anchor: int = _resolve_timestamp(now_unix)
 	_loading = true
 	var result: Variant = SaveManager.call("_read_json_with_fallback", PLAYER_STATE_PATH)
 	_loading = false
 	if result is Dictionary and bool((result as Dictionary).get("ok", false)):
 		var raw: Variant = (result as Dictionary).get("data", {})
 		if raw is Dictionary:
-			var migrated := migrate_state(raw as Dictionary)
+			var migrated := migrate_state(raw as Dictionary, anchor)
 			if validate_state(migrated):
 				last_error = ""
 				return migrated
 			last_error = "save.error.invalid"
 			load_failed.emit(last_error)
-			return default_state()
+			return default_state(anchor)
 	last_error = "save.error.corrupt"
 	load_failed.emit(last_error)
-	return default_state()
+	return default_state(anchor)
 
 
-func migrate_state(raw: Dictionary) -> Dictionary:
+func migrate_state(raw: Dictionary, now_unix: int = -1) -> Dictionary:
 	if raw.is_empty():
-		return default_state()
+		return default_state(now_unix)
+	var anchor: int = _resolve_timestamp(now_unix)
 	var version: int = int(raw.get("version", 1))
 	if version > PLAYER_STATE_VERSION:
 		last_error = "save.error.newer"
@@ -200,7 +217,7 @@ func migrate_state(raw: Dictionary) -> Dictionary:
 			1:
 				working = _migrate_1_to_2(working)
 			2:
-				working = _migrate_2_to_3(working)
+				working = _migrate_2_to_3(working, anchor)
 			3:
 				working = _migrate_3_to_4(working)
 			_:
@@ -209,7 +226,25 @@ func migrate_state(raw: Dictionary) -> Dictionary:
 		working["version"] = version
 	if not working.has("claimed_rewards"):
 		working["claimed_rewards"] = {}
-	return working
+	return _ensure_economy_anchor(working, anchor)
+
+
+## Additive v4 economy anchor. It only fills a missing/zero unclaimed timestamp;
+## any recorded claim window or positive timestamp is preserved byte-for-byte.
+func _ensure_economy_anchor(target: Dictionary, anchor: int) -> Dictionary:
+	var section_variant: Variant = target.get("economy", {})
+	var section: Dictionary = section_variant if section_variant is Dictionary else {}
+	var stored: int = int(section.get("last_settled_unix", -1))
+	var claims_variant: Variant = section.get("claims", {})
+	var claims: Dictionary = claims_variant if claims_variant is Dictionary else {}
+	if stored < 0 or (stored == 0 and claims.is_empty()):
+		section["last_settled_unix"] = maxi(anchor, 0)
+		section["claims"] = claims
+		target["economy"] = section
+	elif not section.has("claims"):
+		section["claims"] = claims
+		target["economy"] = section
+	return target
 
 
 func _migrate_1_to_2(data: Dictionary) -> Dictionary:
@@ -219,8 +254,8 @@ func _migrate_1_to_2(data: Dictionary) -> Dictionary:
 	return result
 
 
-func _migrate_2_to_3(data: Dictionary) -> Dictionary:
-	var fresh: Dictionary = default_state()
+func _migrate_2_to_3(data: Dictionary, now_unix: int = -1) -> Dictionary:
+	var fresh: Dictionary = default_state(now_unix)
 	var profile_variant: Variant = data.get("profile", {})
 	if profile_variant is Dictionary:
 		var profile: Dictionary = profile_variant
@@ -229,7 +264,21 @@ func _migrate_2_to_3(data: Dictionary) -> Dictionary:
 		var favorites_variant: Variant = profile.get("favorites", [])
 		if favorites_variant is Array:
 			fresh["profile"]["favorites"] = (favorites_variant as Array).duplicate()
-		fresh["profile"]["last_unit_id"] = str(profile.get("last_unit_id", ""))
+		fresh["profile"]["last_unit_id"] = str(profile.get("last_unit_id", profile.get("selected_unit_id", "")))
+	# Older saves may already carry v3-shaped fields. Keep those values and only
+	# backfill keys that are absent instead of resetting the player's progress.
+	var resources_variant: Variant = data.get("resources", {})
+	if resources_variant is Dictionary:
+		(fresh["resources"] as Dictionary).merge(resources_variant as Dictionary, true)
+	for section: String in ["owned_units", "inventory", "parties", "claimed_rewards"]:
+		var value: Variant = data.get(section, null)
+		if value is Array or value is Dictionary:
+			fresh[section] = (value as Array).duplicate(true) if value is Array else (value as Dictionary).duplicate(true)
+	if data.has("active_party"):
+		fresh["active_party"] = str(data.get("active_party", "default"))
+	for key: String in ["next_unit_serial", "next_equip_serial"]:
+		if int(data.get(key, 0)) > 0:
+			fresh[key] = int(data[key])
 	var legacy: Dictionary = {}
 	for key: String in ["battle_progress", "settings_summary", "version"]:
 		if data.has(key):
@@ -296,6 +345,10 @@ func validate_state(state: Dictionary) -> bool:
 		"espers", "summon", "economy", "shops", "crafting"
 	]:
 		if not (state.get(section, {}) is Dictionary):
+			return false
+	var economy_variant: Variant = state.get("economy", {})
+	if economy_variant is Dictionary and (economy_variant as Dictionary).has("last_settled_unix"):
+		if int((economy_variant as Dictionary).get("last_settled_unix", -1)) < 0:
 			return false
 	var seen: Dictionary = {}
 	for entry: Variant in state.get("owned_units", []):

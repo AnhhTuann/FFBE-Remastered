@@ -386,6 +386,13 @@ func get_crafting_recipe(id: String) -> Dictionary:
 	return _lookup_definition(_crafting_recipes, id)
 
 
+## Public, read-only definition gate used by economy systems before charging or
+## granting. Currencies and all composite synthetic resource/item definitions
+## resolve through the same validator used when the packs were loaded.
+func definition_exists(id: String) -> bool:
+	return _definition_exists(id)
+
+
 func get_crafting_recipes() -> Dictionary:
 	return _crafting_recipes.duplicate(true)
 
@@ -564,11 +571,16 @@ func _validate_banners(banners: Dictionary) -> bool:
 		if not guarantee_variant is Dictionary:
 			return false
 		var guarantee: Dictionary = guarantee_variant
-		if int(guarantee.get("within", 0)) <= 0:
+		var within: int = int(guarantee.get("within", 0))
+		if within <= 0:
 			return false
 		if str(guarantee.get("type", "")) == "unit_id" and not seen.has(str(guarantee.get("unit_id", ""))):
 			return false
-		if int((entry.get("pity", {}) as Dictionary).get("threshold", 0)) <= 0:
+		var pity: Dictionary = entry.get("pity", {})
+		var threshold: int = int(pity.get("threshold", 0))
+		# The engine grants from guarantee.within. A mismatched display threshold
+		# would promise a different draw count, so fail closed instead of choosing.
+		if threshold <= 0 or threshold != within:
 			return false
 	return true
 
@@ -606,6 +618,7 @@ func _validate_shops(shops: Dictionary) -> bool:
 		if not stock_variant is Array or (stock_variant as Array).is_empty():
 			return false
 		var seen: Dictionary = {}
+		var shop_region: String = str(shops[id].get("region", ""))
 		for item_variant: Variant in stock_variant as Array:
 			if not item_variant is Dictionary:
 				return false
@@ -613,7 +626,12 @@ func _validate_shops(shops: Dictionary) -> bool:
 			var stock_id: String = str(item.get("stock_id", ""))
 			if stock_id.is_empty() or seen.has(stock_id):
 				return false
-			if not _definition_exists(str(item.get("definition_id", ""))):
+			var definition_id: String = str(item.get("definition_id", ""))
+			if not _definition_exists(definition_id):
+				return false
+			var parsed_definition: ContentId = ContentId.parse(definition_id)
+			if parsed_definition != null and parsed_definition.is_valid() and \
+					str(parsed_definition.region) != shop_region:
 				return false
 			if not _is_valid_cost(item.get("cost", null)):
 				return false

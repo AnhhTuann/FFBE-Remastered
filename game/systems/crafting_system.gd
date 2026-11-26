@@ -3,7 +3,9 @@ extends RefCounted
 
 ## Prompt 05 synthetic crafting system. Jobs are local-only, use synthetic
 ## recipes and settle from an explicit timestamp; claims and refunds are
-## idempotent through namespaced PlayerState claim keys.
+## idempotent through namespaced PlayerState claim keys. Output definitions are
+## validated before payment and again before grant so a tampered job cannot
+## manufacture arbitrary resources.
 
 const EVIDENCE_LABEL := "REMASTERED_DESIGN"
 
@@ -42,6 +44,9 @@ func start(recipe_id: String, now_unix: int = -1) -> Dictionary:
 	var inputs: Dictionary = _clamped_cost(def.get("inputs", {}))
 	if inputs.is_empty():
 		return _fail("invalid_inputs", "craft.inputs", {"key": recipe_id})
+	var outputs: Dictionary = _clamped_cost(def.get("outputs", {}))
+	if not _valid_outputs(outputs):
+		return _fail("invalid_definition", "craft.definition", {"key": recipe_id})
 	if not state.call("can_pay", inputs):
 		return _fail("insufficient_resources", "craft.resources", {"key": recipe_id})
 
@@ -67,7 +72,7 @@ func start(recipe_id: String, now_unix: int = -1) -> Dictionary:
 		"ready_at": now + duration,
 		"duration_seconds": duration,
 		"inputs": inputs.duplicate(true),
-		"outputs": (def.get("outputs", {}) as Dictionary).duplicate(true),
+		"outputs": outputs.duplicate(true),
 		"receipt_prefix": str(def.get("receipt_prefix", "")),
 		"evidence": EVIDENCE_LABEL
 	}
@@ -78,8 +83,9 @@ func start(recipe_id: String, now_unix: int = -1) -> Dictionary:
 	return _commit("crafting", snapshot, "craft.start.ok", {"key": job_id, "job": job.duplicate(true)})
 
 
-func status() -> Dictionary:
-	var now: int = int(Time.get_unix_time_from_system())
+func status(now_unix: int = -1) -> Dictionary:
+	var now: int = now_unix if now_unix >= 0 else int(Time.get_unix_time_from_system())
+	now = maxi(now, 0)
 	var section: Dictionary = _read_section(state.get("data"), "crafting")
 	var jobs: Dictionary = _read_section(section, "jobs")
 	var result: Dictionary = {}
@@ -120,7 +126,9 @@ func settle(now_unix: int) -> Dictionary:
 	return _commit("crafting", snapshot, "craft.settle.ok", {"changed": changed, "now_unix": now})
 
 
-func claim(job_id: String) -> Dictionary:
+func claim(job_id: String, now_unix: int = -1) -> Dictionary:
+	var now: int = now_unix if now_unix >= 0 else int(Time.get_unix_time_from_system())
+	now = maxi(now, 0)
 	var section: Dictionary = _read_section(state.get("data"), "crafting")
 	var jobs: Dictionary = _read_section(section, "jobs")
 	if not jobs.has(job_id):
@@ -137,6 +145,8 @@ func claim(job_id: String) -> Dictionary:
 		return _fail("not_claimable", "craft.job.claimable", {"key": job_id})
 
 	var outputs: Dictionary = _clamped_cost(job.get("outputs", {}))
+	if not _valid_outputs(outputs):
+		return _fail("invalid_definition", "craft.definition", {"key": claim_key})
 	var snapshot: String = _snapshot()
 	var granted: Dictionary = {}
 	var uids: Array[String] = []
@@ -154,7 +164,7 @@ func claim(job_id: String) -> Dictionary:
 	claims = _ensure_section(section, "claims")
 	job = jobs.get(job_id, {}) if jobs.get(job_id, {}) is Dictionary else {}
 	job["status"] = "claimed"
-	job["claimed_at"] = int(Time.get_unix_time_from_system())
+	job["claimed_at"] = now
 	jobs[job_id] = job
 	claims[claim_key] = {"job_id": job_id, "outputs": granted.duplicate(true), "evidence": EVIDENCE_LABEL}
 	section["jobs"] = jobs
@@ -203,6 +213,8 @@ func cancel(job_id: String, now_unix: int = -1) -> Dictionary:
 # --- item/resource grant -------------------------------------------------------
 
 func _grant_output(definition_id: String, quantity: int, source: String) -> Dictionary:
+	if not _repo().call("definition_exists", definition_id):
+		return _fail("invalid_definition", "craft.definition", {})
 	var section_name: String = ""
 	if not _repo().call("get_equipment_definition", definition_id).is_empty():
 		section_name = "equipment"
@@ -253,6 +265,15 @@ func _unique_equip_uid(parsed: ContentId, entries: Array) -> String:
 	var data: Dictionary = state.get("data")
 	data["next_equip_serial"] = serial + 1
 	return uid
+
+
+func _valid_outputs(outputs: Dictionary) -> bool:
+	if outputs.is_empty():
+		return false
+	for output_id: Variant in outputs.keys():
+		if not _repo().call("definition_exists", str(output_id)):
+			return false
+	return true
 
 
 func _has_flag(flag: String) -> bool:

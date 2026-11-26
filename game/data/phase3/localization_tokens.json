@@ -198,6 +198,7 @@
       "invalid_pool": "reason.invalid_pool",
       "invalid_pot": "reason.invalid_pot",
       "invalid_quantity": "reason.invalid_quantity",
+      "invalid_receipt": "reason.invalid_receipt",
       "invalid_seed": "reason.invalid_seed",
       "invalid_slot": "reason.invalid_slot",
       "invalid_time": "reason.invalid_time",

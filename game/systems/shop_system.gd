@@ -4,9 +4,12 @@ extends RefCounted
 ## Prompt 05 synthetic shop system. Stock, costs and limits come from
 ## SYNTHETIC_FIXTURE data; no FFBE shop inventory is represented. Item outputs
 ## become inventory entries with local UIDs; pure resources use PlayerState.
+## The fixture `refresh` field is metadata only: no refresh action, timer or
+## stock reset is implemented, and no refresh cadence is inferred from it.
 
 const EVIDENCE_LABEL := "REMASTERED_DESIGN"
 const MAX_QUANTITY := 99
+const MAX_RECEIPT_LENGTH := 128
 
 var state: Node = null
 
@@ -38,7 +41,21 @@ func stock(shop_id: String) -> Array[Dictionary]:
 	return result
 
 
+## Receipts normalize like summon receipts: trimmed edges, bounded length and a
+## stable invalid_receipt diagnostic before any cost is checked or charged.
+func normalize_receipt(receipt: String) -> String:
+	var trimmed: String = receipt.strip_edges()
+	if trimmed.is_empty() or trimmed.length() > MAX_RECEIPT_LENGTH:
+		return ""
+	return trimmed
+
+
 func buy(shop_id: String, stock_id: String, quantity: int, receipt: String = "") -> Dictionary:
+	var normalized: String = normalize_receipt(receipt)
+	if normalized.is_empty():
+		return _fail("invalid_receipt", "reason.invalid_receipt", {
+			"key": "", "receipt_length": receipt.length(), "max_length": MAX_RECEIPT_LENGTH
+		})
 	var def: Dictionary = shop(shop_id)
 	if def.is_empty():
 		return _fail("unknown_shop", "shop.unknown", {"key": shop_id})
@@ -51,12 +68,19 @@ func buy(shop_id: String, stock_id: String, quantity: int, receipt: String = "")
 			break
 	if stock_entry.is_empty():
 		return _fail("unknown_stock", "shop.stock", {"key": shop_id})
+	var definition_id: String = str(stock_entry.get("definition_id", ""))
+	if not _repo().call("definition_exists", definition_id):
+		return _fail("invalid_definition", "shop.definition", {"key": shop_id})
+	var parsed_definition: ContentId = ContentId.parse(definition_id)
+	if parsed_definition != null and parsed_definition.is_valid() and \
+			str(parsed_definition.region) != str(def.get("region", "")):
+		return _fail("region_mismatch", "reason.region_mismatch", {"key": shop_id})
 	var required_flags: Array = stock_entry.get("required_flags", []) if stock_entry.get("required_flags", []) is Array else []
 	for flag_variant: Variant in required_flags:
 		if not _has_flag(str(flag_variant)):
 			return _fail("flag_required", "shop.flag", {"key": shop_id, "flag": str(flag_variant)})
 
-	var claim_key: String = "shop|%s|%s|%s" % [shop_id, stock_id, receipt]
+	var claim_key: String = "shop|%s|%s|%s" % [shop_id, stock_id, normalized]
 	var purchase_key: String = "%s|%s" % [shop_id, stock_id]
 	var data: Dictionary = state.get("data")
 	var section: Dictionary = _read_section(data, "shops")
@@ -84,7 +108,7 @@ func buy(shop_id: String, stock_id: String, quantity: int, receipt: String = "")
 		return _fail("payment_failed", "shop.payment", {"key": claim_key})
 	var granted: Dictionary = {}
 	var uids: Array[String] = []
-	var outputs: Dictionary = {str(stock_entry.get("definition_id", "")): quantity}
+	var outputs: Dictionary = {definition_id: quantity}
 	for output_id: String in outputs.keys():
 		var grant_result: Dictionary = _grant_output(output_id, quantity, "shop_purchase")
 		if not bool(grant_result.get("ok", false)):
@@ -103,7 +127,7 @@ func buy(shop_id: String, stock_id: String, quantity: int, receipt: String = "")
 		"shop_id": shop_id,
 		"stock_id": stock_id,
 		"quantity": quantity,
-		"receipt": receipt,
+		"receipt": normalized,
 		"cost": cost,
 		"evidence": EVIDENCE_LABEL
 	}
@@ -122,6 +146,8 @@ func buy(shop_id: String, stock_id: String, quantity: int, receipt: String = "")
 # --- item/resource grant -------------------------------------------------------
 
 func _grant_output(definition_id: String, quantity: int, source: String) -> Dictionary:
+	if not _repo().call("definition_exists", definition_id):
+		return _fail("invalid_definition", "shop.definition", {})
 	var section_name: String = ""
 	if not _repo().call("get_equipment_definition", definition_id).is_empty():
 		section_name = "equipment"

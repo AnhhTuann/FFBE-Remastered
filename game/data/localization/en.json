@@ -522,6 +522,7 @@
   "reason.invalid_pool": "Invalid pool",
   "reason.invalid_pot": "Invalid pot request",
   "reason.invalid_quantity": "Invalid quantity",
+  "reason.invalid_receipt": "Invalid receipt",
   "reason.invalid_seed": "Invalid seed",
   "reason.invalid_slot": "Invalid slot",
   "reason.invalid_time": "Invalid time",
