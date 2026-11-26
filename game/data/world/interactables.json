@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored NPC, chest, exit and encounter-trigger definitions. All names and rewards are synthetic.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "source_data_imported": false,
+    "evidence_class": "REMASTERED_DESIGN"
+  },
+  "interactables": [
+    {
+      "id": "npc:GL:2101@keeper",
+      "kind": "npc",
+      "region": "GL",
+      "native_id": "2101",
+      "form": "keeper",
+      "area_id": "loc:GL:1101@haven",
+      "position": {"x": 300, "y": 430},
+      "radius": 58,
+      "name_key": "world.npc.keeper.name",
+      "prompt_key": "world.prompt.talk",
+      "dialogue_id": "dialogue:GL:2101@keeper",
+      "interaction_policy": "repeatable",
+      "portrait_ref": "style:keeper",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "npc:GL:2102@scout",
+      "kind": "npc",
+      "region": "GL",
+      "native_id": "2102",
+      "form": "scout",
+      "area_id": "loc:GL:1101@haven",
+      "position": {"x": 760, "y": 360},
+      "radius": 58,
+      "name_key": "world.npc.scout.name",
+      "prompt_key": "world.prompt.talk",
+      "dialogue_id": "dialogue:GL:2102@scout",
+      "interaction_policy": "repeatable",
+      "portrait_ref": "style:scout",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "treasure:GL:4101@meadow",
+      "kind": "treasure",
+      "region": "GL",
+      "native_id": "4101",
+      "form": "meadow",
+      "area_id": "loc:GL:1102@meadow",
+      "position": {"x": 530, "y": 430},
+      "radius": 54,
+      "name_key": "world.treasure.meadow.name",
+      "prompt_key": "world.prompt.open",
+      "interaction_policy": "one_time",
+      "reward": {"gil": 150, "items": ["fragment:GL:910101@base"]},
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "encounter_trigger:GL:5101@meadow",
+      "kind": "encounter_trigger",
+      "region": "GL",
+      "native_id": "5101",
+      "form": "meadow",
+      "area_id": "loc:GL:1102@meadow",
+      "position": {"x": 930, "y": 300},
+      "radius": 62,
+      "name_key": "world.trigger.meadow.name",
+      "prompt_key": "world.prompt.battle",
+      "encounter_id": "encounter:GL:950001@skirmish",
+      "interaction_policy": "repeatable",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "encounter_trigger:GL:5102@spire",
+      "kind": "encounter_trigger",
+      "region": "GL",
+      "native_id": "5102",
+      "form": "spire",
+      "area_id": "loc:GL:1103@spire",
+      "position": {"x": 640, "y": 300},
+      "radius": 62,
+      "name_key": "world.trigger.spire.name",
+      "prompt_key": "world.prompt.battle",
+      "encounter_id": "encounter:GL:950002@boss",
+      "interaction_policy": "one_time",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "exit:GL:6101@haven_to_map",
+      "kind": "exit",
+      "region": "GL",
+      "native_id": "6101",
+      "form": "haven_to_map",
+      "area_id": "loc:GL:1101@haven",
+      "position": {"x": 1090, "y": 590},
+      "radius": 62,
+      "name_key": "world.exit.map.name",
+      "prompt_key": "world.prompt.return_map",
+      "destination": "world_map",
+      "interaction_policy": "repeatable",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "exit:GL:6102@meadow_to_haven",
+      "kind": "exit",
+      "region": "GL",
+      "native_id": "6102",
+      "form": "meadow_to_haven",
+      "area_id": "loc:GL:1102@meadow",
+      "position": {"x": 110, "y": 590},
+      "radius": 62,
+      "name_key": "world.exit.haven.name",
+      "prompt_key": "world.prompt.travel",
+      "destination": "loc:GL:1101@haven",
+      "interaction_policy": "repeatable",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "exit:GL:6103@meadow_to_spire",
+      "kind": "exit",
+      "region": "GL",
+      "native_id": "6103",
+      "form": "meadow_to_spire",
+      "area_id": "loc:GL:1102@meadow",
+      "position": {"x": 1110, "y": 120},
+      "radius": 62,
+      "name_key": "world.exit.spire.name",
+      "prompt_key": "world.prompt.travel",
+      "destination": "loc:GL:1103@spire",
+      "requirement": {"location_id": "loc:GL:1103@spire"},
+      "interaction_policy": "repeatable",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "exit:GL:6104@spire_to_meadow",
+      "kind": "exit",
+      "region": "GL",
+      "native_id": "6104",
+      "form": "spire_to_meadow",
+      "area_id": "loc:GL:1103@spire",
+      "position": {"x": 110, "y": 590},
+      "radius": 62,
+      "name_key": "world.exit.meadow.name",
+      "prompt_key": "world.prompt.travel",
+      "destination": "loc:GL:1102@meadow",
+      "interaction_policy": "repeatable",
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    }
+  ]
+}

@@ -30,6 +30,7 @@ FALLBACK_LOCALE = "en"
 DICTIONARY_DIR = Path("game/data/localization")
 TOKEN_MANIFEST_PATH = Path("game/data/phase3/localization_tokens.json")
 SOURCE_DIR = Path("game")
+WORLD_DATA_DIR = Path("game/data/world")
 DEFAULT_OUTPUT = Path("data/validation/localization-coverage.json")
 LONG_LABEL_THRESHOLD = 40
 
@@ -157,10 +158,52 @@ def scan_sources(root: Path) -> dict[str, Any]:
     }
 
 
+def scan_world_data_keys(root: Path) -> dict[str, Any]:
+    """Find localization keys referenced by the synthetic world JSON packs.
+
+    Data-driven dialogue, quest and map labels never appear as GDScript string
+    literals. Scanning their key fields keeps those values from silently
+    rendering a raw key at runtime.
+    """
+    data_root = root / WORLD_DATA_DIR
+    files = sorted(
+        (path for path in data_root.glob("*.json") if path.is_file()),
+        key=lambda path: path.name,
+    )
+    keys: set[str] = set()
+
+    def walk(value: Any, field: str = "") -> None:
+        if isinstance(value, dict):
+            for child_field, child in value.items():
+                walk(child, str(child_field))
+        elif isinstance(value, list):
+            for child in value:
+                walk(child, field)
+        elif isinstance(value, str):
+            is_key_field = field == "key" or field.endswith("_key") or field == "lines"
+            if is_key_field and "." in value:
+                keys.add(value)
+
+    for path in files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        walk(payload)
+    return {
+        "data_files_scanned": len(files),
+        "data_files": [path.relative_to(root).as_posix() for path in files],
+        "literal_keys": sorted(keys),
+    }
+
+
 def build_report(root: Path) -> dict[str, Any]:
     """Build the deterministic coverage report for ``root``."""
     source = scan_sources(root)
     source_keys = set(source["literal_keys"])
+    data_scan = scan_world_data_keys(root)
+    data_keys = set(data_scan["literal_keys"])
+    key_reference_set = source_keys | data_keys
     token_categories, token_problems = load_token_manifest(root)
     dynamic_keys = sorted({key for mapping in token_categories.values() for key in mapping.values()})
     dynamic_key_set = set(dynamic_keys)
@@ -176,11 +219,14 @@ def build_report(root: Path) -> dict[str, Any]:
     union_keys = sorted(
         set().union(
             *(set(dictionary) for dictionary in dictionaries.values()),
-            source_keys,
+            key_reference_set,
             dynamic_key_set,
         )
     )
-    reference_keys = set().union(*(set(dictionary) for dictionary in dictionaries.values()))
+    reference_keys = set().union(
+        *(set(dictionary) for dictionary in dictionaries.values()),
+        key_reference_set,
+    )
     missing_dynamic_keys = [key for key in dynamic_keys if key not in reference_keys]
 
     per_locale: dict[str, Any] = {}
@@ -193,7 +239,7 @@ def build_report(root: Path) -> dict[str, Any]:
             "unused_keys": [
                 key
                 for key in sorted(dictionary)
-                if key not in source_keys and key not in dynamic_key_set
+                if key not in key_reference_set and key not in dynamic_key_set
             ],
             "empty_value_keys": [key for key, value in sorted(dictionary.items()) if not value],
         }
@@ -256,6 +302,7 @@ def build_report(root: Path) -> dict[str, Any]:
         "fallback_locale": FALLBACK_LOCALE,
         "locales": list(LOCALES),
         "source_scan": source,
+        "world_data_scan": data_scan,
         "union_key_count": len(union_keys),
         "dynamic_references": {
             "manifest_file": TOKEN_MANIFEST_PATH.as_posix(),
@@ -342,6 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"status: {report['status']}")
     print(f"locales: {', '.join(LOCALES)}")
     print(f"union keys: {report['union_key_count']}")
+    print(f"world data keys: {len(report['world_data_scan']['literal_keys'])}")
     print(f"missing keys: {report['blocking']['missing_key_count']}")
     print(f"placeholder mismatches: {report['blocking']['placeholder_mismatch_count']}")
     print(f"dynamic references: {report['dynamic_references']['reference_count']}")

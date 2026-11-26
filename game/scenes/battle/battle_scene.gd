@@ -83,6 +83,9 @@ var _party_source_key: String = ""
 var _run_id: String = ""
 var _seed_source: String = "independent"
 var _battle_blocked: bool = false
+var _world_context: Dictionary = {}
+var _return_scene_path: String = MAIN_MENU_PATH
+var _encounter_override: String = ""
 
 ## Run ids are presentation-scoped: retrying the same encounter always creates
 ## a new settlement identity even inside one process.
@@ -94,6 +97,11 @@ func _ready() -> void:
 	_build_ui()
 	if not LocaleManager.locale_changed.is_connected(_apply_locale):
 		LocaleManager.locale_changed.connect(_apply_locale)
+	_world_context = WorldContext.consume()
+	_encounter_override = str(_world_context.get("encounter_id", ""))
+	_return_scene_path = str(_world_context.get("return_scene", MAIN_MENU_PATH))
+	if _return_scene_path.is_empty():
+		_return_scene_path = MAIN_MENU_PATH
 	_qa_read_freeze_frame()
 	_start_battle(_preferred_encounter())
 	if _qa_mode():
@@ -438,6 +446,10 @@ func _qa_mode() -> bool:
 
 
 func _preferred_encounter() -> String:
+	if not _encounter_override.is_empty() and ContentRepository.call(
+		"get_encounter", _encounter_override
+	).size() > 0:
+		return _encounter_override
 	if _qa_mode():
 		var requested: String = OS.get_environment("FFBE_QA_ENCOUNTER")
 		if not requested.is_empty() and ContentRepository.call("get_encounter", requested).size() > 0:
@@ -1218,7 +1230,12 @@ func _record_result(state: RefCounted) -> void:
 	if result_variant is RefCounted:
 		var result_dict: Dictionary = result_variant.call("to_dict")
 		_result_snapshot = result_dict.duplicate(true)
-		var player_state: Node = get_node_or_null("/root/PlayerState")
+		# Resolve through the active SceneTree so a headless test can call this
+		# settlement hook before the battle scene is attached to a scene tree.
+		var player_state: Node = null
+		var loop: Variant = Engine.get_main_loop()
+		if loop is SceneTree:
+			player_state = (loop as SceneTree).root.get_node_or_null("PlayerState")
 		var claim: Dictionary = {}
 		if player_state != null and player_state.has_method("claim_battle_reward"):
 			claim = player_state.call("claim_battle_reward", result_dict)
@@ -1360,8 +1377,30 @@ func _on_retry_pressed() -> void:
 	_start_battle(current)
 
 
+## Build the return payload for a world encounter. Kept separate from scene
+## navigation so the transition contract is directly testable headlessly.
+func _world_return_context() -> Dictionary:
+	if _return_scene_path == MAIN_MENU_PATH or not ResourceLoader.exists(_return_scene_path):
+		return {}
+	var payload: Dictionary = _world_context.duplicate(true)
+	payload["return_scene"] = _return_scene_path
+	if not _result_snapshot.is_empty():
+		payload["battle_result"] = _result_snapshot.duplicate(true)
+	return payload
+
+
 func _on_menu_pressed() -> void:
-	get_tree().change_scene_to_file(MAIN_MENU_PATH)
+	# A world encounter returns to its exploration area and carries the settled
+	# battle result back. Reward claiming happens only in _record_result(), so a
+	# retry or scene reload cannot grant the same run twice.
+	var payload: Dictionary = _world_return_context()
+	var destination: String = MAIN_MENU_PATH
+	if not payload.is_empty():
+		destination = _return_scene_path
+		WorldContext.write(payload)
+	else:
+		WorldContext.clear()
+	get_tree().change_scene_to_file(destination)
 
 
 func _on_battle_event(event: Dictionary) -> void:

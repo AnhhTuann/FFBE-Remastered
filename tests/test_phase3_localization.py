@@ -18,7 +18,8 @@ REPORT_PATH = ROOT / "data/validation/localization-coverage.json"
 TOOL_PATH = ROOT / "tools/localization/coverage_report.py"
 TOKEN_MANIFEST_PATH = ROOT / "game/data/phase3/localization_tokens.json"
 LOCALES = ("en", "ja", "vi")
-EXPECTED_KEY_COUNT = 742
+EXPECTED_KEY_COUNT = 829
+EXPECTED_WORLD_DATA_KEY_COUNT = 45
 EXPECTED_DYNAMIC_MAPPING_COUNT = 305
 EXPECTED_DYNAMIC_KEY_COUNT = 280
 
@@ -288,6 +289,28 @@ class Phase3LocalizationTest(unittest.TestCase):
         self.assertIn(f"`{report['vietnamese_diacritics']['coverage']}`", coverage_doc)
         self.assertIn(f"`{report['japanese_glyphs']['coverage']}`", coverage_doc)
         self.assertIn("coverage_report.py", coverage_doc)
+
+    def test_world_data_key_scan(self) -> None:
+        scan = self.report["world_data_scan"]
+        self.assertEqual(scan["data_files_scanned"], 6)
+        for name in (
+            "dialogues.json", "interactables.json", "location_connections.json",
+            "locations.json", "quests.json", "regions.json",
+        ):
+            self.assertIn(f"game/data/world/{name}", scan["data_files"])
+        self.assertEqual(len(scan["literal_keys"]), EXPECTED_WORLD_DATA_KEY_COUNT)
+        self.assertEqual(scan["literal_keys"], sorted(scan["literal_keys"]))
+        for key in (
+            "dialogue.scout.line2",
+            "quest.oath.title",
+            "world.location.haven.name",
+            "world.prompt.open",
+        ):
+            self.assertIn(key, scan["literal_keys"])
+        for locale in LOCALES:
+            missing = [key for key in scan["literal_keys"] if key not in self.dictionaries[locale]]
+            self.assertEqual(missing, [], locale)
+            self.assertEqual(self.report["per_locale"][locale]["missing_keys"], [])
 
     def test_generated_report_matches_tool_serialization(self) -> None:
         report = self.report

@@ -68,6 +68,24 @@ func clear_write_failure() -> void:
 	_fail_next_atomic_write = false
 
 
+## Prompt 06 writes a one-generation pre-migration copy before an older player
+## state is normalized. It uses the same `user://` path namespace and never
+## touches backups from other prompts.
+func backup_for_migration(path: String) -> Error:
+	if not FileAccess.file_exists(path):
+		return OK
+	var original: String = FileAccess.get_file_as_string(path)
+	var backup_path: String = path + ".mig.bak"
+	var file: FileAccess = FileAccess.open(backup_path, FileAccess.WRITE)
+	if file == null:
+		return FileAccess.get_open_error()
+	if original.is_empty() or not file.store_string(original):
+		file.close()
+		return ERR_FILE_CANT_WRITE
+	file.close()
+	return OK
+
+
 func default_battle_progress() -> Dictionary:
 	return {
 		"version": BATTLE_PROGRESS_VERSION,

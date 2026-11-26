@@ -1,0 +1,18 @@
+name=prompt06-haven_npc-vi-1920x1080
+scene=res://scenes/world/exploration_area.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=haven_npc
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=1302 stddev=0.086948
+runtime_error_lines=0
+log_basename=prompt06-haven_npc-vi-1920x1080.log

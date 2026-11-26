@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "description": "Project-authored synthetic dialogue graphs. No original FFBE story text is represented.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "source_data_imported": false,
+    "evidence_class": "REMASTERED_DESIGN"
+  },
+  "dialogues": [
+    {
+      "id": "dialogue:GL:2101@keeper",
+      "kind": "dialogue",
+      "region": "GL",
+      "native_id": "2101",
+      "form": "keeper",
+      "speaker_key": "world.npc.keeper.name",
+      "portrait_ref": "style:keeper",
+      "start_node": "intro",
+      "nodes": [
+        {
+          "id": "intro",
+          "lines": ["dialogue.keeper.line1", "dialogue.keeper.line2"],
+          "choices": [
+            {
+              "id": "accept_oath",
+              "label_key": "dialogue.choice.accept_oath",
+              "next": "accepted",
+              "effects": [
+                {"type": "flag", "key": "keeper_intro", "value": true},
+                {"type": "quest_accept", "quest_id": "quest:GL:3100@oath"},
+                {"type": "quest_event", "event": {"type": "talk_to", "target": "npc:GL:2101@keeper", "count": 1}},
+                {"type": "unlock_location", "location_id": "loc:GL:1102@meadow"}
+              ]
+            },
+            {
+              "id": "later",
+              "label_key": "dialogue.choice.later",
+              "next": "end",
+              "effects": []
+            }
+          ]
+        },
+        {
+          "id": "accepted",
+          "lines": ["dialogue.keeper.line3"],
+          "choices": [],
+          "next": "end",
+          "effects": []
+        },
+        {
+          "id": "end",
+          "lines": [],
+          "choices": [],
+          "next": "",
+          "effects": []
+        }
+      ],
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    },
+    {
+      "id": "dialogue:GL:2102@scout",
+      "kind": "dialogue",
+      "region": "GL",
+      "native_id": "2102",
+      "form": "scout",
+      "speaker_key": "world.npc.scout.name",
+      "portrait_ref": "style:scout",
+      "start_node": "intro",
+      "nodes": [
+        {
+          "id": "intro",
+          "lines": [
+            {
+              "key": "dialogue.scout.active",
+              "when": {"quest_status": "active", "quest_id": "quest:GL:3101@lantern"}
+            },
+            {
+              "key": "dialogue.scout.intro",
+              "when": {"quest_status": "not_started", "quest_id": "quest:GL:3101@lantern"}
+            },
+            {
+              "key": "dialogue.scout.done",
+              "when": {"quest_status": "completed", "quest_id": "quest:GL:3101@lantern"}
+            }
+          ],
+          "choices": [
+            {
+              "id": "accept_lantern",
+              "label_key": "dialogue.choice.accept_quest",
+              "next": "accepted",
+              "when": {"quest_status": "not_started", "quest_id": "quest:GL:3101@lantern"},
+              "effects": [
+                {"type": "quest_accept", "quest_id": "quest:GL:3101@lantern"},
+                {"type": "quest_event", "event": {"type": "talk_to", "target": "npc:GL:2102@scout", "count": 1}}
+              ]
+            },
+            {
+              "id": "continue_lantern",
+              "label_key": "dialogue.choice.continue",
+              "next": "end",
+              "when": {"quest_status": "active", "quest_id": "quest:GL:3101@lantern"},
+              "effects": []
+            },
+            {
+              "id": "close",
+              "label_key": "dialogue.choice.close",
+              "next": "end",
+              "effects": []
+            }
+          ]
+        },
+        {
+          "id": "accepted",
+          "lines": ["dialogue.scout.line2"],
+          "choices": [],
+          "next": "end",
+          "effects": []
+        },
+        {
+          "id": "end",
+          "lines": [],
+          "choices": [],
+          "next": "",
+          "effects": []
+        }
+      ],
+      "verification_status": "REMASTERED_DESIGN",
+      "provenance": {
+        "origin": "remastered_design",
+        "source": "prompt06-synthetic-world",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      }
+    }
+  ]
+}
