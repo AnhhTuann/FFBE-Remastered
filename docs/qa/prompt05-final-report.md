@@ -176,11 +176,15 @@ The remaining ten `ERROR:` lines in the positive Godot log are intentional negat
 
 ## P. Publication evidence
 
-Publication is being performed with this checkpoint. The implementation commit, annotated tag `checkpoint/prompt-05-esper-summon-economy`, stacked draft PR against `phase-3-hardening`, and independent remote verification are being recorded in the follow-up documentation-only commit on this same branch. No `main` update, merge, force push, hard reset or destructive rebase is part of publication.
+- Branch pushed: `phase-4-esper-summon-economy`, tracking `origin/phase-4-esper-summon-economy`.
+- Implementation commit: `34d7b35bf85fa3cf9c8b1a25149cedc7a8091629` — `feat(prompt05): add esper, summon and synthetic economy foundations`.
+- Stacked draft PR: [#8](https://github.com/AnhhTuann/FFBE-Remastered/pull/8), `OPEN`, `isDraft: true`, base `phase-3-hardening`, head `phase-4-esper-summon-economy`.
+- Checkpoint tag: annotated `checkpoint/prompt-05-esper-summon-economy`, created at the final publication commit on this branch.
+- Remote verification: branch SHA, tag target, PR base/draft state and `origin/main` were re-read independently after push/tag creation. No `main` update, merge, force push, hard reset or destructive rebase was performed.
 
 ## Q. Final status
 
-Implementation and validation are complete and green. All mandatory corrections, synthetic economy foundations, migration, localization, GUI QA, exports and security/rights review are satisfied. Publication verification is the only remaining gate; Prompt 06 remains unstarted and owner approval is required before any merge.
+Implementation, validation and publication are complete and green. All mandatory corrections, synthetic economy foundations, migration, localization, GUI QA, exports and security/rights review are satisfied. Prompt 06 remains unstarted and owner approval is required before any merge.
 
 ## Definition of Done — 28 items
 
@@ -212,5 +216,5 @@ Implementation and validation are complete and green. All mandatory corrections,
 | 24 | Linux and Windows exports produced | PASS | both exit `0`; file types verified |
 | 25 | Linux exported-binary smoke passes | PASS | exit `0`, PlayerState v4 boot |
 | 26 | Security/rights/size review passes | PASS | no secrets, protected assets, runtime saves or staged executables |
-| 27 | Stacked draft PR, tag and remote verification complete | PENDING | publication in progress on this branch |
+| 27 | Stacked draft PR, tag and remote verification complete | PASS | draft PR #8, annotated checkpoint tag, independent remote checks |
 | 28 | Final report delivered; Prompt 06 not started | PASS | this document and branch boundary |
