@@ -44,6 +44,7 @@ var dialogue: DialogueManager = null
 var interaction: InteractionController = null
 var _original_data: Dictionary = {}
 var _original_last_error: String = ""
+var _original_save_status: String = "NORMAL"
 var _original_locale: String = ""
 var _original_files: Dictionary = {}
 var _original_env: Dictionary = {}
@@ -70,6 +71,7 @@ func run() -> bool:
 
 	_original_data = _data().duplicate(true)
 	_original_last_error = str(state.get("last_error"))
+	_original_save_status = str(state.get("save_status"))
 	_original_files = _snapshot_files()
 	_original_env = _snapshot_environment()
 	var locale_node: Node = tree.root.get_node_or_null("LocaleManager")
@@ -94,13 +96,17 @@ func run() -> bool:
 	_run("test_quest_lifecycle_and_idempotence")
 	_run("test_exploration_controller")
 	_run("test_battle_context_and_rewards")
+	_run("test_fault_injection_scenarios")
 	_run("test_scene_smoke")
 
 	_restore_files()
 	_restore_environment()
 	state.set("data", _original_data)
 	state.set("last_error", _original_last_error)
+	state.call("set_save_status", _original_save_status, "")
+	state.call("clear_pending_battle_result")
 	saves.call("clear_write_failure")
+	saves.call("clear_migration_backup_failure")
 	if locale_node != null:
 		locale_node.call("set_locale", _original_locale, false)
 	WorldContext.clear()
@@ -228,9 +234,58 @@ func _data() -> Dictionary:
 
 
 func _fresh() -> void:
+	# Isolate each test from a previous fault-injection save and unlock the in-memory
+	# profile explicitly. A future-version fixture is removed inside this isolated
+	# test profile before any further settlement is attempted.
+	for suffix: String in ["", ".bak", ".tmp", ".mig.bak"]:
+		_remove_file(PLAYER_STATE_PATH + suffix)
 	state.set("data", state.call("default_state", 0))
 	state.set("last_error", "")
+	state.call("set_save_status", "NORMAL", "")
+	state.call("clear_pending_battle_result")
 	saves.call("clear_write_failure")
+	saves.call("clear_migration_backup_failure")
+
+
+func _battle_payload(encounter_id: String, victory: bool, run_id: String) -> Dictionary:
+	return {
+		"encounter_id": encounter_id,
+		"encounter_name": "Synthetic encounter",
+		"victory": victory,
+		"outcome": "victory" if victory else "defeat",
+		"turns": 3,
+		"seed": 42,
+		"run_id": run_id,
+		"rewards": {
+			"repeat": {"gil": 100, "items": [REWARD_ITEM]},
+			"first_clear": {"gil": 50, "items": []},
+			"missions": []
+		}
+	}
+
+
+func _make_battle(context: Dictionary) -> Control:
+	var packed: PackedScene = load(BATTLE_SCENE) as PackedScene
+	var battle: Control = packed.instantiate() as Control
+	battle.set("_world_context", context.duplicate(true))
+	battle.set("_return_scene_path", EXPLORATION_SCENE)
+	return battle
+
+
+func _record_battle(battle: Control, payload: Dictionary) -> Dictionary:
+	var result := BattleResult.new()
+	result.encounter_id = str(payload.get("encounter_id", ""))
+	result.encounter_name = str(payload.get("encounter_name", ""))
+	result.victory = bool(payload.get("victory", false))
+	result.outcome = str(payload.get("outcome", ""))
+	result.turns = int(payload.get("turns", 0))
+	result.seed = int(payload.get("seed", 0))
+	result.run_id = str(payload.get("run_id", ""))
+	result.rewards = (payload.get("rewards", {}) as Dictionary).duplicate(true)
+	var battle_state := BattleState.new()
+	battle_state.result = result
+	battle.call("_record_result", battle_state)
+	return battle.call("_world_return_context")
 
 
 func _fingerprint() -> String:
@@ -532,7 +587,9 @@ func test_battle_context_and_rewards() -> bool:
 	var retry: Dictionary = carried.duplicate(true)
 	retry["run_id"] = "prompt06-run-2"
 	var retry_claim: Dictionary = state.call("claim_battle_reward", retry)
-	_ok(bool(retry_claim.get("ok", false)), "retry uses a new run identity")
+	# A world one-time boss is keyed by encounter identity, not attempt identity.
+	_no(bool(retry_claim.get("ok", false)), "one-time boss cannot be farmed by a new run")
+	_eq(str(retry_claim.get("reason", "")), "already_claimed", "one-time boss retry reason")
 
 	_fresh()
 	var defeat_result: Dictionary = carried.duplicate(true)
@@ -547,6 +604,207 @@ func test_battle_context_and_rewards() -> bool:
 	_eq(str(handled.get("reason", "")), "defeat", "defeat is reported")
 	_eq(quests.status(OATH), "active", "defeat does not complete quest")
 	_eq(JSON.stringify(quests.progress(OATH)), JSON.stringify(progress_before), "defeat does not advance objectives")
+	return true
+
+
+func test_fault_injection_scenarios() -> bool:
+	# --- Future save load -----------------------------------------------------
+	_fresh()
+	var future: Dictionary = _data().duplicate(true)
+	future["version"] = 999
+	var future_text: String = JSON.stringify(future)
+	_ok(_write_file(PLAYER_STATE_PATH, future_text), "future fixture written")
+	var loaded: Dictionary = state.call("load_state", 0)
+	_eq(str(state.get("save_status")), "READ_ONLY_FUTURE_VERSION", "Future save load locks profile")
+	_eq(str(state.get("last_error")), "save.error.newer", "Future save load reports stable error")
+	_eq(FileAccess.get_file_as_string(PLAYER_STATE_PATH), future_text, "Future save bytes unchanged after load")
+	_no(FileAccess.file_exists(PLAYER_STATE_PATH + ".mig.bak"), "future save creates no migration backup")
+	_no(FileAccess.file_exists(PLAYER_STATE_PATH + ".tmp"), "future save creates no temp file")
+	_ok(bool(saves.call("is_path_read_only", PLAYER_STATE_PATH)), "future save path guarded in writer")
+	_eq(int(loaded.get("version", 0)), 4, "future save not installed in memory")
+
+	# --- Future save commit ---------------------------------------------------
+	_no(int(state.call("save")) == OK, "Future save commit blocks save")
+	_no(int(state.call("commit", "future")) == OK, "Future save commit blocks section commit")
+	_no(int(state.call("reset_to_defaults")) == OK, "Future save commit blocks reset")
+	_no(int(state.call("set_locale", "en")) == OK, "Future save commit blocks locale change")
+	_no(bool(state.call("pay", {"gil": 1})), "Future save commit blocks spending")
+	_ok((state.call("migrate_state", future) as Dictionary).is_empty(), "Future save commit blocks migration")
+	_no(int(state.call("recover_from_load_failure")) == OK, "Future save recovery refuses newer bytes")
+	_eq(str(state.get("save_status")), "READ_ONLY_FUTURE_VERSION", "Future save recovery keeps lock")
+
+	# --- Future save reward ---------------------------------------------------
+	var future_result: Dictionary = _battle_payload(BOSS, true, "fixture-future-run")
+	var battle_claim: Dictionary = state.call("claim_battle_reward", future_result)
+	_eq(str(battle_claim.get("reason", "")), "read_only", "Future save reward blocks battle claim")
+	var world_claim: Dictionary = state.call("claim_world_reward", "treasure", CHEST, {"gil": 1})
+	_eq(str(world_claim.get("reason", "")), "read_only", "Future save reward blocks world claim")
+	var allow_mutation: Callable = func() -> Dictionary: return {"ok": true}
+	var mutation: Dictionary = state.call("transact_world", "future", allow_mutation)
+	_eq(str(mutation.get("reason", "")), "read_only", "Future save reward blocks staged mutation")
+	_no(int(saves.call("atomic_write", PLAYER_STATE_PATH, {"version": 4})) == OK, "Future save reward blocks direct writer")
+	_eq(FileAccess.get_file_as_string(PLAYER_STATE_PATH), future_text, "Future save bytes unchanged after all attempts")
+
+	# --- Migration failure ----------------------------------------------------
+	_fresh()
+	var legacy: Dictionary = _data().duplicate(true)
+	legacy.erase("world")
+	legacy["version"] = 3
+	var legacy_text: String = JSON.stringify(legacy)
+	_ok(_write_file(PLAYER_STATE_PATH, legacy_text), "migration fixture written")
+	saves.call("fail_next_migration_backup")
+	var failed_migration: Dictionary = state.call("load_state", 0)
+	_eq(str(state.get("save_status")), "LOAD_FAILED", "Migration failure locks profile")
+	_eq(str(state.get("last_error")), "save.error.migration_backup", "Migration failure reports stable error")
+	_eq(FileAccess.get_file_as_string(PLAYER_STATE_PATH), legacy_text, "Migration failure preserves source bytes")
+	_no(int(state.call("commit", "migration")) == OK, "Migration failure blocks commit")
+	_no(FileAccess.file_exists(PLAYER_STATE_PATH + ".mig.bak"), "Migration failure leaves no partial backup")
+	_no(bool(failed_migration.get("world", {}).is_empty()), "Migration failure returns safe defaults")
+
+	# --- Treasure commit failure ---------------------------------------------
+	_fresh()
+	_ok(interaction.configure_area(MEADOW), "meadow configured for treasure fault")
+	var treasure_before: String = _fingerprint()
+	saves.call("fail_next_atomic_write")
+	var failed_treasure: Dictionary = interaction.resolve_by_id(CHEST)
+	_no(bool(failed_treasure.get("ok", false)), "Treasure commit failure reported")
+	_eq(str(failed_treasure.get("reason", "")), "save_failed", "Treasure commit failure reason")
+	_eq(_fingerprint(), treasure_before, "Treasure commit failure rolls back entire action")
+	_no(world.was_treasure_opened(CHEST), "Treasure commit failure does not mark opened")
+	saves.call("clear_write_failure")
+	_ok(bool(interaction.resolve_by_id(CHEST).get("ok", false)), "Treasure retry after write failure succeeds")
+
+	# --- Battle settlement failure -------------------------------------------
+	_fresh()
+	var battle_context: Dictionary = {
+		"encounter_id": BOSS, "location_id": SPIRE, "trigger_id": SPIRE_TRIGGER
+	}
+	var failed_battle: Control = _make_battle(battle_context)
+	var battle_before: String = _fingerprint()
+	saves.call("fail_next_atomic_write")
+	_record_battle(failed_battle, _battle_payload(BOSS, true, "fixture-settlement-fail"))
+	_eq(str(failed_battle.get("_reward_status_key")), "battle.reward_save_failed", "Battle settlement failure status key")
+	_eq(_fingerprint(), battle_before, "Battle settlement failure rolls back reward and world state")
+	_eq(str((state.call("get_pending_battle_result") as Dictionary).get("run_id", "")),
+		"fixture-settlement-fail", "Battle settlement failure preserves pending result")
+	failed_battle.free()
+	saves.call("clear_write_failure")
+	var settled_battle: Control = _make_battle(battle_context)
+	var settled_payload: Dictionary = _record_battle(
+		settled_battle, _battle_payload(BOSS, true, "fixture-settlement-retry")
+	)
+	_ok(bool(settled_payload.get("battle_result", {}).get("victory", false)), "Battle settlement retry succeeds")
+	_ok((state.call("get_pending_battle_result") as Dictionary).is_empty(), "Successful settlement clears pending result")
+	settled_battle.free()
+
+	# --- Quest staging failure ------------------------------------------------
+	_fresh()
+	_ok(bool(quests.accept(OATH).get("ok", false)), "quest accepted before staging fault")
+	var quest_before: String = _fingerprint()
+	saves.call("fail_next_atomic_write")
+	var failed_event: Dictionary = quests.record_event({"type": "talk_to", "target": KEEPER, "count": 1})
+	_no(bool(failed_event.get("ok", false)), "Quest staging failure reported")
+	_eq(str(failed_event.get("reason", "")), "save_failed", "Quest staging failure reason")
+	_eq(_fingerprint(), quest_before, "Quest staging failure rolls back progress and rewards")
+	saves.call("clear_write_failure")
+	_ok(bool(quests.record_event({"type": "talk_to", "target": KEEPER, "count": 1}).get("ok", false)),
+		"Quest staging retry after write failure succeeds")
+
+	# --- Duplicate treasure event --------------------------------------------
+	var gil_before_event: int = _resource("gil")
+	var duplicate_treasure_event: Dictionary = quests.record_event({
+		"type": "open_treasure", "target": CHEST, "count": 1
+	})
+	_ok(bool(duplicate_treasure_event.get("ok", false)), "Duplicate treasure event is accepted idempotently")
+	_eq(_resource("gil"), gil_before_event, "Duplicate treasure event grants no extra currency")
+
+	# --- Duplicate battle result ---------------------------------------------
+	_fresh()
+	var duplicate_battle: Control = _make_battle(battle_context)
+	var duplicate_payload: Dictionary = _record_battle(
+		duplicate_battle, _battle_payload(BOSS, true, "fixture-duplicate-run")
+	)
+	duplicate_battle.free()
+	var settled_result: Dictionary = duplicate_payload.get("battle_result", {})
+	var state_after_settle: String = _fingerprint()
+	var first_return: Dictionary = interaction.on_battle_result(duplicate_payload, settled_result)
+	var second_return: Dictionary = interaction.on_battle_result(duplicate_payload, settled_result)
+	_ok(bool(first_return.get("settled", false)), "Duplicate battle result first return is a no-op settlement")
+	_ok(bool(second_return.get("settled", false)), "Duplicate battle result second return is a no-op settlement")
+	_eq(_fingerprint(), state_after_settle, "Duplicate battle result cannot change settled state")
+
+	# --- Battle return after success ------------------------------------------
+	var gil_after_battle: int = _resource("gil")
+	var claims_after_battle: String = JSON.stringify(
+		(_data().get("reward_claims", {}) as Dictionary)
+	)
+	var battle_return: Dictionary = interaction.on_battle_result(duplicate_payload, settled_result)
+	_ok(bool(battle_return.get("progressed", false)), "Battle return after success reports victory")
+	_eq(_resource("gil"), gil_after_battle, "Battle return after success grants no second reward")
+	_eq(JSON.stringify((_data().get("reward_claims", {}) as Dictionary)), claims_after_battle,
+		"Battle return after success preserves claim ledger")
+
+	# --- One-time boss victory -------------------------------------------------
+	_fresh()
+	var victory_battle: Control = _make_battle(battle_context)
+	var victory_payload: Dictionary = _record_battle(
+		victory_battle, _battle_payload(BOSS, true, "fixture-boss-victory")
+	)
+	var claims: Dictionary = _data().get("reward_claims", {})
+	_ok(claims.has("battle|once|%s" % BOSS), "One-time boss victory records stable encounter claim")
+	_no(claims.has("battle|run|fixture-boss-victory"), "One-time boss victory never uses per-run claim")
+	_ok(world.was_one_time_encounter_defeated(BOSS), "One-time boss victory records defeat flag during battle")
+	var processed: Dictionary = (world.state().get("processed_battle_runs", {}) as Dictionary)
+	_ok(processed.has("fixture-boss-victory"), "One-time boss victory records run receipt during battle")
+	_no(bool(victory_battle.call("retry_allowed")), "One-time boss victory hides Retry")
+	_ok(bool(victory_payload.get("battle_result", {}).get("one_time", false)),
+		"One-time boss victory carries one_time policy to return")
+	victory_battle.free()
+
+	# --- One-time boss retry after victory ------------------------------------
+	var farmed_run: Dictionary = _battle_payload(BOSS, true, "fixture-boss-farm")
+	farmed_run["one_time"] = true
+	var farmed_claim: Dictionary = state.call("claim_battle_reward", farmed_run)
+	_no(bool(farmed_claim.get("ok", false)), "One-time boss retry after victory cannot claim again")
+	_eq(str(farmed_claim.get("reason", "")), "already_claimed", "One-time boss retry after victory reason")
+	_no(interaction.can_interact({
+		"id": SPIRE_TRIGGER, "kind": "encounter_trigger",
+		"interaction_policy": "one_time", "encounter_id": BOSS,
+		"position": {"x": 640, "y": 360}
+	}), "One-time boss trigger blocked after victory")
+
+	# --- One-time boss retry after defeat -------------------------------------
+	_fresh()
+	var defeat_battle: Control = _make_battle(battle_context)
+	_record_battle(defeat_battle, _battle_payload(BOSS, false, "fixture-boss-defeat"))
+	_ok(bool(defeat_battle.call("retry_allowed")), "One-time boss retry after defeat remains available")
+	_no(world.was_one_time_encounter_defeated(BOSS), "One-time boss defeat does not mark encounter cleared")
+	defeat_battle.free()
+	var retry_battle: Control = _make_battle(battle_context)
+	_record_battle(retry_battle, _battle_payload(BOSS, true, "fixture-boss-retry"))
+	_ok(world.was_one_time_encounter_defeated(BOSS), "One-time boss retry after defeat can clear encounter")
+	_no(bool(retry_battle.call("retry_allowed")), "One-time boss retry victory closes Retry")
+	retry_battle.free()
+
+	# --- Repeatable encounter retry -------------------------------------------
+	_fresh()
+	var repeat_context: Dictionary = {
+		"encounter_id": SKIRMISH, "location_id": MEADOW, "trigger_id": MEADOW_TRIGGER
+	}
+	var gil_before_repeat: int = _resource("gil")
+	var repeat_battle: Control = _make_battle(repeat_context)
+	_record_battle(repeat_battle, _battle_payload(SKIRMISH, true, "fixture-repeat-1"))
+	var gil_after_first: int = _resource("gil")
+	_ok(gil_after_first > gil_before_repeat, "Repeatable encounter first run grants rewards")
+	_ok(bool(repeat_battle.call("retry_allowed")), "Repeatable encounter keeps Retry after victory")
+	repeat_battle.free()
+	var repeat_retry: Control = _make_battle(repeat_context)
+	_record_battle(repeat_retry, _battle_payload(SKIRMISH, true, "fixture-repeat-2"))
+	repeat_retry.free()
+	_ok(_resource("gil") > gil_after_first, "Repeatable encounter retry grants rewards again")
+	var repeat_claims: Dictionary = _data().get("reward_claims", {})
+	_ok(repeat_claims.has("battle|run|fixture-repeat-1"), "Repeatable encounter run 1 claim recorded")
+	_ok(repeat_claims.has("battle|run|fixture-repeat-2"), "Repeatable encounter run 2 claim recorded")
 	return true
 
 

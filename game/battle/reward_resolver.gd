@@ -5,7 +5,13 @@ extends RefCounted
 ## synthetic fixtures. Repeatable, first-clear and mission rewards are kept in
 ## separate buckets so settlement can apply independent idempotency keys.
 
-func resolve(encounter_definition: Dictionary, victory: bool, turns: int = 0, run_id: String = "") -> Dictionary:
+func resolve(
+	encounter_definition: Dictionary,
+	victory: bool,
+	turns: int = 0,
+	run_id: String = "",
+	one_time: bool = false
+) -> Dictionary:
 	if not victory:
 		return {
 			"gil": 0, "items": [], "victory": false, "repeatable": false,
@@ -33,7 +39,11 @@ func resolve(encounter_definition: Dictionary, victory: bool, turns: int = 0, ru
 	var mission_variants: Variant = policy.get("mission_rewards", encounter_definition.get("mission_rewards", []))
 	var missions: Array[Dictionary] = []
 	var claim_keys: Dictionary = {}
-	if repeatable:
+	if one_time:
+		# World one-time encounters use a stable receipt. A fresh battle run id
+		# cannot turn the same boss into a repeatable reward source.
+		claim_keys["repeat"] = "battle|once|%s" % encounter_id
+	elif repeatable:
 		claim_keys["repeat"] = "battle|run|%s" % (run_id if not run_id.is_empty() else "unknown")
 	else:
 		claim_keys["repeat"] = "battle|once|%s" % encounter_id
@@ -55,7 +65,7 @@ func resolve(encounter_definition: Dictionary, victory: bool, turns: int = 0, ru
 				"repeatable": bool(mission.get("repeatable", false))
 			}
 			var key: String = "battle|mission|%s|%s" % [encounter_id, mission_id]
-			if bool(entry["repeatable"]) and not run_id.is_empty():
+			if not one_time and bool(entry["repeatable"]) and not run_id.is_empty():
 				key = "%s|%s" % [key, run_id]
 			entry["key"] = key
 			claim_keys["mission:%s" % mission_id] = key
@@ -66,6 +76,7 @@ func resolve(encounter_definition: Dictionary, victory: bool, turns: int = 0, ru
 		"items": (repeat.get("items", []) as Array).duplicate(),
 		"victory": true,
 		"repeatable": repeatable,
+		"one_time": one_time,
 		"repeat": repeat,
 		"first_clear": first_clear,
 		"missions": missions,

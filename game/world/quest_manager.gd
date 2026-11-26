@@ -87,46 +87,21 @@ func accept(quest_id: String) -> Dictionary:
 func record_event(event: Dictionary) -> Dictionary:
 	var event_type: String = str(event.get("type", ""))
 	var target: String = str(event.get("target", ""))
-	var count: int = maxi(1, int(event.get("count", 1)))
 	if not EVENT_TYPES.has(event_type) or target.is_empty():
 		return _fail("invalid_event")
-	var touched: Array[String] = []
-	var completed: Array[String] = []
-	for quest_id: String in repository.get_quest_ids():
-		if status(quest_id) != "active":
-			continue
-		var changed: bool = false
-		var current_progress: Dictionary = progress(quest_id)
-		for objective: Dictionary in repository.get_objectives(quest_id):
-			if str(objective.get("type", "")) != event_type or str(objective.get("target", "")) != target:
-				continue
-			var objective_id: String = str(objective.get("id", ""))
-			var required: int = maxi(1, int(objective.get("count", 1)))
-			var next_value: int = mini(required, int(current_progress.get(objective_id, 0)) + count)
-			if next_value == int(current_progress.get(objective_id, 0)):
-				continue
-			current_progress[objective_id] = next_value
-			changed = true
-		if not changed:
-			continue
-		touched.append(quest_id)
-		if _all_objectives_met(quest_id, current_progress):
-			var completion: Dictionary = _complete(quest_id, current_progress)
-			if not bool(completion.get("ok", false)):
-				return completion
-			completed.append(quest_id)
-		else:
-			var result: Variant = _state_node.call("transact_world", "quests", func() -> Dictionary:
-				return _stage_quest(quest_id, "active", current_progress)
-			)
-			if not (result is Dictionary and bool((result as Dictionary).get("ok", false))):
-				return _fail("save_failed")
-	for quest_id: String in touched:
+	# Every objective touched by this event is staged together and committed
+	# once. A failed write rolls back all quest progress, rewards and unlocks.
+	var result: Variant = _state_node.call("transact_world", "quests", func() -> Dictionary:
+		var state_variant: Variant = _state_node.get("data")
+		if not state_variant is Dictionary:
+			return {"ok": false, "reason": "invalid_state"}
+		return QuestSettlement.stage_event(state_variant, event, repository)
+	)
+	if not (result is Dictionary and bool((result as Dictionary).get("ok", false))):
+		return _fail(str((result as Dictionary).get("reason", "save_failed")))
+	for quest_id: String in (result as Dictionary).get("touched", []):
 		quest_changed.emit(quest_id)
-	return {
-		"ok": true, "reason": "", "touched": touched,
-		"completed": completed, "event": event.duplicate(true)
-	}
+	return result
 
 
 func journal() -> Array[Dictionary]:

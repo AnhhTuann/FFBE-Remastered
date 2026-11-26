@@ -83,6 +83,7 @@
   "battle.limit": "LB",
   "battle.log": "Battle Log",
   "battle.menu": "Battle Menu",
+  "battle.one_time_cleared": "One-time encounter cleared; retry is unavailable.",
   "battle.overdrive": "Overdrive",
   "battle.party_fallback_labeled": "Using labelled fallback party",
   "battle.party_invalid": "Party is invalid",

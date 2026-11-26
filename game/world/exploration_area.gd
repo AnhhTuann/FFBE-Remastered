@@ -92,6 +92,12 @@ func _ready() -> void:
 
 	if scenario == "haven_npc":
 		_start_dialogue("dialogue:GL:2101@keeper")
+	elif scenario == "haven_npc_choice":
+		_start_dialogue("dialogue:GL:2101@keeper")
+		dialogue.advance()
+		dialogue.advance()
+		dialogue_panel.show_page(dialogue.current())
+		_clear_dialogue_labels()
 	elif scenario == "meadow_chest":
 		interact_at_player()
 	elif scenario == "meadow_battle" or scenario == "spire_boss":
@@ -161,7 +167,7 @@ func _qa_location(scenario: String) -> String:
 
 
 func _qa_start_position(scenario: String) -> Vector2:
-	if scenario == "haven_npc":
+	if scenario == "haven_npc" or scenario == "haven_npc_choice":
 		return Vector2(300, 490)
 	if scenario == "meadow_chest":
 		return Vector2(530, 490)
@@ -202,7 +208,7 @@ func _rebuild_markers() -> void:
 		button.position = _design_to_screen(Vector2(
 			float(point.get("x", 0)), float(point.get("y", 0))
 		)) - Vector2(68, 17)
-		button.focus_mode = Control.FOCUS_NONE
+		button.focus_mode = Control.FOCUS_ALL
 		button.pressed.connect(func() -> void: _on_marker_pressed(id))
 		marker_layer.add_child(button)
 		marker_buttons[id] = button
@@ -262,7 +268,14 @@ func _start_dialogue(dialogue_id: String) -> void:
 		status_key = "world.error.invalid_exit"
 		return
 	dialogue_panel.show_page(page)
-	dialogue_panel.next_button.grab_focus()
+	_clear_dialogue_labels()
+
+
+func _clear_dialogue_labels() -> void:
+	# The interaction prompt sits underneath the panel; leaving it visible
+	# bleeds stale text through the translucent background.
+	prompt_label.text = ""
+	status_label.text = ""
 
 
 func _advance_dialogue() -> void:
@@ -271,6 +284,7 @@ func _advance_dialogue() -> void:
 		dialogue_panel.hide()
 		return
 	dialogue_panel.show_page(page)
+	_clear_dialogue_labels()
 	_refresh_markers()
 
 
@@ -283,6 +297,7 @@ func _choose_dialogue(choice_id: String) -> void:
 		dialogue_panel.hide()
 	else:
 		dialogue_panel.show_page(page)
+		_clear_dialogue_labels()
 	_refresh_markers()
 	_refresh_presentation()
 
@@ -290,6 +305,10 @@ func _choose_dialogue(choice_id: String) -> void:
 func _close_dialogue() -> void:
 	dialogue.close()
 	dialogue_panel.hide()
+	for button_variant: Variant in marker_buttons.values():
+		if button_variant is Button:
+			(button_variant as Button).grab_focus()
+			break
 
 
 func _launch_battle(result: Dictionary) -> void:
@@ -398,14 +417,33 @@ func _draw() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key: InputEventKey = event
-		if _held_key_change(key):
-			get_viewport().set_input_as_handled()
-			return
 		if not key.pressed:
 			return
+		# Dialogue owns keyboard input before movement keys are latched.
 		if dialogue.is_active():
+			var focus_owner: Control = get_viewport().gui_get_focus_owner()
 			match key.keycode:
+				KEY_UP:
+					if focus_owner != null:
+						var previous: Control = focus_owner.get_node_or_null(
+							focus_owner.get_focus_neighbor(SIDE_TOP)
+						) as Control
+						if previous != null:
+							previous.grab_focus()
+					get_viewport().set_input_as_handled()
+				KEY_DOWN:
+					if focus_owner != null:
+						var next_focus: Control = focus_owner.get_node_or_null(
+							focus_owner.get_focus_neighbor(SIDE_BOTTOM)
+						) as Control
+						if next_focus != null:
+							next_focus.grab_focus()
+					get_viewport().set_input_as_handled()
 				KEY_E, KEY_SPACE, KEY_ENTER:
+					# A focused choice button handles ui_accept itself; do not
+					# silently select choice 0 behind the user's selection.
+					if focus_owner is Button and bool(dialogue.current().get("awaiting_choice", false)):
+						return
 					var page: Dictionary = dialogue.current()
 					if bool(page.get("awaiting_choice", false)):
 						var choices: Array = page.get("choices", [])
@@ -417,6 +455,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_ESCAPE:
 					_close_dialogue()
 					get_viewport().set_input_as_handled()
+			return
+		if _held_key_change(key):
+			get_viewport().set_input_as_handled()
 			return
 		if _paused:
 			if key.keycode == KEY_ESCAPE:

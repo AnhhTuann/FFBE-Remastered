@@ -490,9 +490,15 @@ func finish(victory: bool) -> void:
 	result.seed_source = state.seed_source
 	result.run_id = state.run_id
 	result.boss = state.boss
+	result.one_time = bool(encounter_def.get("one_time", false))
 	var policy_variant: Variant = encounter_def.get("reward_policy", {})
-	result.reward_policy = policy_variant.duplicate(true) if policy_variant is Dictionary else {}
-	result.rewards = reward_resolver.resolve(encounter_def, victory, state.turn, state.run_id)
+	var policy: Dictionary = policy_variant.duplicate(true) if policy_variant is Dictionary else {}
+	if result.one_time:
+		policy["repeatable"] = false
+	result.reward_policy = policy
+	result.rewards = reward_resolver.resolve(
+		encounter_def, victory, state.turn, state.run_id, result.one_time
+	)
 	result.defeated_enemies = defeated
 	state.result = result
 	turn_manager.finish(result.outcome)

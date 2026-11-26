@@ -96,7 +96,12 @@ func can_interact(entry: Dictionary) -> bool:
 			return str(entry.get("interaction_policy", "")) != "one_time" or not world_state.was_treasure_opened(id)
 		"encounter_trigger":
 			if str(entry.get("interaction_policy", "")) == "one_time":
-				return not world_state.was_one_time_encounter_defeated(str(entry.get("encounter_id", "")))
+				var encounter_id: String = str(entry.get("encounter_id", ""))
+				if world_state.was_one_time_encounter_defeated(encounter_id):
+					return false
+				var state_variant: Variant = _state_node.get("data")
+				var claims: Dictionary = (state_variant as Dictionary).get("reward_claims", {}) if state_variant is Dictionary else {}
+				return not claims.has("battle|once|%s" % encounter_id)
 			return true
 		"exit":
 			var destination: String = str(entry.get("destination", ""))
@@ -181,16 +186,27 @@ func _resolve(entry: Dictionary) -> Dictionary:
 func _open_treasure(id: String, entry: Dictionary) -> Dictionary:
 	var reward_variant: Variant = entry.get("reward", {})
 	var reward: Dictionary = reward_variant if reward_variant is Dictionary else {}
+	var event: Dictionary = {"type": "open_treasure", "target": id, "count": 1}
+	# Treasure, reward claim and quest event share one staged mutation and one
+	# commit; a failed write restores the whole action.
 	var callback: Callable = func() -> Dictionary:
-		return _stage_treasure(id)
+		var staged: Dictionary = _stage_treasure(id)
+		if not bool(staged.get("ok", false)):
+			return staged
+		if quests != null:
+			var state_variant: Variant = _state_node.get("data")
+			var quest_stage: Dictionary = QuestSettlement.stage_event(
+				state_variant, event, quests.repository
+			)
+			if not bool(quest_stage.get("ok", false)):
+				return quest_stage
+		return staged
 	var claim: Variant = _state_node.call("claim_world_reward", "treasure", id, reward, callback)
 	if not (claim is Dictionary and bool((claim as Dictionary).get("ok", false))):
 		return {"ok": false, "reason": str((claim as Dictionary).get("reason", "reward_failed")), "id": id}
-	var event: Dictionary = {
-		"type": "open_treasure", "target": id, "count": 1
-	}
 	if quests != null:
-		quests.record_event(event)
+		for quest_id: String in quests.repository.get_quest_ids():
+			quests.quest_changed.emit(quest_id)
 	return {
 		"ok": true, "action": "treasure", "id": id,
 		"reward": (claim as Dictionary).get("rewards", {}),
@@ -226,19 +242,21 @@ func _stage_treasure(id: String) -> Dictionary:
 
 
 func on_battle_result(context: Dictionary, result: Dictionary) -> Dictionary:
-	var encounter_id: String = str(result.get("encounter_id", context.get("encounter_id", "")))
 	var victory: bool = bool(result.get("victory", false))
-	world_state.remember_battle_result(result)
 	if not victory:
+		# Defeat settles nothing; Retry remains available.
 		return {"ok": true, "progressed": false, "reason": "defeat"}
-	var trigger_id: String = str(context.get("trigger_id", ""))
-	if not trigger_id.is_empty():
-		world_state.record_interaction(trigger_id, "victory")
-	var trigger_variant: Variant = locations.get_interactable(trigger_id)
-	if trigger_variant is Dictionary and str((trigger_variant as Dictionary).get("interaction_policy", "")) == "one_time":
-		world_state.mark_one_time_encounter_defeated(encounter_id)
-	if quests != null:
-		quests.record_event({
-			"type": "defeat_encounter", "target": encounter_id, "count": 1
-		})
-	return {"ok": true, "progressed": true, "reason": "victory"}
+	var run_id: String = str(result.get("run_id", ""))
+	var processed_variant: Variant = world_state.state().get("processed_battle_runs", {})
+	var processed: Dictionary = processed_variant if processed_variant is Dictionary else {}
+	if not run_id.is_empty() and processed.has(run_id):
+		# Canonical settlement already committed during the battle. Return is a
+		# presentation step only and cannot grant or count anything twice.
+		return {"ok": true, "progressed": true, "reason": "victory", "settled": true}
+	var settlement: Variant = _state_node.call("settle_world_battle", result, context)
+	if not (settlement is Dictionary and bool((settlement as Dictionary).get("ok", false))):
+		return {
+			"ok": false, "progressed": false,
+			"reason": str((settlement as Dictionary).get("reason", "save_failed"))
+		}
+	return {"ok": true, "progressed": true, "reason": "victory", "settled": true}

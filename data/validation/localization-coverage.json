@@ -332,8 +332,8 @@
     "keys_without_japanese_glyphs": [],
     "locale": "ja",
     "note": "Japanese values must contain kana or kanji, not romaji placeholders.",
-    "strings_checked": 829,
-    "strings_with_japanese_glyphs": 829
+    "strings_checked": 830,
+    "strings_with_japanese_glyphs": 830
   },
   "locales": [
     "en",
@@ -372,6 +372,11 @@
           "key": "battle.hint_target",
           "length": 70,
           "value": "Select a highlighted {targeting} target, or press Backspace to cancel."
+        },
+        {
+          "key": "battle.one_time_cleared",
+          "length": 49,
+          "value": "One-time encounter cleared; retry is unavailable."
         },
         {
           "key": "battle.pause_detail",
@@ -668,6 +673,11 @@
           "value": "Chọn mục tiêu {targeting} được đánh dấu, hoặc nhấn Backspace để hủy."
         },
         {
+          "key": "battle.one_time_cleared",
+          "length": 50,
+          "value": "Trận chiến một lần đã hoàn tất; không thể thử lại."
+        },
+        {
           "key": "battle.pause_detail",
           "length": 118,
           "value": "Tốc độ thay đổi số khung logic 60 Hz được tiến hành mỗi nhịp hiển thị.\nSát thương không phụ thuộc vào độ dài hoạt ảnh."
@@ -875,13 +885,13 @@
       ]
     },
     "threshold": 40,
-    "total": 105
+    "total": 107
   },
   "per_locale": {
     "en": {
       "dictionary_file": "game/data/localization/en.json",
       "empty_value_keys": [],
-      "key_count": 829,
+      "key_count": 830,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1334,7 +1344,7 @@
     "ja": {
       "dictionary_file": "game/data/localization/ja.json",
       "empty_value_keys": [],
-      "key_count": 829,
+      "key_count": 830,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1787,7 +1797,7 @@
     "vi": {
       "dictionary_file": "game/data/localization/vi.json",
       "empty_value_keys": [],
-      "key_count": 829,
+      "key_count": 830,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -2313,14 +2323,15 @@
       "game/world/interaction_controller.gd",
       "game/world/quest_manager.gd",
       "game/world/quest_repository.gd",
+      "game/world/quest_settlement.gd",
       "game/world/world_context.gd",
       "game/world/world_location_repository.gd",
       "game/world/world_map.gd",
       "game/world/world_map_marker_area.gd",
       "game/world/world_state_service.gd"
     ],
-    "gd_files_scanned": 76,
-    "literal_call_sites": 103,
+    "gd_files_scanned": 77,
+    "literal_call_sites": 104,
     "literal_keys": [
       "battle.ability_button",
       "battle.ability_tooltip",
@@ -2350,6 +2361,7 @@
       "battle.hint_target",
       "battle.hp",
       "battle.menu",
+      "battle.one_time_cleared",
       "battle.pause",
       "battle.pause_detail",
       "battle.paused",
@@ -2390,13 +2402,13 @@
       "world.map.title",
       "world.npc.keeper.name"
     ],
-    "translation_call_sites": 141
+    "translation_call_sites": 142
   },
   "status": "pass",
   "tool_version": "1.1.0",
-  "union_key_count": 829,
+  "union_key_count": 830,
   "vietnamese_diacritics": {
-    "coverage": 0.9638,
+    "coverage": 0.9639,
     "keys_without_diacritics": [
       "awakening.ex",
       "awakening.nv",
@@ -2431,8 +2443,8 @@
     ],
     "locale": "vi",
     "note": "Brand tokens such as NV, EX, TMR, STMR, LB, SLB, gil, UID and digits are expected without diacritics.",
-    "strings_checked": 829,
-    "strings_with_diacritics": 799
+    "strings_checked": 830,
+    "strings_with_diacritics": 800
   },
   "world_data_scan": {
     "data_files": [

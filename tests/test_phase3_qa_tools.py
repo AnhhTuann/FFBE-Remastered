@@ -266,7 +266,7 @@ class Prompt06QaToolsTest(unittest.TestCase):
     def test_default_paths_and_matrix_size(self) -> None:
         self.assertEqual(self.tool.DEFAULT_CAPTURE_DIR, "docs/qa/screenshots/prompt06")
         self.assertEqual(self.tool.DEFAULT_OUTPUT, "docs/qa/prompt06-visual-review.md")
-        self.assertEqual(len(self._full_matrix()), 72)
+        self.assertEqual(len(self._full_matrix()), 117)
 
     def test_validate_matrix_accepts_complete_clean_matrix(self) -> None:
         self.tool.validate_matrix(self._full_matrix())
@@ -296,7 +296,7 @@ class Prompt06QaToolsTest(unittest.TestCase):
     def test_render_summarises_prompt06_metadata(self) -> None:
         rendered = self.tool.render(self._full_matrix())
         self.assertIn("# Prompt 06 world exploration visual review", rendered)
-        self.assertIn("Captures: 72", rendered)
+        self.assertIn("Captures: 117", rendered)
         self.assertIn("World Map selected location", rendered)
         self.assertIn("Runtime error lines across all captures: 0", rendered)
         self.assertIn("subjective visual sign-off", rendered)
@@ -307,6 +307,17 @@ class Prompt06QaToolsTest(unittest.TestCase):
             self.assertIn(scenario, script)
         self.assertIn("QA_PROFILE_ROOT", script)
         self.assertIn("rm -rf -- \"$PROFILE\"", script)
+
+    def test_capture_wrapper_seeds_real_world_battle_context(self) -> None:
+        script = (ROOT / "tools/qa/capture_prompt06.sh").read_text(encoding="utf-8")
+        self.assertIn("export FFBE_QA_MODE=1", script)
+        self.assertIn("battle_victory)", script)
+        self.assertIn("encounter:GL:950002@boss", script)
+        self.assertIn("encounter_trigger:GL:5102@spire", script)
+        self.assertIn("battle_defeat|battle_retry|battle_return)", script)
+        self.assertIn("encounter:GL:950001@skirmish", script)
+        self.assertIn("encounter_trigger:GL:5101@meadow", script)
+        self.assertIn("FFBE_QA_RETURN_SCENE", script)
 
 
 if __name__ == "__main__":

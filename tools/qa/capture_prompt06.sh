@@ -20,8 +20,26 @@ set -euo pipefail
 : "${LOCALE:?LOCALE is required}"
 
 case "${SCENARIO:-}" in
-  ""|world_map|selected|locked|journal|quest_complete_journal|hub|haven_npc|pause|meadow_chest|meadow_battle|spire_boss) ;;
+  ""|world_map|selected|locked|journal|quest_complete_journal|hub|haven_npc|haven_npc_choice|pause|meadow_chest|meadow_battle|spire_boss|battle_victory|battle_defeat|battle_retry|battle_return) ;;
   *) echo "Invalid SCENARIO for Prompt 06: $SCENARIO" >&2; exit 2 ;;
+esac
+
+# Battle result captures must exercise the real world settlement path, not a
+# presentation-only mock. QA mode is explicit and the world context below is
+# equivalent to the one exploration_area writes before changing scenes.
+export FFBE_QA_MODE=1
+export FFBE_QA_RETURN_SCENE="${FFBE_QA_RETURN_SCENE:-res://scenes/world/exploration_area.tscn}"
+case "${SCENARIO:-}" in
+  battle_victory)
+    export ENCOUNTER="${ENCOUNTER:-encounter:GL:950002@boss}"
+    export FFBE_QA_WORLD_TRIGGER="${FFBE_QA_WORLD_TRIGGER:-encounter_trigger:GL:5102@spire}"
+    export FFBE_QA_WORLD_LOCATION="${FFBE_QA_WORLD_LOCATION:-loc:GL:1103@spire}"
+    ;;
+  battle_defeat|battle_retry|battle_return)
+    export ENCOUNTER="${ENCOUNTER:-encounter:GL:950001@skirmish}"
+    export FFBE_QA_WORLD_TRIGGER="${FFBE_QA_WORLD_TRIGGER:-encounter_trigger:GL:5101@meadow}"
+    export FFBE_QA_WORLD_LOCATION="${FFBE_QA_WORLD_LOCATION:-loc:GL:1102@meadow}"
+    ;;
 esac
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

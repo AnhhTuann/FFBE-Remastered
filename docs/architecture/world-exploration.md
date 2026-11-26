@@ -1,6 +1,6 @@
 # World exploration architecture
 
-**Status:** Prompt 06 synthetic vertical slice; implementation complete, gameplay evidence pending final QA.
+**Status:** Prompt 06 synthetic vertical slice; Prompt 06.1 save-integrity and settlement hardening complete. Host-verifiable QA is green; Windows runtime and subjective visual approval remain owner verification items.
 **Rights gate:** `not_passed`. No protected FFBE map, story, art, music, text or source pack is used.
 **Scene root:** `game/` (Godot 4.7.2 stable); repository paths below are relative to the project root.
 
@@ -121,14 +121,21 @@ strings through `LocaleManager` and emits `next_pressed`, `choice_selected` and
 `QuestRepository` exposes prerequisites, objectives and rewards. `QuestManager` tracks
 `not_started`, `active` and `completed` status per quest in the additive world state.
 `record_event()` accepts the existing event vocabulary `talk_to`, `visit_location`,
-`defeat_encounter`, `open_treasure`, `collect` and `complete_quest`. Objective progress
-is clamped to its required count and initialized from already-observed world facts,
-so older progress is not lost when a quest is accepted later. Completion is atomic with
-reward settlement and unlocks.
+`defeat_encounter`, `open_treasure`, `collect` and `complete_quest`. The pure
+`QuestSettlement.stage_event()` helper advances every matching objective, completes
+quests, grants one-time rewards and unlocks locations without committing. `QuestManager`
+and treasure/battle settlement call it inside one `PlayerState.transaction()`, so a
+failed write rolls back progress, rewards, flags and unlocks together. Objective
+progress is clamped to its required count and initialized from already-observed world
+facts, so older progress is not lost when a quest is accepted later.
 
 Rewards use only existing synthetic resource IDs and are claimed through
-`PlayerState.claim_world_reward()` with `world|quest|...` and `world|treasure|...`
-claim keys. A repeated interaction, retry or reload cannot claim the same reward twice.
+`PlayerState.claim_world_reward()` / `QuestSettlement` with `world|quest|...` and
+`world|treasure|...` claim keys. A repeated interaction, retry or reload cannot claim
+the same reward twice. The Dialogue Panel now removes stale choice buttons immediately,
+keeps overflowing choices scrollable, assigns explicit focus neighbors, clears stale
+prompt/status labels and reclaims body-label height on choice pages so keyboard and
+mouse navigation remain usable at all three supported resolutions.
 
 ## 6. Persistence and migration
 
@@ -140,11 +147,22 @@ drops existing resources, units, equipment, claimed rewards, battle runs, econom
 shops, crafting, summon or esper data.
 
 `SaveManager.backup_for_migration()` writes `player_state_v3.json.mig.bak` before the
-first committed world mutation of an older save. A save with a future top-level
-version is refused rather than downgraded. `PlayerState.transact_world()` stages a
-snapshot, commits it through the existing writer and rolls back in-memory state if the
-write fails. The state validator checks the additive world section alongside all
-Prompt 01–05.1 sections.
+first committed world mutation of an older save. A save with a future top-level or
+`world.version` is refused before any backup, normalization or write. Load status is
+sticky: `NORMAL`, `MIGRATING`, `READ_ONLY_FUTURE_VERSION` and `LOAD_FAILED` are explicit;
+only `MIGRATING` may create the one-generation `.mig.bak`. The two terminal failure
+states register the player-state path as read-only inside `SaveManager`, so even a
+direct `atomic_write()` cannot alter the preserved bytes. A fresh profile with no save
+remains `NORMAL`. `recover_from_load_failure()` refuses to reset a future-version file
+and requires explicit owner action.
+
+`PlayerState.transaction()` is the single commit path for one gameplay action: guard,
+full snapshot, staged mutation, validation, one `atomic_write()`, then emit one
+`state_changed` signal. A nested transaction is rejected; a failed write restores the
+whole snapshot. `transact_world()`, `claim_world_reward()`, `claim_battle_reward()` and
+`settle_world_battle()` all use it. `SaveManager.atomic_write()` prevalidates serialized
+JSON and restores `.bak` if the final rename fails. The state validator checks the
+additive world section alongside all Prompt 01–05.1 sections.
 
 ## 7. Battle identity and reward isolation
 
@@ -152,14 +170,23 @@ An encounter trigger writes `location_id`, `encounter_id`, `return_scene` and
 `trigger_id` to `WorldContext`, then changes to `BattleScene`. `BattleScene` consumes
 the context, uses `encounter_id` as an override for the existing encounter lookup and
 stores `return_scene` for the result path. The result snapshot is written back to
-`WorldContext` when the player returns, and `InteractionController.on_battle_result()`
-calls `QuestManager.record_event()` only for a successful result with a matching
-location/encounter/trigger identity.
+`WorldContext` when the player returns. Canonical settlement now happens *during* the
+battle: `BattleScene._record_result()` calls `PlayerState.settle_world_battle()`, which
+stages battle reward, world flags, run receipt, encounter flag and quest event in one
+transaction. `InteractionController.on_battle_result()` checks the `processed_battle_runs`
+receipt and treats the return as a presentation step; a replayed result cannot grant,
+count or unlock anything twice.
 
-Defeat produces no reward claim and no quest progress. Retry creates a new battle
-`run_id`; existing battle claim keys remain prefixed `battle|run|`, `battle|once|`,
-`battle|first|` and `battle|mission|`. World reward keys remain separate. This keeps
-battle settlement, treasure settlement and quest settlement independently idempotent.
+`_stage_world_battle()` validates trigger existence, kind, encounter identity and
+location against authored data before staging. Defeat records no victory flag and no
+reward claim but preserves a run receipt so Retry remains available. A repeatable
+encounter keeps Retry after victory and grants again under a fresh `battle|run|` key.
+A one-time world encounter uses the stable `battle|once|<encounter_id>` claim key
+even when the run id changes, hides Retry after victory, and blocks the trigger both
+through the defeat flag and the claim ledger. `BattleResult.one_time` and
+`RewardResolver.resolve(..., one_time)` carry that policy from the world trigger to
+the reward resolver. If the settlement write fails, the full snapshot is rolled back
+and the pending battle result is retained; the player can retry settlement safely.
 
 ## 8. Localization
 
@@ -175,7 +202,8 @@ includes a scan over the world JSON key fields.
 
 - `game/tests/prompt06_world_test_suite.gd`: isolated GDScript tests for catalog gates,
   migration v1–v4, transactional rollback, movement/collision, dialogue, quests,
-  treasure, battle identity, defeat isolation and scene wiring.
+  treasure, battle identity, defeat isolation, scene wiring and the 14 required
+  fault-injection/idempotency scenarios.
 - `tests/test_prompt06_world_data.py`: static JSON/schema/provenance/reference checks.
 - `tools/qa/capture_prompt06.sh`: live-window screenshot harness using a fresh isolated
   profile for every capture.

@@ -1,242 +1,151 @@
-# Prompt 06 final report — synthetic world, exploration, story and quests
+# Báo cáo cuối cùng Prompt 06 — thế giới, khám phá, cốt truyện và nhiệm vụ
 
-**Development branch:** `phase-5-world-exploration-story`\
-**Branch point / PR #9 base:** `phase-4-esper-summon-economy` at `d66cd4397d5b842cedfe38b83ff21aec58e74efb`\
-**Stacked PR:** #9, base `phase-4-esper-summon-economy`, head `phase-5-world-exploration-story` (draft; owner approval pending)\
-**Prior PR:** #8 remains `OPEN`, `DRAFT`, base `phase-3-hardening`, head `phase-4-esper-summon-economy`; it was not modified\
-**Rights gate:** `not_passed`\
-**Status:** implementation and host-verifiable validation complete; publication evidence is recorded below; owner approval is pending.
+**Nhánh phát triển:** `phase-5-world-exploration-story`
+**PR #9:** `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, URL `https://github.com/AnhhTuann/FFBE-Remastered/pull/9`
+**Checkpoint đã xuất bản:** `af9cceaca88cf7de92dcb96907c40223f0783fa2`, tag `checkpoint/prompt-06-world-exploration-story`
+**Phạm vi báo cáo này:** Prompt 06.1 — hardening sau checkpoint Prompt 06; không mở Prompt 07, không hợp nhất PR, không đổi base PR #9.
+**Trạng thái rights gate:** `not_passed`.
 
-## A. Scope and boundary
+## 1. Tóm tắt triển khai (Implementation Summary)
 
-Prompt 06 delivers a synthetic world/exploration/story vertical slice: a World Map, a keyboard/mouse explorable area, NPC dialogue with choices, a two-quest chain, one-time treasure, unlock-gated travel, and a battle-return path that preserves location, encounter and quest identity. All content is project-authored `SYNTHETIC_FIXTURE` or `REMASTERED_DESIGN`; no original FFBE story, map, art, portrait, music, text or source pack was imported or represented.
+Prompt 06.1 giữ nguyên vertical slice thế giới tổng hợp của Prompt 06 và chỉ bổ sung hardening: bảo vệ file lưu tương lai/lỗi, giao dịch ghi dữ liệu nguyên tử, chuyển settlement trận chiến vào thời điểm trận kết thúc, ngăn farm thưởng một lần, sửa Dialog Panel và mở rộng bằng chứng GUI.
 
-Explicitly outside this pass: Prompt 07, original story restoration, new protected assets, real-money purchases, hosted services, credentials, runtime saves in Git, engine upgrades, and any change to `main`, PR #8 or published Prompt 05/05.1 history. No force push, hard reset, `git clean`, destructive rebase, history rewrite, tag/branch deletion or save reset was performed.
+Các hành vi được giữ nguyên: đường dẫn `user://player_state_v3.json`, định dạng tổng thể version 4, phần `world` bổ sung version 1, di cư v1–v4, ba ngôn ngữ `vi`/`en`/`ja`, điều khiển bàn phím/chuột, quest, treasure và battle-return hiện hữu. Không có nội dung FFBE gốc, asset được bảo vệ, dịch vụ trực tuyến hay giao dịch tiền thật nào được thêm vào.
 
-The changes are confined to the new world scenes/scripts/data, the additive world portion of the existing v4 save, the existing battle result return path, the main-menu entry, localization, validation, tools and documentation.
+## 2. Nguyên nhân gốc rễ (Root Causes Found)
 
-## B. Baseline and branch integrity
+| # | Nguyên nhân | Hệ quả trước hardening |
+|---:|---|---|
+| 1 | Save tương lai/lỗi bị từ chối trong bộ nhớ nhưng không khóa đường dẫn ghi | Một `commit()`, `save()`, `reset_to_defaults()`, claim thưởng hoặc ghi trực tiếp `SaveManager.atomic_write()` vẫn có thể ghi đè byte cần giữ lại |
+| 2 | Backup di cư chỉ là best-effort, không kiểm tra lỗi | Lỗi ghi `.mig.bak` vẫn có thể dẫn tới normalize/ghi tiếp |
+| 3 | Thưởng trận, trạng thái thế giới và quest được settle ở các thời điểm khác nhau | Ghi trận thành công nhưng ghi quest/world thất bại có thể để progress không nhất quán |
+| 4 | Encounter boss dùng fixture `repeatable = true` và claim key theo `run_id` | Retry hoặc `run_id` mới có thể farm lại phần thưởng one-time |
+| 5 | `on_battle_result()` không có receipt định danh, trigger/result identity và context validation | Kết quả replay, sai trigger hoặc sai location có thể cộng progress trùng |
+| 6 | Dialog Panel có kích thước cố định, nút lựa chọn không cuộn được, focus không có neighbor và label cũ không bị dọn | Overflow/ẩn nút ở resolution nhỏ và điều hướng bàn phím không ổn định |
+| 7 | Harness GUI trước đó chỉ chụp transition trận | Chưa chứng minh được màn hình victory/defeat/retry/return đi qua settlement thật |
 
-The accepted pre-change baseline is Prompt 05.1 head `d66cd4397d5b842cedfe38b83ff21aec58e74efb`. Preflight verified the local branch, the remote branch, the clean starting tree and PR state. `main` and `origin/main` remained `6232acab9fa75fafd8a7c9a2099a1c94c08fa51e`. The tag `checkpoint/prompt-06-world-exploration-story` was absent before creation.
+## 3. Tệp đã thay đổi (Files Changed)
 
-Baseline evidence (`/tmp/opencode/ffbe-logs/prompt06/baseline/summary.txt`):
+**Lõi lưu và giao dịch**
 
-| Check | Baseline result |
-|---|---|
-| Godot import | exit `0` |
-| Full Godot runner | `3155 passed, 0 failed`, exit `0` |
-| Godot negative control | deliberate failure, exit `1`, `3155 passed, 1 failed` |
-| Python unittest discovery | `77 tests`, `OK`, exit `0` |
-| Importer security suite | `22 tests`, `OK`, exit `0` |
-| Localization validation | `status: pass`, `742` keys, `0` missing, `0` placeholder mismatches |
-| Linux / Windows export | both exit `0` |
-| Linux exported-binary smoke | exit `0` |
+- `game/core/player_state.gd`: bốn trạng thái lưu, khóa ghi, `transaction()` với snapshot/rollback, pending battle result, `settle_world_battle()`, `_stage_world_battle()`, claim key one-time ổn định.
+- `game/core/save_manager.gd`: path guard, fault hook backup, prevalidate JSON trước khi ghi, khôi phục `.bak` khi rename thất bại.
+- `game/world/quest_settlement.gd` và `.uid`: lớp stage thuần cho quest, reward, unlock; không tự commit.
 
-All final validation used isolated profiles under `/tmp/opencode/ffbe-profiles/prompt-06-*`. GUI captures used a fresh temporary profile per capture. No command read or wrote the owner's real save.
+**Settlement thế giới và trận chiến**
 
-## C. Source and rights audit
+- `game/world/interaction_controller.gd`: treasure/reward/quest một giao dịch, `on_battle_result()` theo receipt, chặn trigger one-time đã claim.
+- `game/world/quest_manager.gd`: `record_event()` một transaction duy nhất.
+- `game/battle/battle_result.gd`, `battle_manager.gd`, `reward_resolver.gd`: truyền cờ `one_time` tới reward resolver.
+- `game/scenes/battle/battle_scene.gd`: settle trong `_record_result()`, ẩn/chặn Retry sau victory one-time, khóa selector khi có world context, QA auto-return về exploration.
 
-`docs/audit/prompt06-world-story-source-audit.md` records the pre-implementation audit. No lawfully usable recovered FFBE map, story or dialogue pack was available, so the world was designed from scratch. Every pack declares `fixture_marker: SYNTHETIC_FIXTURE`, `policy.rights_gate: not_passed`, `policy.source_data_imported: false` and `policy.evidence_class: REMASTERED_DESIGN`; every record declares `verification_status: REMASTERED_DESIGN` with project-authored provenance.
+**Dialog, QA và tài liệu**
 
-No GL/JP equivalence is implied. All world IDs use the GL namespace and compact `loc:` location form; the repository canonicalizes `loc:` to `location` for kind validation without changing stable IDs. No restricted FFBE or Elvlin pack is active or approved in `data/import-approvals/registry.json` or `game/data/phase3/imported_manifest.json`.
+- `game/world/dialogue_panel.gd`, `game/scenes/world/dialogue_panel.tscn`: choices cuộn được, responsive sizing, focus neighbors, dọn prompt/status cũ.
+- `game/world/exploration_area.gd`: scenario `haven_npc_choice`, focus dialogue và dọn trạng thái cũ.
+- `game/tests/prompt06_world_test_suite.gd`: 14 kịch bản fault-injection/idempotency/one-time.
+- `tools/qa/capture_prompt06.sh`, `tools/qa/prompt06_visual_report.py`, `tests/test_phase3_qa_tools.py`: ma trận 117 ảnh, world-context thật cho capture trận chiến.
+- Localization `vi`/`en`/`ja` thêm `battle.one_time_cleared`; coverage JSON/report và kỳ vọng test cập nhật lên 830 keys.
+- Tài liệu cập nhật: `docs/qa/prompt06-final-report.md`, `docs/qa/prompt06-visual-review.md`, `docs/architecture/world-exploration.md`, `docs/data-dictionary/world-story-schema.md`.
 
-## D. World data and catalog
+## 4. Kết quả toàn vẹn lưu (Save Integrity Results)
 
-Six packs are registered in `game/data/content_catalog.json` and loaded by `game/core/content_repository.gd`: regions, locations, location connections, interactables, dialogues and quests. Content loading is fail-closed on missing, malformed or policy-invalid data.
+- Save status gồm `NORMAL`, `MIGRATING`, `READ_ONLY_FUTURE_VERSION`, `LOAD_FAILED`. Chỉ `NORMAL` cho phép ghi; `MIGRATING` chỉ cho phép tạo `.mig.bak`; hai trạng thái terminal khóa target path.
+- Future top-level version hoặc `world.version` bị từ chối trước backup, normalize và ghi. Test xác nhận raw bytes và hash metadata không đổi sau mọi đường dẫn ghi, claim, migration, reset và recovery.
+- Profile mới không có save vẫn ở `NORMAL`; save có nhưng không đọc được chuyển sang `LOAD_FAILED`. `recover_from_load_failure()` không reset được file tương lai.
+- `transaction()` chặn nested commit, snapshot toàn bộ `data`, validate trước commit, emit đúng một `state_changed` và rollback toàn bộ khi write lỗi.
+- `atomic_write()` prevalidate JSON đã serialize và khôi phục `.bak` nếu rename tới target thất bại.
 
-The synthetic world contains one region (`region:GL:1001@vale`), three locations (`loc:GL:1101@haven`, `loc:GL:1102@meadow`, `loc:GL:1103@spire`), two travel connections, nine interactables, two dialogue graphs and two quests. References are checked against existing battle encounters and existing synthetic resource IDs. Rewards use only validated item/fragment resources.
+## 5. Kết quả giao dịch trận/điểm/nhân vật (Battle/Quest/Treasure Transaction Results)
 
-`tests/test_prompt06_world_data.py` statically verifies schema version, policy, ID shape, provenance, graph references, interactable contracts, dialogue effects, quest objectives/rewards, localization coverage and the absence of restricted-source phrases.
+- `BattleScene._record_result()` gọi `PlayerState.settle_world_battle()` ngay khi có result. Reward battle, flag encounter, `processed_battle_runs`, `last_battle_result`, interaction count và quest event nằm trong một transaction.
+- `_stage_world_battle()` kiểm tra trigger tồn tại, `kind = encounter_trigger`, `encounter_id` trùng và `area_id` trùng `location_id` khi có context.
+- Treasure dùng `claim_world_reward()` với callback stage treasure + quest; failed write rollback cả claim, reward, flag và progress.
+- `QuestManager.record_event()` chỉ commit một lần qua `QuestSettlement.stage_event()`; mọi objective bị event tác động được cập nhật chung.
+- Khi settlement thất bại, transaction rollback và giữ `pending_battle_result` để retry an toàn. Khi settlement thành công, pending result bị xóa.
 
-## E. Additive save state and migration
+## 6. Kết quả idempotency
 
-The save path remains `user://player_state_v3.json` and the top-level format remains version 4. `PlayerState.default_world_state()` adds an internal world-state version 1 section for current location, discovery/unlocks, quests, flags, dialogue choices, interactions, opened treasures, one-time encounter defeats and the last battle result. `_ensure_world_state()` backfills missing fields for v1, v2, v3 and v4 saves without resetting resources, units, inventory, claimed rewards, battle runs, economy, shops, crafting, summoning or Espers.
-
-`SaveManager.backup_for_migration()` writes `player_state_v3.json.mig.bak` before the first committed world mutation of an older save. Future top-level versions are refused rather than downgraded. `PlayerState.transact_world()` stages a snapshot, commits via the existing writer and restores in-memory state if the commit fails. `game/tests/prompt06_world_test_suite.gd` covers the v1/v2/v3/v4 matrix, backup creation, future-version refusal and write rollback.
-
-## F. World Map and exploration
-
-`world_map.tscn` draws a project-authored map surface with location markers, connection edges, selection state, locked/unlocked indicators, a localized detail panel, a quest journal button and travel into an exploration area. `world_map_marker_area.gd` contains no protected map art; it draws synthetic shapes.
-
-`exploration_area.tscn` hosts a `Control` playfield, player marker, interaction buttons, controls/help labels, a pause panel and the reusable `dialogue_panel.tscn`. Movement and interaction are authored in a 1280×720 design space and mapped to the real viewport, so 1024×640, 1280×720 and 1920×1080 use the same logical positions, obstacles and click targets.
-
-Controls: WASD/arrows move; mouse click sets a clamped finite target; E/Space interacts or advances dialogue; Enter confirms a choice; Escape opens/closes pause, closes dialogue or returns from pause to the World Map. Obstacles reject both keyboard and mouse movement, verified by `ExplorationController` tests.
-
-## G. Dialogue, quests and treasure
-
-`DialogueRepository` provides keyed lines, conditional lines, choices and effects. `DialogueManager` resolves quest-status conditions and applies `flag`, `quest_accept`, `quest_event` and `unlock_location` effects only after a choice is selected. `DialoguePanel` is presentation-only and resolves all text through `LocaleManager`. The keeper dialogue accepts the oath quest; the scout dialogue has conditional intro/active/done lines.
-
-`QuestManager` accepts quests with prerequisite gates, initializes progress from facts already present in the world state, records the supported event vocabulary, completes objectives atomically, settles rewards once and unlocks locations. The oath quest unlocks the meadow; the lantern quest requires talk, visit, treasure, battle, collect and prerequisite-quest objectives, and unlocks the spire.
-
-Treasure uses `one_time` interaction and `world|treasure|<id>` claim keys. Repeated interaction, reload or scene re-entry cannot claim it twice. No dialogue or quest text claims to restore an original FFBE story.
-
-## H. Battle integration and identity
-
-An encounter trigger writes location, encounter, return-scene and trigger identity into `WorldContext`, then starts the existing `BattleScene`. `BattleScene` consumes the context, applies the encounter override, keeps the return path and emits a result snapshot. `InteractionController.on_battle_result()` accepts that snapshot only for a matching identity, calls `QuestManager.record_event()` for a victory and leaves defeat without progress or reward.
-
-`WorldContext` stores metadata on the persistent SceneTree root under a namespaced prefix instead of adding/removing a child node. This removes the Godot "parent node is busy" errors encountered when a scene changed during `_ready()`. QA battle-transition scenarios defer the scene change to the next idle frame. Retry uses a new battle `run_id`; existing battle reward prefixes (`battle|run|`, `battle|once|`, `battle|first|`, `battle|mission|`) remain unchanged and are separate from world claim keys.
-
-## I. Localization
-
-`vi` remains the default locale, with `en` and `ja` supported. World labels, prompts, dialogue lines, quest text and the two new battle-result statuses (`world.explore.battle_victory`, `world.explore.battle_defeat`) are localization keys. The world scenes and dialogue panel reconnect on `locale_changed` for live switching. `FFBE_QA_LOCALE` is a QA-only starting-locale override and does not write the saved locale.
-
-`data/validation/localization-coverage.json` was regenerated by `tools/localization/coverage_report.py`: `829` union keys, `0` missing, `0` placeholder mismatches, `45` world data keys, `280` dynamic references and `0` dynamic reference errors. `docs/localization/coverage-report.md` and the Python key-count expectation were updated to match.
-
-## J. Regression evidence and negative control
-
-| Check | Result | Evidence |
+| Đối tượng | Khóa/định danh | Hành vi lặp lại |
 |---|---|---|
-| Godot import | exit `0` | `final/import.log` |
-| Full Godot runner | `3521 passed, 0 failed`, exit `0` | `final/godot-full.log` |
-| Negative control | `3521 passed, 1 failed`, exit `1` | `final/godot-negative.log`, `FFBE_TEST_NEGATIVE_CONTROL=1` |
-| Python unittest discovery | `95 tests`, `OK`, exit `0` | `final/python.log` |
-| Importer security suite | `22 tests`, `OK`, exit `0` | `final/importer.log` |
-| Localization validator | `status: pass`, `829` keys, `0` missing, `0` placeholder mismatches, `45` world keys, `280` dynamic references, `0` dynamic errors, exit `0` | `final/localization.log` |
-| `git diff --check` | reviewed after final diff | publication evidence |
+| Treasure | `world|treasure|<id>` | Không claim lại, không cộng gil/item, event quest vô hại |
+| Quest reward | `world|quest|<quest_id>` | Chỉ reward lần đầu; unlock vẫn ổn định |
+| Repeatable encounter | `battle|run|<run_id>` | Mỗi run mới được reward tương ứng |
+| One-time world encounter | `battle|once|<encounter_id>` | Retry/run mới không farm được reward |
+| Battle return | `processed_battle_runs[<run_id>]` | Return lần hai là no-op settlement |
+| Quest event trùng | progress clamp tới required count | Không vượt mục tiêu, không reward trùng |
 
-Expected negative-validation `ERROR:` lines in the Godot logs come from deliberate fixture tests for invalid economy/esper packs and shutdown resource notices; they are not runtime GUI errors. The GUI capture harness counts `SCRIPT ERROR`, `Parse Error` and `ERROR:` lines separately and requires zero for every Prompt 06 capture.
+## 7. Kết quả fault-injection
 
-## K. Static Python and repository validation
+Mười bốn kịch bản bắt buộc đều nằm trong `game/tests/prompt06_world_test_suite.gd::test_fault_injection_scenarios()` và chạy trong full Godot suite:
 
-`tests/test_prompt06_world_data.py` adds ten static world-contract tests. `tests/test_phase3_qa_tools.py` adds seven Prompt 06 QA-tool tests covering the 72-capture matrix, missing-capture detection, runtime-error rejection, missing scenario metadata, report rendering and the isolated-profile capture wrapper. `tests/test_phase3_localization.py` was updated to the regenerated `829`-key baseline.
+1. Future save load — byte file giữ nguyên, status `READ_ONLY_FUTURE_VERSION`.
+2. Future save commit — chặn `save`, `commit`, reset, locale, spending, migration và recovery.
+3. Future save reward — chặn battle claim, world claim, staged mutation và direct writer.
+4. Treasure commit failure — report `save_failed`, fingerprint state không đổi, retry thành công.
+5. Battle settlement failure — rollback reward/world/quest, giữ pending result, retry settlement thành công.
+6. Quest staging failure — rollback progress và reward, retry event thành công.
+7. Duplicate treasure event — không cộng reward.
+8. Duplicate battle result — fingerprint không đổi sau return lần hai.
+9. One-time boss victory — flag/claim/receipt ghi trong lúc battle, Retry ẩn.
+10. One-time boss retry after victory — claim bị chặn `already_claimed`, trigger bị chặn.
+11. One-time boss retry after defeat — Retry vẫn mở, defeat không mark cleared, victory sau đó mới đóng Retry.
+12. Repeatable encounter retry — reward run 2 vẫn được cấp, Retry vẫn mở.
+13. Battle return after success — không grant reward lần hai.
+14. Migration failure — status `LOAD_FAILED`, source bytes giữ nguyên, không để lại `.mig.bak` một phần.
 
-The world data validator checks the compact `loc:` prefix by canonical kind normalization rather than renaming stable IDs. All newly added JSON keys are present in all three locale dictionaries. No forbidden source phrase or JP-region world record is present.
+## 8. GUI trước/sau (GUI Before/After)
 
-## L. Headless regression matrix
+| Khía cạnh | Trước Prompt 06.1 | Sau Prompt 06.1 |
+|---|---|---|
+| Ma trận | 8 scenario × 3 resolution × 3 locale = 72 ảnh | 13 scenario × 3 resolution × 3 locale = 117 ảnh |
+| Dialogue | Fixed size, choice overflow, focus không neighbor | Choice cuộn được, focus neighbors, label cũ được dọn, responsive tại 1024×640 / 1280×720 / 1920×1080 |
+| Battle GUI | Chỉ transition vào battle | Victory, defeat, Retry và Battle return chạy battle thật trong profile isolate với world settlement |
+| Bằng chứng | Geometry/pixel/error count | Geometry/pixel/error count cho 117 ảnh, zero runtime error line; behavior khẳng định bằng headless tests |
 
-Final isolated run (`/tmp/opencode/ffbe-logs/prompt06/final/summary.txt`):
+Các ảnh là capture cửa sổ Godot thật, không phải mockup hoặc ảnh ghép. Chúng chứng minh render/navigation xảy ra; chúng **không** thay thế phê duyệt trực quan chủ quan của owner. Báo cáo sinh tự động: `docs/qa/prompt06-visual-review.md`.
 
-```text
-import_exit=0
-godot_full_exit=0
-Results: 3521 passed, 0 failed
-negative_exit=1
-Results: 3521 passed, 1 failed
-python_exit=0
-Ran 95 tests in 1.415s
-OK
-importer_exit=0
-Ran 22 tests in 0.229s
-OK
-localization_exit=0
-status: pass
-union keys: 829
-world data keys: 45
-missing keys: 0
-placeholder mismatches: 0
-dynamic references: 280
-dynamic reference errors: 0
-linux_export_exit=0
-windows_export_exit=0
-linux_smoke_exit=0
-capture_sidecars=72
-capture_runtime_error_total=0
-DONE
-```
+## 9. Kết quả full regression
 
-The increase from the baseline `3155` assertions comes from the Prompt 06 world suite, the v1–v4 normalization test and explicit scene/context checks. Python discovery increased from `77` to `95` tests through the ten static world-contract tests and seven QA-tool tests.
+| Check | Lệnh/đường dẫn | Kết quả |
+|---|---|---|
+| Godot import (class registration) | `godot --headless --editor --quit --path game --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-dev` | exit `0` |
+| Godot full suite | `godot --headless --path game --script res://tests/test_runner.gd --user-dir /tmp/opencode/ffbe-profiles/prompt-06-1-dev` | `3594 passed, 0 failed`, exit `0` |
+| Negative control | full suite với `FFBE_TEST_NEGATIVE_CONTROL=1` | exit `1`, `3594 passed, 1 failed` |
+| Python discovery | `python3 -m unittest discover -s tests -v` | `96 tests`, `OK`, exit `0` |
+| Importer security | `python3 -m unittest tests.test_phase3_importer -v` | `22 tests`, `OK`, exit `0` |
+| World data + QA tools | `python3 -m unittest tests.test_prompt06_world_data tests.test_phase3_qa_tools -v` | `30 tests`, `OK`, exit `0` |
+| Localization | `python3 tools/localization/coverage_report.py --root .` | `status: pass`, `830` keys, `45` world keys, `0` missing, `0` placeholder mismatch, `280` dynamic refs, `0` dynamic error |
+| GUI matrix | `tools/qa/prompt06_visual_report.py` | `117` PNG/sidecar pairs, `0` runtime error line |
+| `git diff --check` | review trước commit | exit `0` |
 
-## M. Exports and runtime status
+Log chi tiết nằm dưới `/tmp/opencode/ffbe-logs/prompt061/dev/` và `/tmp/opencode/ffbe-logs/prompt061/gui/`. Các dòng `ERROR` dự kiến trong log Godot đến từ fixture test âm tính và thông báo shutdown resource, không phải runtime GUI error.
 
-| Artifact | Result |
+## 10. Kết quả export
+
+| Artifact | Kết quả |
 |---|---|
-| Linux release export | exit `0`, ELF64 x86-64 executable, `final/exports/linux-export.log` |
-| Windows release export | exit `0`, PE32+ x86-64 executable, `final/exports/windows-export.log` |
-| Linux exported-binary smoke | exit `0`, `final/exports/linux-smoke.log` |
-| File types and SHA-256 | `final/exports/file-types.log`, `final/exports/sha256.log` |
-| Windows runtime | **BLOCKED / NOT RUN** — no Windows host is available; export success is not runtime verification |
+| Linux release export | exit `0`, ELF64 x86-64 |
+| Windows release export | exit `0`, PE32+ x86-64 |
+| Smoke binary Linux | exit `0` |
+| Windows runtime | **BLOCKED / NOT RUN** — không có host Windows; exit export không phải bằng chứng chạy runtime |
 
-Export templates were discovered through a read-only symlink from the isolated Godot data directory to the existing local template installation; no template was downloaded or modified.
+Export dùng template Godot `4.7.2.stable` có sẵn; không tải template, không nâng engine, không đưa binary vào Git.
 
-## N. Real GUI QA
+## 11. Git Commit SHA
 
-Capture tool: `tools/qa/capture_prompt06.sh`, which delegates to the live-window `tools/qa/capture_phase3.sh` with a fresh isolated profile per capture. Report generator: `tools/qa/prompt06_visual_report.py`. Output directory: `docs/qa/screenshots/prompt06/`. The required eight scenarios × three resolutions × three locales are:
+Commit hardening chính: `__HARDENING_COMMIT_SHA__`
+Tiêu đề commit: `fix(world): harden save integrity and world settlement`
+Checkpoint trước đó vẫn là `af9cceaca88cf7de92dcb96907c40223f0783fa2` và tag `checkpoint/prompt-06-world-exploration-story`. Không có hard reset, force push, rebase phá hủy, cherry-pick, `git clean` hay ghi đè lịch sử.
 
-- World Map, selected location, hub exploration, NPC dialogue, quest journal, treasure interaction, battle transition and quest completion;
-- `1024x640`, `1280x720`, `1920x1080`;
-- `vi`, `en`, `ja`.
+## 12. PR #9 đã cập nhật
 
-At `1920x1080` the wrapper uses fullscreen because the available X display cannot fit a decorated client window of that size. Every PNG has a sidecar containing scene, scenario, resolution, locale, geometry, ImageMagick pixel statistics and runtime error count. The generator rejects any missing matrix cell or nonzero error line. The derived report is [docs/qa/prompt06-visual-review.md](prompt06-visual-review.md).
+PR #9 vẫn `OPEN`, `DRAFT`, base `phase-4-esper-summon-economy`, head `phase-5-world-exploration-story`. Chỉ nhánh này được push bình thường. PR #8, `main` và tag checkpoint Prompt 06 không bị thay đổi. PR #9 chưa merge, chưa đóng và chưa chuyển DRAFT→READY.
 
-Seventy-two sidecars were generated and zero runtime error lines were recorded across all of them. These captures prove live rendering at the requested sizes and locales; they do not establish subjective art-direction approval.
+## 13. Rủi ro / blocker còn lại
 
-## O. Security, rights, size and preservation
-
-Pre-publication repository review is recorded in `/tmp/opencode/ffbe-logs/prompt06/final/security-audit.txt`. It checks credentials, executables, archives, logs, saves, temp files, restricted packs, import approvals, the active imported manifest and tracked build/cache directories. The intended staged set contains source, synthetic JSON, isolated GUI evidence and documentation only.
-
-No runtime save, exported binary, temporary debug script, credential or protected asset is staged. The GUI PNG/TXT pairs are intentional QA evidence. No original or recovered FFBE/Elvlin pack was added to public Git.
-
-## P. Reproducibility and evidence locations
-
-- Development logs: `/tmp/opencode/ffbe-logs/prompt06/dev-summary.txt`, `godot-current.log`, `import-current.log`.
-- Baseline: `/tmp/opencode/ffbe-logs/prompt06/baseline/summary.txt`.
-- Final validation: `/tmp/opencode/ffbe-logs/prompt06/final/summary.txt` and sibling logs.
-- GUI capture log: `/tmp/opencode/ffbe-logs/prompt06/capture-matrix.log`; per-capture logs under `/tmp/ffbe-phase3-qa/`.
-- Isolated profiles: `/tmp/opencode/ffbe-profiles/prompt-06-dev`, `prompt-06-final`, `prompt-06-qa-runs`.
-- Static documentation: `docs/audit/prompt06-world-story-source-audit.md`, `docs/architecture/world-exploration.md`, `docs/data-dictionary/world-story-schema.md`, this report and the visual review.
-
-## Q. Known limitations and non-verified items
-
-- Windows runtime execution: **NOT RUN / BLOCKED** on this Linux host. Windows export success only proves that a PE32+ binary was produced.
-- Subjective visual, readability and art-direction approval: **NOT VERIFIED**. Automated captures verify geometry, pixel variation and zero runtime error lines only.
-- The world is a synthetic demonstration, not a restoration of original FFBE geography, story, names or quest text.
-- Battle-transition captures show the encounter-trigger transition into battle, not a full battle-to-victory playthrough; reward idempotency and defeat isolation are covered by headless tests.
-- The three `Unicode parsing error ... 400000` lines in Godot import/export logs are previously root-caused editor doc-cache warnings for the Escape keycode; input bindings were intentionally unchanged.
-- Original online services, real-money purchases and protected source assets remain outside project scope.
-
-## R. Prompt preservation and regression
-
-The existing v4 save contract, battle reward ledger, economy/summon/shop/crafting/Espers systems and main-menu entry points remain intact. The Main Menu gains a World entry; no prior button was removed. BattleScene consumes optional world context only when present, so non-world battles still start and return normally. Prompt 05/05.1 tests remain in the full suite and are green. `main`, PR #8 and the published Prompt 05/05.1 commits were not touched.
-
-## S. Review and publication evidence
-
-- Reviewed the staged diff before commit. `git diff --cached --check` returned exit `0` with no output.
-- Security review (`/tmp/opencode/ffbe-logs/prompt06/final/security-audit.txt`): `207` staged files, `0` credential filename/text hits, `0` executable or archive candidates, `0` runtime save candidates, `0` temporary log candidates, `0` registry entries, `0` active imported packs and `last_import: null`. The `72` `.txt` sidecars are intentional GUI evidence containing geometry, pixel statistics, locale and runtime-error metadata.
-- Implementation commit: `6d22904d0922b2530097930502f80f99c7fbe006` — `feat(prompt06): add synthetic world exploration and story slice`.
-- Published with a normal push: `git push origin phase-5-world-exploration-story`, reported as a new remote branch. One docs-only follow-up commit on the same branch records this publication evidence; no amend, rebase, force push or history rewrite was used.
-- Independent post-push verification after the implementation commit: local HEAD and `origin/phase-5-world-exploration-story` were both `6d22904d0922b2530097930502f80f99c7fbe006`. After the evidence commit, local and remote branch were re-read and matched at the final HEAD.
-- GitHub PR #9 was re-read after publication: `state: OPEN`, `isDraft: true`, `baseRefName: phase-4-esper-summon-economy`, `baseRefOid: d66cd4397d5b842cedfe38b83ff21aec58e74efb`, `headRefName: phase-5-world-exploration-story`, URL `https://github.com/AnhhTuann/FFBE-Remastered/pull/9`. The PR was not merged, closed or retargeted.
-- GitHub PR #8 was re-read and remained `OPEN`, `DRAFT`, base `phase-3-hardening`, head `phase-4-esper-summon-economy` at `d66cd4397d5b842cedfe38b83ff21aec58e74efb`. It was not modified.
-- `origin/main` remained `6232acab9fa75fafd8a7c9a2099a1c94c08fa51e`; `origin/phase-3-hardening` remained `33aa0f697943ef0417444bff32510849a662b6f0`; `origin/phase-4-esper-summon-economy` remained `d66cd4397d5b842cedfe38b83ff21aec58e74efb`.
-- The tag `checkpoint/prompt-06-world-exploration-story` was confirmed absent before creation, then created as an annotated tag at the final branch HEAD after the docs-only evidence commit. No existing tag was replaced or deleted.
-
-## T. Final status
-
-Implementation is complete. All host-verifiable validation gates are green; Windows runtime and subjective visual approval remain explicitly non-verified rather than reported as passing. The branch is published as draft PR #9 for owner review. Prompt 07 has not been started and must not begin before owner approval.
-
-## Definition of Done — 32 items
-
-| # | Item | Status | Evidence / caveat |
-|---:|---|---|---|
-| 1 | Branch created from Prompt 05.1 head | PASS | `phase-5-world-exploration-story` at `d66cd439...`; PR #9 base recorded |
-| 2 | `main` and PR #8 preserved | PASS | `main` at `6232aca...`; PR #8 `OPEN`/`DRAFT`, unchanged base/head |
-| 3 | Rights gate remains `not_passed` | PASS | all six world packs and audit document |
-| 4 | No restricted FFBE/Elvlin/source material | PASS | audit, static phrase scan, import manifests |
-| 5 | Synthetic provenance on every world record | PASS | `test_stable_ids_and_provenance` |
-| 6 | Six world packs registered and fail-closed | PASS | catalog and `ContentRepository` tests |
-| 7 | Stable regional IDs and `loc:` normalization | PASS | repository `_canonical_kind()`, Python ID checks |
-| 8 | World Map scene present and functional | PASS | `world_map.tscn`, GUI matrix, headless scene test |
-| 9 | Location selection and travel | PASS | `test_world_map_scene`, selected-location captures |
-| 10 | Locked location gate | PASS | quest unlock requirements and unlock tests |
-| 11 | Exploration area scene present | PASS | `exploration_area.tscn`, hub captures |
-| 12 | WASD/arrow movement | PASS | `test_exploration_controller` |
-| 13 | Mouse/keyboard interaction support | PASS | controller and scene tests, design-space mapping |
-| 14 | Obstacles and finite mouse targets | PASS | `test_exploration_controller` |
-| 15 | Escape pause/return and Enter confirm | PASS | exploration input handlers and pause scenario |
-| 16 | Dialogue panel scene and keyed text | PASS | `dialogue_panel.tscn`, `DialoguePanel` tests |
-| 17 | Dialogue choices and effects | PASS | `test_dialogue_manager`, keeper/scout graph tests |
-| 18 | Quest journal and two-quest chain | PASS | `test_quest_manager`, journal captures |
-| 19 | Treasure one-time claim | PASS | `test_interaction_controller`, treasure captures |
-| 20 | World Map → exploration → battle context | PASS | `test_battle_result_identity`, battle-transition captures |
-| 21 | Battle result returns to exploration | PASS | `_world_return_context()` and result-path test |
-| 22 | Defeat never completes objectives | PASS | `test_battle_result_identity` |
-| 23 | Retry/reload cannot duplicate world rewards | PASS | claim-key tests, treasure and quest tests |
-| 24 | Save path and v4 format preserved | PASS | `user://player_state_v3.json`, version contract tests |
-| 25 | v1/v2/v3/v4 normalization, backup, refusal, rollback | PASS | `test_version_matrix_normalization`, migration/rollback tests |
-| 26 | `vi`/`en`/`ja` parity and live switching | PASS | `829` keys, `0` missing, GUI locale matrix |
-| 27 | No hardcoded world user-facing strings | PASS | scene text fields empty; locale key scan |
-| 28 | Godot full suite and negative control | PASS | `3521/0` exit `0`; `3521/1` exit `1` |
-| 29 | Python, importer and localization suites | PASS | `95`, `22`, validator `pass` with `829` keys |
-| 30 | Linux/Windows export and Linux smoke | PASS | all exit `0`; file types and hashes logged |
-| 31 | GUI matrix at three resolutions and locales | PASS | 72 PNG/sidecar pairs, `0` runtime error lines; visual review generator |
-| 32 | Docs, diff, commit, push, draft PR #9, tag | PASS | section S evidence; implementation commit `6d22904`, normal push, PR #9 `OPEN`/`DRAFT`, annotated checkpoint tag |
+- Windows runtime: **BLOCKED / NOT RUN** trên host Linux hiện tại; cần owner chạy binary Windows trên máy Windows nếu muốn xác nhận runtime.
+- Phê duyệt trực quan/art-direction/readability: **NOT VERIFIED**; tự động hóa chỉ xác nhận geometry, pixel statistics, số dòng lỗi và capture thật.
+- Save tương lai/không đọc được được cố ý giữ khóa để owner phục hồi; hardening này không tự động ghi đè dữ liệu đó.
+- Prompt 07 chưa được bắt đầu và chỉ được phép sau khi owner phê duyệt checkpoint này.
+- Dữ liệu thế giới là fixture tổng hợp, không phải khôi phục địa lý/cốt truyện FFBE gốc.

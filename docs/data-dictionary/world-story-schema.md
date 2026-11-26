@@ -170,10 +170,22 @@ the world state adds an internal `world.version = 1` section:
 | `interactions` | object | `interactable_id → interaction counts/state` |
 | `opened_treasures` | string[] | One-time treasure claim state |
 | `defeated_one_time_encounters` | string[] | One-time encounter state |
+| `processed_battle_runs` | object | `run_id → { run_id, encounter_id, outcome, trigger_id, one_time }` settlement receipt written during battle |
 | `last_battle_result` | object | Most recent result snapshot used by the return path |
 
-World mutation uses `PlayerState.transact_world(section, mutator)`. Reward settlement
-uses `claim_world_reward()` with claim keys `world|quest|<quest_id>` and
-`world|treasure|<treasure_id>`. Battle rewards keep their existing `battle|...` claim
-keys. Missing world fields in older v1–v4 saves are backfilled without resetting other
-progress; a `.mig.bak` backup is written before the first committed world migration.
+`PlayerState` also exposes transient, non-serialized guards: `save_status`
+(`NORMAL`, `MIGRATING`, `READ_ONLY_FUTURE_VERSION`, `LOAD_FAILED`), `read_only_reason`
+and `pending_battle_result`. Only the first two allow writes; the last two terminal
+states preserve on-disk bytes for owner recovery. The pending result is retained only
+when a settlement write fails, so a retry can replay it without a second reward.
+
+World mutation uses `PlayerState.transaction(section, mutator)` through
+`transact_world()`. Reward settlement uses `claim_world_reward()` with claim keys
+`world|quest|<quest_id>` and `world|treasure|<treasure_id>`. Quest completion uses
+`QuestSettlement.stage_event()` inside the same transaction as the triggering action.
+Battle rewards keep their existing `battle|...` claim keys; a world one-time encounter
+uses the stable `battle|once|<encounter_id>` key regardless of `run_id`, while a
+repeatable encounter uses `battle|run|<run_id>` per attempt. Missing world fields in
+older v1–v4 saves are backfilled without resetting other progress; a `.mig.bak` backup
+is written before the first committed world migration. A future top-level or world
+version is refused before backup creation and the target path is registered read-only.

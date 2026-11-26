@@ -83,6 +83,7 @@
   "battle.limit": "LB",
   "battle.log": "Nhật ký trận đấu",
   "battle.menu": "Menu trận đấu",
+  "battle.one_time_cleared": "Trận chiến một lần đã hoàn tất; không thể thử lại.",
   "battle.overdrive": "Overdrive",
   "battle.party_fallback_labeled": "Đang dùng đội hình dự phòng có nhãn",
   "battle.party_invalid": "Đội hình không hợp lệ",

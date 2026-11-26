@@ -83,6 +83,7 @@
   "battle.limit": "LB（リミット）",
   "battle.log": "バトルログ",
   "battle.menu": "バトルメニュー",
+  "battle.one_time_cleared": "一度きりの戦闘は完了しました。再挑戦できません。",
   "battle.overdrive": "オーバードライブ",
   "battle.party_fallback_labeled": "ラベル付き代替編成を使用",
   "battle.party_invalid": "編成が無効です",
