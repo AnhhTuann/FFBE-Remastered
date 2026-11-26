@@ -85,7 +85,7 @@ qa/test_viewport_width=1920
 qa/test_viewport_height=1080
 content/schema_version=1
 save/format_version=2
-save/player_format_version=3
+save/player_format_version=4
 
 [rendering]
 

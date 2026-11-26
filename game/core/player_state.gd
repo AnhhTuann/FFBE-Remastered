@@ -2,14 +2,16 @@ extends Node
 
 ## Writable player state. Immutable definitions come from ContentRepository;
 ## this service owns owned units, inventory, resources, trust, parties and locale.
-## It is a separate version-3 file so version-2 slot and battle-progress saves
-## remain untouched and readable.
+## It remains in the version-3 filename so version-2 slot and battle-progress
+## saves stay untouched; the in-file format is version 4 with additive v4 sections.
+## Fresh and migrated profiles anchor economy.last_settled_unix at creation time
+## so an epoch-zero save cannot claim historical offline rewards.
 
 signal state_changed(section: String)
 signal load_failed(message: String)
 
 const PLAYER_STATE_PATH := "user://player_state_v3.json"
-const PLAYER_STATE_VERSION := 3
+const PLAYER_STATE_VERSION := 4
 const SUPPORTED_LOCALES: Array[String] = ["vi", "en", "ja"]
 
 var data: Dictionary = {}
@@ -40,7 +42,20 @@ func rebuild_systems() -> void:
 		build_resolver = build_script.new(self)
 
 
-func default_state() -> Dictionary:
+## Resolves an explicit test timestamp, then the QA away-period anchor, then
+## the real clock. Explicit values always win so regression tests stay deterministic.
+func _resolve_timestamp(now_unix: int) -> int:
+	if now_unix >= 0:
+		return now_unix
+	var qa_now: String = OS.get_environment("FFBE_QA_NOW_UNIX")
+	var qa_away: String = OS.get_environment("FFBE_QA_OFFLINE_SECONDS")
+	if qa_now.is_valid_int() and qa_away.is_valid_int():
+		return maxi(0, qa_now.to_int() - maxi(0, qa_away.to_int()))
+	return maxi(0, int(Time.get_unix_time_from_system()))
+
+
+func default_state(now_unix: int = -1) -> Dictionary:
+	var anchor: int = _resolve_timestamp(now_unix)
 	var resources: Dictionary = {
 		"gil": 500000,
 		"lapis": 0,
@@ -87,6 +102,14 @@ func default_state() -> Dictionary:
 		"next_unit_serial": serial,
 		"next_equip_serial": 1,
 		"claimed_rewards": {},
+		"reward_claims": {},
+		"mission_progress": {},
+		"battle_runs": {},
+		"espers": {},
+		"summon": {},
+		"economy": {"last_settled_unix": anchor, "claims": {}},
+		"shops": {},
+		"crafting": {},
 		"legacy": {}
 	}
 
@@ -160,28 +183,30 @@ func _default_inventory() -> Dictionary:
 	}
 
 
-func load_state() -> Dictionary:
+func load_state(now_unix: int = -1) -> Dictionary:
+	var anchor: int = _resolve_timestamp(now_unix)
 	_loading = true
 	var result: Variant = SaveManager.call("_read_json_with_fallback", PLAYER_STATE_PATH)
 	_loading = false
 	if result is Dictionary and bool((result as Dictionary).get("ok", false)):
 		var raw: Variant = (result as Dictionary).get("data", {})
 		if raw is Dictionary:
-			var migrated := migrate_state(raw as Dictionary)
+			var migrated := migrate_state(raw as Dictionary, anchor)
 			if validate_state(migrated):
 				last_error = ""
 				return migrated
 			last_error = "save.error.invalid"
 			load_failed.emit(last_error)
-			return default_state()
+			return default_state(anchor)
 	last_error = "save.error.corrupt"
 	load_failed.emit(last_error)
-	return default_state()
+	return default_state(anchor)
 
 
-func migrate_state(raw: Dictionary) -> Dictionary:
+func migrate_state(raw: Dictionary, now_unix: int = -1) -> Dictionary:
 	if raw.is_empty():
-		return default_state()
+		return default_state(now_unix)
+	var anchor: int = _resolve_timestamp(now_unix)
 	var version: int = int(raw.get("version", 1))
 	if version > PLAYER_STATE_VERSION:
 		last_error = "save.error.newer"
@@ -192,14 +217,34 @@ func migrate_state(raw: Dictionary) -> Dictionary:
 			1:
 				working = _migrate_1_to_2(working)
 			2:
-				working = _migrate_2_to_3(working)
+				working = _migrate_2_to_3(working, anchor)
+			3:
+				working = _migrate_3_to_4(working)
 			_:
 				return {}
 		version += 1
 		working["version"] = version
 	if not working.has("claimed_rewards"):
 		working["claimed_rewards"] = {}
-	return working
+	return _ensure_economy_anchor(working, anchor)
+
+
+## Additive v4 economy anchor. It only fills a missing/zero unclaimed timestamp;
+## any recorded claim window or positive timestamp is preserved byte-for-byte.
+func _ensure_economy_anchor(target: Dictionary, anchor: int) -> Dictionary:
+	var section_variant: Variant = target.get("economy", {})
+	var section: Dictionary = section_variant if section_variant is Dictionary else {}
+	var stored: int = int(section.get("last_settled_unix", -1))
+	var claims_variant: Variant = section.get("claims", {})
+	var claims: Dictionary = claims_variant if claims_variant is Dictionary else {}
+	if stored < 0 or (stored == 0 and claims.is_empty()):
+		section["last_settled_unix"] = maxi(anchor, 0)
+		section["claims"] = claims
+		target["economy"] = section
+	elif not section.has("claims"):
+		section["claims"] = claims
+		target["economy"] = section
+	return target
 
 
 func _migrate_1_to_2(data: Dictionary) -> Dictionary:
@@ -209,8 +254,8 @@ func _migrate_1_to_2(data: Dictionary) -> Dictionary:
 	return result
 
 
-func _migrate_2_to_3(data: Dictionary) -> Dictionary:
-	var fresh: Dictionary = default_state()
+func _migrate_2_to_3(data: Dictionary, now_unix: int = -1) -> Dictionary:
+	var fresh: Dictionary = default_state(now_unix)
 	var profile_variant: Variant = data.get("profile", {})
 	if profile_variant is Dictionary:
 		var profile: Dictionary = profile_variant
@@ -219,13 +264,65 @@ func _migrate_2_to_3(data: Dictionary) -> Dictionary:
 		var favorites_variant: Variant = profile.get("favorites", [])
 		if favorites_variant is Array:
 			fresh["profile"]["favorites"] = (favorites_variant as Array).duplicate()
-		fresh["profile"]["last_unit_id"] = str(profile.get("last_unit_id", ""))
+		fresh["profile"]["last_unit_id"] = str(profile.get("last_unit_id", profile.get("selected_unit_id", "")))
+	# Older saves may already carry v3-shaped fields. Keep those values and only
+	# backfill keys that are absent instead of resetting the player's progress.
+	var resources_variant: Variant = data.get("resources", {})
+	if resources_variant is Dictionary:
+		(fresh["resources"] as Dictionary).merge(resources_variant as Dictionary, true)
+	for section: String in ["owned_units", "inventory", "parties", "claimed_rewards"]:
+		var value: Variant = data.get(section, null)
+		if value is Array or value is Dictionary:
+			fresh[section] = (value as Array).duplicate(true) if value is Array else (value as Dictionary).duplicate(true)
+	if data.has("active_party"):
+		fresh["active_party"] = str(data.get("active_party", "default"))
+	for key: String in ["next_unit_serial", "next_equip_serial"]:
+		if int(data.get(key, 0)) > 0:
+			fresh[key] = int(data[key])
 	var legacy: Dictionary = {}
 	for key: String in ["battle_progress", "settings_summary", "version"]:
 		if data.has(key):
 			legacy[key] = (data[key] if not data[key] is Dictionary else (data[key] as Dictionary).duplicate(true))
 	fresh["legacy"] = legacy
 	return fresh
+
+
+func _migrate_3_to_4(data: Dictionary) -> Dictionary:
+	## Additive migration: every v3 field is retained. Only missing v4 sections
+	## are backfilled, and legacy claim keys are copied into the canonical store
+	## so an older save cannot grant the same legacy reward twice.
+	var result: Dictionary = data.duplicate(true)
+	for section: String in [
+		"reward_claims", "mission_progress", "battle_runs", "espers",
+		"summon", "economy", "shops", "crafting"
+	]:
+		var value: Variant = result.get(section, null)
+		if value == null or not (value is Dictionary):
+			result[section] = {}
+
+	var claimed_variant: Variant = result.get("claimed_rewards", {})
+	if claimed_variant is Dictionary:
+		var claims: Dictionary = result.get("reward_claims", {})
+		for legacy_key: Variant in (claimed_variant as Dictionary).keys():
+			var key: String = str(legacy_key)
+			if claims.has(key):
+				continue
+			var entry_variant: Variant = (claimed_variant as Dictionary)[legacy_key]
+			claims[key] = {
+				"key": key,
+				"legacy": true,
+				"result": entry_variant.duplicate(true) if entry_variant is Dictionary else {}
+			}
+		result["reward_claims"] = claims
+
+	var runs: Dictionary = result.get("battle_runs", {})
+	var legacy_variant: Variant = result.get("legacy", {})
+	if legacy_variant is Dictionary and runs.is_empty():
+		var legacy_progress: Variant = (legacy_variant as Dictionary).get("battle_progress", {})
+		if legacy_progress is Dictionary:
+			runs["legacy"] = (legacy_progress as Dictionary).duplicate(true)
+	result["battle_runs"] = runs
+	return result
 
 
 func normalize_locale(locale: String) -> String:
@@ -243,8 +340,16 @@ func validate_state(state: Dictionary) -> bool:
 		return false
 	if not (state.get("parties", {}) is Dictionary) or not (state.get("resources", {}) is Dictionary):
 		return false
-	if not (state.get("claimed_rewards", {}) is Dictionary):
-		return false
+	for section: String in [
+		"claimed_rewards", "reward_claims", "mission_progress", "battle_runs",
+		"espers", "summon", "economy", "shops", "crafting"
+	]:
+		if not (state.get(section, {}) is Dictionary):
+			return false
+	var economy_variant: Variant = state.get("economy", {})
+	if economy_variant is Dictionary and (economy_variant as Dictionary).has("last_settled_unix"):
+		if int((economy_variant as Dictionary).get("last_settled_unix", -1)) < 0:
+			return false
 	var seen: Dictionary = {}
 	for entry: Variant in state.get("owned_units", []):
 		if not entry is Dictionary:
@@ -358,7 +463,8 @@ func grant_unit(definition_id: String, source: String = "granted") -> String:
 	(units as Array).append(entry)
 	data["owned_units"] = units
 	data["next_unit_serial"] = serial + 1
-	commit("units")
+	if commit("units") != OK:
+		return ""
 	return str(entry["instance_id"])
 
 
@@ -412,17 +518,23 @@ func locale() -> String:
 	return normalize_locale(str((data.get("profile", {}) as Dictionary).get("locale", "vi")))
 
 
-func set_locale(locale: String) -> void:
+func set_locale(locale: String) -> Error:
 	var normalized := normalize_locale(locale)
 	var profile_variant: Variant = data.get("profile", {})
-	var profile: Dictionary = profile_variant if profile_variant is Dictionary else {}
+	var previous: Dictionary = (profile_variant as Dictionary).duplicate(true) if profile_variant is Dictionary else {}
+	var profile: Dictionary = previous.duplicate(true)
 	profile["locale"] = normalized
 	data["profile"] = profile
-	commit("profile")
+	var error: Error = commit("profile")
+	if error != OK:
+		data["profile"] = previous
+		return error
+	return OK
 
 
-## Deterministic idempotency key for a battle result. The same encounter, seed,
-## turn count and reward snapshot can only be claimed once, even after a reload.
+## Legacy diagnostic fingerprint only. Canonical settlement uses the explicit
+## claim keys supplied by RewardResolver; this helper is retained so older QA
+## captures can still identify a result, but it never gates a reward grant.
 func battle_reward_key(result: Dictionary) -> String:
 	var rewards_variant: Variant = result.get("rewards", {})
 	var rewards: Dictionary = rewards_variant if rewards_variant is Dictionary else {}
@@ -442,30 +554,227 @@ func battle_reward_key(result: Dictionary) -> String:
 
 
 func claim_battle_reward(result: Dictionary) -> Dictionary:
+	var snapshot: Dictionary = data.duplicate(true)
 	if not bool(result.get("victory", false)):
-		return {"ok": false, "reason": "not_victory", "key": ""}
-	var key := battle_reward_key(result)
-	var claimed_variant: Variant = data.get("claimed_rewards", {})
-	var claimed: Dictionary = claimed_variant if claimed_variant is Dictionary else {}
-	if claimed.has(key):
-		return {"ok": false, "reason": "already_claimed", "key": key, "message": "save.error.invalid"}
-	claimed[key] = {
-		"encounter_id": str(result.get("encounter_id", "")),
+		return {"ok": false, "reason": "not_victory", "key": "", "message": "reward.not_victory"}
+
+	var encounter_id: String = str(result.get("encounter_id", ""))
+	var run_id: String = str(result.get("run_id", ""))
+	var claim_keys: Dictionary = _canonical_claim_keys(result, encounter_id, run_id)
+	var repeat_key: String = str(claim_keys.get("repeat", ""))
+	if repeat_key.is_empty():
+		return {"ok": false, "reason": "invalid_result", "key": "", "message": "reward.invalid_result"}
+
+	var claims_variant: Variant = data.get("reward_claims", {})
+	var claims: Dictionary = claims_variant if claims_variant is Dictionary else {}
+	var new_claim_keys: Array[String] = []
+	for key_variant: Variant in claim_keys.values():
+		var key: String = str(key_variant)
+		if not claims.has(key):
+			new_claim_keys.append(key)
+	if new_claim_keys.is_empty():
+		return {"ok": false, "reason": "already_claimed", "key": repeat_key, "message": "reward.already_claimed"}
+
+	var rewards_variant: Variant = result.get("rewards", {})
+	var rewards: Dictionary = rewards_variant if rewards_variant is Dictionary else {}
+	var grant: Dictionary = {}
+
+	# Repeat, first-clear and each mission have independent claim keys. An
+	# already claimed first-clear must not suppress this run's repeat reward.
+	if not claims.has(repeat_key):
+		var repeat_variant: Variant = rewards.get("repeat", {})
+		if repeat_variant is Dictionary:
+			_collect_reward(repeat_variant, grant)
+		else:
+			_collect_reward(rewards, grant)
+		_remember_claim(claims, _snapshot_section(snapshot, "claimed_rewards"), repeat_key,
+			encounter_id, run_id, result)
+
+	var first_key: String = str(claim_keys.get("first_clear", ""))
+	if not first_key.is_empty() and not claims.has(first_key):
+		var first_variant: Variant = rewards.get("first_clear", {})
+		if first_variant is Dictionary:
+			_collect_reward(first_variant, grant)
+		_remember_claim(claims, _snapshot_section(snapshot, "claimed_rewards"), first_key,
+			encounter_id, run_id, result)
+
+	var claimed_missions: Array[Dictionary] = []
+	var missions_variant: Variant = rewards.get("missions", [])
+	if missions_variant is Array:
+		for mission_variant: Variant in missions_variant:
+			if not mission_variant is Dictionary:
+				continue
+			var mission: Dictionary = mission_variant
+			var mission_id: String = str(mission.get("id", ""))
+			var key: String = str(claim_keys.get("mission:%s" % mission_id, mission.get("key", "")))
+			if mission_id.is_empty() or key.is_empty() or claims.has(key):
+				continue
+			var mission_reward: Variant = mission.get("reward", {})
+			if mission_reward is Dictionary:
+				_collect_reward(mission_reward, grant)
+			_remember_claim(claims, _snapshot_section(snapshot, "claimed_rewards"), key,
+				encounter_id, run_id, result)
+			claimed_missions.append({
+				"id": mission_id,
+				"key": key,
+				"repeatable": bool(mission.get("repeatable", false)),
+				"reward": mission_reward.duplicate(true) if mission_reward is Dictionary else {}
+			})
+
+	# Every mutation is staged here; `data` is only replaced after the complete
+	# snapshot is built, and a failed commit restores the whole snapshot.
+	var claimed_variant_current: Variant = data.get("claimed_rewards", {})
+	var claimed: Dictionary = claimed_variant_current if claimed_variant_current is Dictionary else {}
+	for key_variant: Variant in claim_keys.values():
+		var key: String = str(key_variant)
+		if not new_claim_keys.has(key):
+			continue
+		claimed[key] = {
+			"encounter_id": encounter_id,
+			"run_id": run_id,
+			"seed": int(result.get("seed", 0)),
+			"turns": int(result.get("turns", 0))
+		}
+
+	var progress_variant: Variant = data.get("mission_progress", {})
+	var mission_progress: Dictionary = progress_variant if progress_variant is Dictionary else {}
+	for mission: Dictionary in claimed_missions:
+		var key: String = str(mission["key"])
+		var previous: Dictionary = mission_progress.get(key, {})
+		mission_progress[key] = {
+			"key": key,
+			"encounter_id": encounter_id,
+			"mission_id": str(mission["id"]),
+			"run_id": run_id,
+			"turns": int(result.get("turns", 0)),
+			"repeatable": bool(mission["repeatable"]),
+			"completions": int(previous.get("completions", 0)) + 1,
+			"completed": true
+		}
+
+	var runs_variant: Variant = data.get("battle_runs", {})
+	var runs: Dictionary = runs_variant if runs_variant is Dictionary else {}
+	var run_key: String = run_id if not run_id.is_empty() else repeat_key
+	runs[run_key] = {
+		"run_id": run_key,
+		"encounter_id": encounter_id,
+		"seed": int(result.get("seed", 0)),
+		"seed_source": str(result.get("seed_source", "independent")),
+		"turns": int(result.get("turns", 0)),
+		"victory": true,
+		"claim_keys": claim_keys.duplicate(true),
+		"rewards": grant.duplicate(true)
+	}
+
+	var resources: Dictionary = get_resources()
+	for key: String in grant.keys():
+		resources[key] = get_resource(key) + maxi(int(grant[key]), 0)
+	data["resources"] = resources
+	data["reward_claims"] = claims
+	data["claimed_rewards"] = claimed
+	data["mission_progress"] = mission_progress
+	data["battle_runs"] = runs
+
+	var error: Error = commit("rewards")
+	if error != OK:
+		data = snapshot
+		return {"ok": false, "reason": "save_failed", "key": repeat_key, "message": "reward.save_failed"}
+	return {
+		"ok": true,
+		"reason": "",
+		"key": repeat_key,
+		"keys": claim_keys.duplicate(true),
+		"new_keys": new_claim_keys.duplicate(true),
+		"message": "reward.saved",
+		"rewards": grant
+	}
+
+
+func _snapshot_section(snapshot: Dictionary, section: String) -> Dictionary:
+	var value: Variant = snapshot.get(section, {})
+	return value if value is Dictionary else {}
+
+
+func _remember_claim(
+	claims: Dictionary,
+	legacy: Dictionary,
+	key: String,
+	encounter_id: String,
+	run_id: String,
+	result: Dictionary
+) -> void:
+	var record: Dictionary = {
+		"key": key,
+		"encounter_id": encounter_id,
+		"run_id": run_id,
+		"turns": int(result.get("turns", 0)),
+		"canonical": true
+	}
+	claims[key] = record
+	legacy[key] = {
+		"encounter_id": encounter_id,
+		"run_id": run_id,
 		"seed": int(result.get("seed", 0)),
 		"turns": int(result.get("turns", 0))
 	}
-	data["claimed_rewards"] = claimed
+
+
+func _canonical_claim_keys(result: Dictionary, encounter_id: String, run_id: String) -> Dictionary:
+	var policy_variant: Variant = result.get("reward_policy", {})
+	var policy: Dictionary = policy_variant if policy_variant is Dictionary else {}
 	var rewards_variant: Variant = result.get("rewards", {})
 	var rewards: Dictionary = rewards_variant if rewards_variant is Dictionary else {}
-	var grant: Dictionary = {"gil": maxi(int(rewards.get("gil", 0)), 0)}
-	var items_variant: Variant = rewards.get("items", [])
+	if policy.is_empty():
+		var nested_policy: Variant = rewards.get("policy", {})
+		if nested_policy is Dictionary:
+			policy = nested_policy
+	var provided_variant: Variant = rewards.get("claim_keys", result.get("claim_keys", {}))
+	var provided: Dictionary = provided_variant if provided_variant is Dictionary else {}
+	var keys: Dictionary = {}
+
+	var repeat_key: String = str(provided.get("repeat", ""))
+	if not repeat_key.is_empty() and not _is_canonical_claim_key(repeat_key):
+		return {}
+	if repeat_key.is_empty():
+		if not run_id.is_empty():
+			repeat_key = "battle|run|%s" % run_id
+		elif not bool(policy.get("repeatable", true)) and not encounter_id.is_empty():
+			repeat_key = "battle|once|%s" % encounter_id
+	if repeat_key.is_empty():
+		return {}
+	keys["repeat"] = repeat_key
+
+	var first_key: String = str(provided.get("first_clear", ""))
+	if not first_key.is_empty() and not _is_canonical_claim_key(first_key):
+		return {}
+	if first_key.is_empty() and bool(policy.get("first_clear", false)) and not encounter_id.is_empty():
+		first_key = "battle|first|%s" % encounter_id
+	if not first_key.is_empty():
+		keys["first_clear"] = first_key
+
+	for key_variant: Variant in provided.keys():
+		var key: String = str(key_variant)
+		if not key.begins_with("mission:"):
+			continue
+		var mission_key: String = str(provided[key_variant])
+		if not _is_canonical_claim_key(mission_key):
+			return {}
+		keys[key] = mission_key
+	return keys
+
+
+func _is_canonical_claim_key(key: String) -> bool:
+	for prefix: String in ["battle|run|", "battle|once|", "battle|first|", "battle|mission|"]:
+		if key.begins_with(prefix) and key.length() > prefix.length():
+			return true
+	return false
+
+
+func _collect_reward(bundle: Dictionary, grant: Dictionary) -> void:
+	grant["gil"] = int(grant.get("gil", 0)) + maxi(int(bundle.get("gil", 0)), 0)
+	var items_variant: Variant = bundle.get("items", [])
 	if items_variant is Array:
-		for item: Variant in items_variant:
-			var item_id := str(item)
+		for item_variant: Variant in items_variant:
+			var item_id: String = str(item_variant)
 			if not item_id.is_empty():
 				grant[item_id] = int(grant.get(item_id, 0)) + 1
-	grant(grant)
-	var error: Error = commit("rewards")
-	if error != OK:
-		return {"ok": false, "reason": "save_failed", "key": key, "message": "save.error.invalid"}
-	return {"ok": true, "reason": "", "key": key, "message": "save.saved", "rewards": grant}

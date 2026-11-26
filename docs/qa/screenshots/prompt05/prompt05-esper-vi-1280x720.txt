@@ -1,0 +1,18 @@
+name=prompt05-esper-vi-1280x720
+scene=res://scenes/phase3/esper_management.tscn
+resolution=1280x720
+fullscreen=0
+locale=vi
+scenario=
+instance_id=
+party_id=default
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+window_id=199229447
+geometry=WINDOW=199229447 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0
+pixels=1280x720 colors=1339 stddev=0.136045
+runtime_error_lines=0
+log_basename=prompt05-esper-vi-1280x720.log

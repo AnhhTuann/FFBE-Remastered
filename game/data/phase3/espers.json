@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "fixture_marker": "SYNTHETIC_FIXTURE",
+  "content_label": "REMASTERED_DESIGN",
+  "description": "Project-authored fantasy esper fixtures for offline party progression. No FFBE esper, ability, cost or progression value is reproduced.",
+  "policy": {
+    "rights_gate": "not_passed",
+    "allowed_evidence_classes": ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"],
+    "source_data_imported": false
+  },
+  "espers": [
+    {
+      "id": "esper:GL:960001@base",
+      "kind": "esper",
+      "region": "GL",
+      "native_id": "960001",
+      "form": "base",
+      "name_key": "esper.synthetic_ember_warden.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "max_level": 20,
+      "stats": {"hp": 800, "mp": 120, "atk": 60, "def": 45, "mag": 40, "spr": 50},
+      "passive_effects": [
+        {"id": "passive:GL:960001@base", "label": "REMASTERED_DESIGN", "effect": {"stat": "atk", "percent": 5}}
+      ],
+      "cost": {"gil": 20000, "material:GL:900101@base": 2},
+      "unlock": {"min_level": 1, "required_flags": []},
+      "party_link_rules": {"max_active_parties": 1, "region_lock": "same_region", "label": "REMASTERED_DESIGN"},
+      "sp_cap": 100,
+      "sp_cost": {"gil": 5000}
+    },
+    {
+      "id": "esper:GL:960002@base",
+      "kind": "esper",
+      "region": "GL",
+      "native_id": "960002",
+      "form": "base",
+      "name_key": "esper.synthetic_tide_courier.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "max_level": 25,
+      "stats": {"hp": 700, "mp": 160, "atk": 35, "def": 40, "mag": 75, "spr": 65},
+      "passive_effects": [
+        {"id": "passive:GL:960002@base", "label": "REMASTERED_DESIGN", "effect": {"stat": "mag", "percent": 5}}
+      ],
+      "cost": {"gil": 25000, "material:GL:900102@base": 2},
+      "unlock": {"min_level": 1, "required_flags": []},
+      "party_link_rules": {"max_active_parties": 1, "region_lock": "same_region", "label": "REMASTERED_DESIGN"},
+      "sp_cap": 120,
+      "sp_cost": {"gil": 6000}
+    },
+    {
+      "id": "esper:JP:960003@base",
+      "kind": "esper",
+      "region": "JP",
+      "native_id": "960003",
+      "form": "base",
+      "name_key": "esper.synthetic_stone_sentinel.name",
+      "verification_status": "SYNTHETIC_FIXTURE",
+      "provenance": {
+        "origin": "generated",
+        "source": "prompt05-synthetic-fixture",
+        "license": "project-authored",
+        "rights_gate": "not_passed"
+      },
+      "max_level": 20,
+      "stats": {"hp": 1000, "mp": 90, "atk": 40, "def": 85, "mag": 25, "spr": 80},
+      "passive_effects": [
+        {"id": "passive:JP:960003@base", "label": "REMASTERED_DESIGN", "effect": {"stat": "def", "percent": 6}}
+      ],
+      "cost": {"gil": 22000, "item:GL:800001@base": 1},
+      "unlock": {"min_level": 1, "required_flags": []},
+      "party_link_rules": {"max_active_parties": 1, "region_lock": "same_region", "label": "REMASTERED_DESIGN"},
+      "sp_cap": 100,
+      "sp_cost": {"gil": 5000}
+    }
+  ]
+}

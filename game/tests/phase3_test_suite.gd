@@ -84,9 +84,11 @@ func run() -> bool:
 	_run("test_leader_skill_and_brave_shift_builds")
 	_run("test_advanced_mechanic_labels")
 	_run("test_invalid_transactions_preserve_resources")
-	_run("test_save_v2_to_v3_migration")
+	_run("test_save_v2_to_v4_migration")
 	_run("test_locale_fallback_and_localized_text")
 	_run("test_battle_reward_idempotency")
+	_run("test_battle_reward_bucket_settlement")
+	_run("test_battle_reward_save_failure_rollback")
 	_run("test_phase3_scenes_instantiate")
 
 	# Restore the caller's state. Tests intentionally commit to the same
@@ -195,6 +197,13 @@ func _resolve(instance_id: String, party_id: String = "") -> Dictionary:
 func _stats(instance_id: String, party_id: String = "") -> Dictionary:
 	var resolved: Dictionary = _resolve(instance_id, party_id)
 	return resolved.get("stats", {}) if resolved.get("stats", {}) is Dictionary else {}
+
+
+func _has_diagnostic(resolved: Dictionary, key: String) -> bool:
+	for entry_variant: Variant in resolved.get("diagnostics", []):
+		if entry_variant is Dictionary and str((entry_variant as Dictionary).get("key", "")) == key:
+			return true
+	return false
 
 
 func _inventory_uid(definition_id: String) -> String:
@@ -693,7 +702,7 @@ func test_vision_card_assignment_and_level_bonuses() -> bool:
 	_ok(bool(inventory.call("unassign_vision_card", "alt").get("ok", false)), "card removed before mismatch test")
 	_ok(bool(inventory.call("assign_vision_card", "alt", VC_ARCANE).get("ok", false)), "arcane card assigned")
 	var resolved: Dictionary = _resolve(V1, "alt")
-	_ok(str(resolved.get("diagnostics", [])).contains("Vision card category does not match this unit"), "category mismatch diagnosed")
+	_ok(_has_diagnostic(resolved, "build.error.vision_category"), "category mismatch diagnosed with stable key")
 	_eq(JSON.stringify((resolved.get("percent", {}) as Dictionary)), JSON.stringify({"atk": 20}), "mismatched card passive not applied")
 	_eq(int((resolved.get("stats", {}) as Dictionary).get("mag", 0)), 185, "mismatched card still grants flat stats")
 
@@ -709,6 +718,25 @@ func test_vision_card_assignment_and_level_bonuses() -> bool:
 	_result_fail(inventory.call("assign_vision_card", "alt", VC_JP), "locked", "locked card cannot be assigned")
 	_result_fail(inventory.call("upgrade_vision_card", VC_JP), "locked", "locked card cannot be upgraded")
 	_assert_unchanged(before, "locked vision card violations")
+
+	_ok(bool(inventory.call("assign_vision_card_to_unit", V2, VC_ARCANE).get("ok", false)),
+		"vision card assigned directly to unit")
+	_ok(bool(inventory.call("assign_vision_card", "default", VC_GL).get("ok", false)),
+		"legacy party card assigned for precedence check")
+	var unit_card: Dictionary = _resolve(V2, "default")
+	_eq(JSON.stringify((unit_card.get("percent", {}) as Dictionary)), JSON.stringify({"mag": 3}),
+		"unit card outranks legacy party card")
+	_ok((unit_card.get("labels", {}) as Dictionary).has("vision_card:GL:700003@base"),
+		"vision card source label recorded")
+	before = _snapshot()
+	_result_fail(inventory.call("assign_vision_card_to_unit", V1, VC_ARCANE),
+		"already_assigned", "unit card cannot be reused")
+	_assert_unchanged(before, "duplicate unit vision card assignment")
+	_ok(bool(inventory.call("unassign_vision_card_from_unit", V2).get("ok", false)),
+		"unit vision card unassigned")
+	var party_card: Dictionary = _resolve(V2, "default")
+	_eq(JSON.stringify((party_card.get("percent", {}) as Dictionary)), JSON.stringify({"atk": 6}),
+		"legacy level-2 party card applies after unit card is removed")
 	return true
 
 
@@ -896,12 +924,12 @@ func test_invalid_transactions_preserve_resources() -> bool:
 
 # --- save migration -------------------------------------------------------------
 
-func test_save_v2_to_v3_migration() -> bool:
+func test_save_v2_to_v4_migration() -> bool:
 	var fixture: Dictionary = _read_json_dict("res://data/save_fixtures/v2_player_state.json")
 	_eq(int(fixture.get("version", 0)), 2, "fixture is a version 2 save")
-	var migrated: Dictionary = state.call("migrate_state", fixture)
+	var migrated: Dictionary = state.call("migrate_state", fixture, 5000)
 	_eq(int(fixture.get("version", 0)), 2, "migration does not mutate fixture")
-	_eq(int(migrated.get("version", 0)), 3, "v2 migrated to v3")
+	_eq(int(migrated.get("version", 0)), 4, "v2 migrated to v4")
 	_ok(bool(state.call("validate_state", migrated)), "migrated state validates")
 	var profile: Dictionary = migrated.get("profile", {})
 	_eq(str(profile.get("locale", "")), "vi", "profile locale retained")
@@ -923,7 +951,19 @@ func test_save_v2_to_v3_migration() -> bool:
 	_ok((migrated.get("inventory", {}) as Dictionary).has("vision_cards"), "new v3 vision card field")
 	_ok((migrated.get("parties", {}) as Dictionary).has("default"), "new v3 parties field")
 	_eq((((migrated.get("parties", {}) as Dictionary).get("default", {}) as Dictionary).get("slots", []) as Array).size(), 5, "party slots present")
-	_ok((migrated.get("claimed_rewards", {}) as Dictionary).is_empty(), "new claimed rewards field")
+	_ok((migrated.get("claimed_rewards", {}) as Dictionary).is_empty(), "legacy claimed rewards field retained")
+	for section: String in ["reward_claims", "mission_progress", "espers", "summon", "shops", "crafting"]:
+		_ok((migrated.get(section, {}) as Dictionary).is_empty(), "v4 section backfilled: %s" % section)
+	# Economy is additive v4 data: it is initialized with a safe timestamp
+	# anchor and an empty claim set, not left as an epoch-zero retroactive claim.
+	var economy: Dictionary = migrated.get("economy", {})
+	_eq(int(economy.get("last_settled_unix", -1)), 5000, "v4 economy anchored during migration")
+	_ok((economy.get("claims", {}) as Dictionary).is_empty(), "v4 economy has no migrated claim")
+	var runs: Dictionary = migrated.get("battle_runs", {})
+	_ok(runs is Dictionary, "v4 battle_runs section backfilled")
+	_ok(runs.has("legacy"), "legacy battle progress mapped into battle_runs")
+	_eq(int((runs.get("legacy", {}) as Dictionary).get("attempts", 0)), 2,
+		"legacy battle attempts retained in battle_runs")
 	_eq(int(migrated.get("next_unit_serial", 0)), 7, "new unit serial field")
 	_eq(int(migrated.get("next_equip_serial", 0)), 1, "new equipment serial field")
 
@@ -934,7 +974,7 @@ func test_save_v2_to_v3_migration() -> bool:
 	future["version"] = 12
 	_ok((state.call("migrate_state", future) as Dictionary).is_empty(), "newer player save refused")
 	_eq(str(state.get("last_error")), "save.error.newer", "newer save error key")
-	_eq(int((state.call("migrate_state", {}) as Dictionary).get("version", 0)), 3, "empty save gets v3 defaults")
+	_eq(int((state.call("migrate_state", {}) as Dictionary).get("version", 0)), 4, "empty save gets v4 defaults")
 	return true
 
 
@@ -1011,21 +1051,31 @@ func test_battle_reward_idempotency() -> bool:
 	var result: Dictionary = {
 		"victory": true,
 		"encounter_id": SKIRMISH,
+		"run_id": "run:phase3:0001",
 		"seed": 4242,
 		"turns": 7,
-		"rewards": {"gil": 400, "items": ["item:GL:940001@base"]}
+		"seed_source": "independent",
+		"rewards": {
+			"gil": 400,
+			"items": ["item:GL:940001@base"],
+			"repeat": {"gil": 400, "items": ["item:GL:940001@base"]},
+			"claim_keys": {"repeat": "battle|run|run:phase3:0001"}
+		}
 	}
-	var key: String = str(state.call("battle_reward_key", result))
-	_eq(key, str(state.call("battle_reward_key", (result as Dictionary).duplicate(true))), "reward key deterministic")
+	var key: String = "battle|run|run:phase3:0001"
+	_ok(str(state.call("battle_reward_key", result)).begins_with("battle|"),
+		"legacy reward key remains a diagnostic string")
 	var gil_before: int = _resource("gil")
 	var item_before: int = _resource("item:GL:940001@base")
 	var claim: Dictionary = state.call("claim_battle_reward", result)
 	_ok(bool(claim.get("ok", false)), "first battle reward claim succeeds")
-	_eq(str(claim.get("key", "")), key, "claim reports idempotency key")
-	_eq(str(claim.get("message", "")), "save.saved", "claim reports localized save message")
+	_eq(str(claim.get("key", "")), key, "claim reports canonical run key")
+	_eq(str(claim.get("message", "")), "reward.saved", "claim reports stable status key")
 	_eq(_resource("gil"), gil_before + 400, "gil granted once")
 	_eq(_resource("item:GL:940001@base"), item_before + 1, "item reward granted once")
-	_ok(((_data().get("claimed_rewards", {}) as Dictionary)).has(key), "claim key recorded")
+	_ok(((_data().get("claimed_rewards", {}) as Dictionary)).has(key), "legacy mirror records canonical key")
+	_ok(((_data().get("reward_claims", {}) as Dictionary)).has(key), "canonical claim recorded")
+	_ok(((_data().get("battle_runs", {}) as Dictionary)).has("run:phase3:0001"), "run identity recorded")
 
 	var resources_after_first: Dictionary = _resources()
 	var repeat: Dictionary = state.call("claim_battle_reward", result)
@@ -1034,11 +1084,11 @@ func test_battle_reward_idempotency() -> bool:
 	_eq(JSON.stringify(_resources()), JSON.stringify(resources_after_first), "repeat claim grants no resources")
 
 	var other: Dictionary = result.duplicate(true)
-	other["seed"] = 4243
-	var other_key: String = str(state.call("battle_reward_key", other))
-	_ok(other_key != key, "different seed changes reward key")
-	_ok(bool((state.call("claim_battle_reward", other) as Dictionary).get("ok", false)), "distinct encounter result claimable")
-	_eq(_resource("gil"), gil_before + 800, "distinct claim grants gil again")
+	other["run_id"] = "run:phase3:0002"
+	other["rewards"]["claim_keys"] = {"repeat": "battle|run|run:phase3:0002"}
+	_ok(bool((state.call("claim_battle_reward", other) as Dictionary).get("ok", false)),
+		"distinct run is claimable")
+	_eq(_resource("gil"), gil_before + 800, "distinct run grants gil again")
 
 	var defeat: Dictionary = result.duplicate(true)
 	defeat["victory"] = false
@@ -1050,6 +1100,80 @@ func test_battle_reward_idempotency() -> bool:
 	state.call("load_state")
 	_eq(JSON.stringify(_resources()), JSON.stringify(resources_after_first), "reward state survives reload")
 	_result_fail(state.call("claim_battle_reward", result), "already_claimed", "claim after reload")
+	return true
+
+
+func test_battle_reward_bucket_settlement() -> bool:
+	_fresh()
+	var gil_before: int = _resource("gil")
+	var result: Dictionary = {
+		"victory": true,
+		"encounter_id": SKIRMISH,
+		"run_id": "run:phase3:0100",
+		"seed": 4242,
+		"turns": 3,
+		"seed_source": "qa_deterministic",
+		"reward_policy": {"repeatable": true, "first_clear": true, "reward_revision": 1},
+		"rewards": {
+			"repeat": {"gil": 400, "items": []},
+			"first_clear": {"gil": 100, "items": []},
+			"missions": [{
+				"id": "swift_skirmish",
+				"key": "battle|mission|%s|swift_skirmish|run:phase3:0100" % SKIRMISH,
+				"repeatable": true,
+				"reward": {"gil": 50, "items": []}
+			}],
+			"claim_keys": {
+				"repeat": "battle|run|run:phase3:0100",
+				"first_clear": "battle|first|%s" % SKIRMISH,
+				"mission:swift_skirmish": "battle|mission|%s|swift_skirmish|run:phase3:0100" % SKIRMISH
+			}
+		}
+	}
+	var claim: Dictionary = state.call("claim_battle_reward", result)
+	_ok(bool(claim.get("ok", false)), "all reward buckets settle together")
+	_eq(_resource("gil"), gil_before + 550, "repeat, first-clear and mission gil granted")
+	_eq(((_data().get("mission_progress", {}) as Dictionary).size()), 1, "mission progress recorded")
+	_result_fail(state.call("claim_battle_reward", result), "already_claimed", "same run cannot re-settle buckets")
+
+	# A later run still receives its repeat reward after the first-clear key is
+	# spent; only the one-time bucket must be skipped.
+	var second: Dictionary = result.duplicate(true)
+	second["run_id"] = "run:phase3:0101"
+	second["rewards"]["repeat"] = {"gil": 400, "items": []}
+	second["rewards"]["first_clear"] = {"gil": 100, "items": []}
+	second["rewards"]["mission:swift_skirmish"] = {}
+	second["rewards"]["claim_keys"] = {
+		"repeat": "battle|run|run:phase3:0101",
+		"first_clear": "battle|first|%s" % SKIRMISH
+	}
+	var second_claim: Dictionary = state.call("claim_battle_reward", second)
+	_ok(bool(second_claim.get("ok", false)), "later run claims its repeat bucket")
+	_eq(_resource("gil"), gil_before + 950, "spent first-clear bucket is not granted twice")
+	return true
+
+
+func test_battle_reward_save_failure_rollback() -> bool:
+	_fresh()
+	var before: String = _snapshot()
+	var result: Dictionary = {
+		"victory": true,
+		"encounter_id": SKIRMISH,
+		"run_id": "run:phase3:0200",
+		"seed": 4242,
+		"turns": 4,
+		"rewards": {
+			"repeat": {"gil": 400, "items": ["item:GL:940001@base"]},
+			"claim_keys": {"repeat": "battle|run|run:phase3:0200"}
+		}
+	}
+	SaveManager.call("fail_next_atomic_write")
+	var failed: Dictionary = state.call("claim_battle_reward", result)
+	_result_fail(failed, "save_failed", "reward commit failure reported")
+	_assert_unchanged(before, "failed reward settlement rolls back every section")
+	SaveManager.call("clear_write_failure")
+	_ok(bool((state.call("claim_battle_reward", result) as Dictionary).get("ok", false)),
+		"reward can be claimed after write fault is cleared")
 	return true
 
 

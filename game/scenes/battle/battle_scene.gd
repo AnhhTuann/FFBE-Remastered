@@ -79,6 +79,14 @@ var _result_snapshot: Dictionary = {}
 var _title_label: Label
 var _pause_button: Button
 var _menu_button: Button
+var _party_source_key: String = ""
+var _run_id: String = ""
+var _seed_source: String = "independent"
+var _battle_blocked: bool = false
+
+## Run ids are presentation-scoped: retrying the same encounter always creates
+## a new settlement identity even inside one process.
+static var _scene_run_counter: int = 0
 
 
 func _ready() -> void:
@@ -88,9 +96,10 @@ func _ready() -> void:
 		LocaleManager.locale_changed.connect(_apply_locale)
 	_qa_read_freeze_frame()
 	_start_battle(_preferred_encounter())
-	var scenario: String = OS.get_environment("FFBE_QA_SCENARIO")
-	if not scenario.is_empty():
-		_qa_apply_scenario(scenario)
+	if _qa_mode():
+		var scenario: String = OS.get_environment("FFBE_QA_SCENARIO")
+		if not scenario.is_empty():
+			_qa_apply_scenario(scenario)
 
 
 func _exit_tree() -> void:
@@ -424,11 +433,41 @@ func _build_encounter_options() -> void:
 	_encounter_option.select(preferred)
 
 
+func _qa_mode() -> bool:
+	return OS.get_environment("FFBE_QA_MODE").strip_edges() == "1"
+
+
 func _preferred_encounter() -> String:
-	var requested: String = OS.get_environment("FFBE_QA_ENCOUNTER")
-	if not requested.is_empty() and ContentRepository.call("get_encounter", requested).size() > 0:
-		return requested
+	if _qa_mode():
+		var requested: String = OS.get_environment("FFBE_QA_ENCOUNTER")
+		if not requested.is_empty() and ContentRepository.call("get_encounter", requested).size() > 0:
+			return requested
 	return DEFAULT_ENCOUNTER
+
+
+func _new_run_id() -> String:
+	_scene_run_counter += 1
+	# Godot 4.7 has no OS.get_unix_time_us(); the monotonic microsecond clock is
+	# sufficient to make retry/run identities unique inside one process.
+	return "run:scene:%d:%d:%d" % [
+		Time.get_ticks_usec(), _scene_run_counter, absi(randi() % 1000000007)
+	]
+
+
+func _block_battle_start(reason_key: String) -> void:
+	_battle_blocked = true
+	_party_source_key = reason_key
+	manager = null
+	if _hint_label != null:
+		_hint_label.text = LocaleManager.t(reason_key)
+	if _debug_label != null:
+		_debug_label.text = LocaleManager.t(reason_key)
+	for button: Button in [
+		_attack_button, _ability_button, _limit_button, _item_button,
+		_guard_button, _execute_button, _clear_button
+	]:
+		if button != null:
+			button.disabled = true
 
 
 # ---------------------------------------------------------------------------
@@ -452,14 +491,32 @@ func _start_battle(encounter_id: String) -> void:
 	if combatants_variant is Dictionary:
 		combatants = (combatants_variant as Dictionary).duplicate(true)
 
-	# The active PlayerState party replaces the synthetic encounter party only
-	# when every slot resolves. Otherwise the original fixture party is kept.
+	# The active PlayerState party replaces the fixture party only when the full
+	# build resolver accepts it. Outside QA mode an invalid party blocks battle;
+	# QA mode may use the labelled fixture fallback for deterministic captures.
+	_battle_blocked = false
+	_party_source_key = ""
 	var party_id: String = _active_party_id()
-	var resolved_party: Dictionary = _party_combatants(party_id)
-	if not resolved_party.is_empty():
+	var resolved_party: Dictionary = {}
+	var party_valid: bool = false
+	var player_state: Node = get_node_or_null("/root/PlayerState")
+	if player_state != null and player_state.build_resolver != null \
+			and player_state.build_resolver.has_method("resolve_party") \
+			and not party_id.is_empty():
+		var validation: Dictionary = player_state.build_resolver.call("resolve_party", party_id)
+		party_valid = bool(validation.get("ok", false)) and bool(validation.get("valid", false))
+		if party_valid:
+			resolved_party = _party_combatants(party_id)
+			party_valid = resolved_party.size() == 5
+	if party_valid:
 		encounter["party"] = resolved_party.keys()
 		for instance_id: String in resolved_party.keys():
 			combatants[instance_id] = resolved_party[instance_id]
+	elif _qa_mode():
+		_party_source_key = "battle.party_fallback_labeled"
+	else:
+		_block_battle_start("battle.party_invalid")
+		return
 	var abilities: Dictionary = {}
 	var abilities_variant: Variant = package.get("abilities", {})
 	if abilities_variant is Dictionary:
@@ -469,12 +526,17 @@ func _start_battle(encounter_id: String) -> void:
 	if items_variant is Dictionary:
 		items = items_variant
 
-	var seed_value: int = 20261125
-	var seed_text: String = OS.get_environment("FFBE_QA_SEED")
+	_seed_source = "independent"
+	var seed_value: int = (Time.get_ticks_usec() ^ (randi() * 2654435761)) & 0x7FFFFFFFFFFFFFFF
+	var seed_text: String = ""
+	if _qa_mode():
+		seed_text = OS.get_environment("FFBE_QA_SEED")
 	if not seed_text.is_empty() and seed_text.is_valid_int():
 		seed_value = seed_text.to_int()
+		_seed_source = "qa_deterministic"
+	_run_id = _new_run_id()
 
-	manager = script.new(encounter, combatants, abilities, items, seed_value)
+	manager = script.new(encounter, combatants, abilities, items, seed_value, _seed_source, _run_id)
 	manager.connect("event_emitted", _on_battle_event)
 	manager.call("start_battle")
 	_build_encounter_options()
@@ -1161,7 +1223,7 @@ func _record_result(state: RefCounted) -> void:
 		if player_state != null and player_state.has_method("claim_battle_reward"):
 			claim = player_state.call("claim_battle_reward", result_dict)
 		_reward_status_key = _claim_status_key(claim)
-		SaveManager.call("record_battle_result", result_dict)
+		SaveManager.call("record_battle_result", result_dict, str(result_dict.get("run_id", _run_id)))
 
 
 func _show_result(state: RefCounted) -> void:
@@ -1198,15 +1260,22 @@ func _render_result() -> void:
 		"seed": int(_result_snapshot.get("seed", 0)),
 		"gil": int(rewards.get("gil", 0)),
 		"items": ", ".join(items)
+	}) + "\n" + LocaleManager.t("battle.run_id", {
+		"id": str(_result_snapshot.get("run_id", _run_id))
+	}) + "\n" + LocaleManager.t("battle.seed_source", {
+		"source": str(_result_snapshot.get("seed_source", _seed_source))
 	}) + "\n" + LocaleManager.t("battle.reward_status", {
 		"status": LocaleManager.t(_reward_status_key)
 	})
+	if not _party_source_key.is_empty():
+		_result_body.text += "\n" + LocaleManager.t(_party_source_key)
 
 
 func _active_party_id() -> String:
-	var qa_party: String = OS.get_environment("FFBE_QA_PARTY_ID")
-	if not qa_party.is_empty():
-		return qa_party
+	if _qa_mode():
+		var qa_party: String = OS.get_environment("FFBE_QA_PARTY_ID")
+		if not qa_party.is_empty():
+			return qa_party
 	var player_state: Node = get_node_or_null("/root/PlayerState")
 	if player_state == null:
 		return "default"
@@ -1253,6 +1322,8 @@ func _claim_status_key(claim: Dictionary) -> String:
 			return "battle.reward_not_victory"
 		"save_failed":
 			return "battle.reward_save_failed"
+	if bool(claim.get("ok", false)):
+		return "reward.saved"
 	var message_key: String = str(claim.get("message", ""))
 	if not message_key.is_empty() and LocaleManager.has_key(message_key):
 		return message_key
@@ -1333,12 +1404,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _qa_read_freeze_frame() -> void:
+	if not _qa_mode():
+		return
 	var text: String = OS.get_environment("FFBE_QA_FREEZE_FRAME")
 	if not text.is_empty() and text.is_valid_int():
 		_qa_freeze_frame = text.to_int()
 
 
 func _qa_apply_scenario(scenario: String) -> void:
+	if not _qa_mode() or manager == null or _battle_blocked:
+		return
 	var state: RefCounted = manager.get("state")
 	match scenario:
 		"formation":

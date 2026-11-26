@@ -8,7 +8,8 @@ This is a generated snapshot of static dictionary and dynamic-token checks. It m
 parity, placeholder parity, dynamic manifest integrity, Vietnamese diacritic presence,
 Japanese glyph coverage, and long-label risk. It is **not** a claim that translation is
 complete, that every UI label uses the locale service, or that recovered source text exists
-for these strings. All values are project-authored synthetic fixture copy.
+for these strings. All values are project-authored synthetic fixture copy; Prompt 05 adds
+economy, summon, crafting, shop and esper copy under the same guarantee.
 
 ## 1. Blocking results
 
@@ -22,8 +23,8 @@ for these strings. All values are project-authored synthetic fixture copy.
 | Invalid dictionaries | 0 |
 | Exit status of the generator | 0 |
 
-All three dictionaries contain the same **495 keys**. The union of dictionary keys, literal
-GDScript translation keys, and dynamic manifest references is also **495**, so no source
+All three dictionaries contain the same **742 keys**. The union of dictionary keys, literal
+GDScript translation keys, and dynamic manifest references is also **742**, so no source
 key is missing and no locale is short of a key. `LocaleManager` resolves static copy with
 `t(...)`, data-driven names with `label_for(...)`, and stable identifiers through the
 dynamic token manifest described in [translation-guide.md](translation-guide.md).
@@ -32,50 +33,44 @@ dynamic token manifest described in [translation-guide.md](translation-guide.md)
 
 | Locale | Keys | Missing | Unused (diagnostic) | Empty values |
 |---|---:|---:|---:|---:|
-| `en` | 495 | 0 | 230 | 0 |
-| `ja` | 495 | 0 | 230 | 0 |
-| `vi` | 495 | 0 | 230 | 0 |
+| `en` | 742 | 0 | 406 | 0 |
+| `ja` | 742 | 0 | 406 | 0 |
+| `vi` | 742 | 0 | 406 | 0 |
 
 `unused_keys` are dictionary keys referenced neither by a literal `L.t(...)` /
-`LocaleManager.t(...)` call nor by the dynamic manifest. The source scan found 106
-translation call sites (93 with a literal key) across 50 scanned GDScript files. Keys
-consumed through local `t(...)` wrappers, `name_key` fields, or other dynamic data paths
-remain diagnostic-only "unused"; they are deliberately not deleted because the static scan
-cannot resolve them.
+`LocaleManager.t(...)` call nor by the dynamic manifest. The source scan found
+118 translation call sites (97 with a literal key)
+across 62 scanned GDScript files. Keys consumed through local `t(...)`
+wrappers, `name_key` fields, or other dynamic data paths remain diagnostic-only "unused";
+they are deliberately not deleted because the static scan cannot resolve them.
 
 ## 3. Dynamic reference evidence
 
 | Check | Result |
 |---|---|
 | Manifest | `game/data/phase3/localization_tokens.json` |
-| Categories | 22 |
-| Mappings (identifier -> key) | 223 |
-| Distinct dictionary keys referenced | 211 |
+| Categories | 27 |
+| Mappings (identifier -> key) | 305 |
+| Distinct dictionary keys referenced | 280 |
 | Malformed manifest entries | 0 |
 | Referenced keys absent from dictionaries | 0 |
 
-The largest categories are `reason` (42), `mechanic_key` (26), `ability` (25), `resource`
-(22), `mechanic_note` (16), `field` (12), `category` (10), and `slot` (9). Repeated keys
-across categories explain why 223 mappings resolve to 211 distinct keys. The manifest lets
+The largest categories are `reason` (75), `mechanic_key` (35), `ability` (25), `resource` (25), `mechanic_note` (21), `field` (12), `system_message` (12), `status` (11). Repeated keys across categories explain why
+305 mappings resolve to 280 distinct keys. The manifest lets
 the coverage tool distinguish genuine dynamic references from keys that are unused by every
-known consumer.
+known consumer. Prompt 05 adds `esper`, `summon`, `shop`, `crafting` and `system_message` categories.
 
 ## 4. Script and placeholder checks
 
 | Check | Result |
 |---|---|
-| Vietnamese strings with diacritics | 471 / 495 (`0.9515`) |
-| Japanese strings with kana or kanji | 495 / 495 (`1.0`) |
-| Values longer than 40 characters | 66 (`en` 25, `ja` 16, `vi` 25) |
+| Vietnamese strings with diacritics | 716 / 742 (`0.965`) |
+| Japanese strings with kana or kanji | 742 / 742 (`1.0`) |
+| Values longer than 40 characters | 80 (`en` [{'key': 'battle.character_card', 'length': 68, 'value': '{slot} · {name}\nHP {hp}/{max_hp}  MP {mp}  LB {lb}/{lb_cost}{queued}'}, {'key': 'battle.hint_abilities', 'length': 97, 'value': 'Choose an ability. Abilities from different characters can be queued to overlap their hit frames.'}, {'key': 'battle.hint_executing', 'length': 80, 'value': 'Executing at {speed}x speed — logical frames are independent of animation speed.'}, {'key': 'battle.hint_initial', 'length': 42, 'value': 'Select a character, then choose an action.'}, {'key': 'battle.hint_select', 'length': 94, 'value': 'Character {slot} selected. Mouse or keys 1-5 select, A/S/D/F/G choose actions, Space executes.'}, {'key': 'battle.hint_target', 'length': 70, 'value': 'Select a highlighted {targeting} target, or press Backspace to cancel.'}, {'key': 'battle.pause_detail', 'length': 114, 'value': 'Speeds change how many logical 60 Hz frames advance per visual tick.\nDamage is never tied to animation completion.'}, {'key': 'battle.result_detail', 'length': 64, 'value': '{name}\nTurns: {turns} · Seed: {seed}\nGil: {gil} · Items: {items}'}, {'key': 'boot.content_failed', 'length': 46, 'value': 'Content load failed (error {error}). See logs.'}, {'key': 'boot.offline_summary', 'length': 45, 'value': 'Offline gains: {count} payouts over {seconds}'}, {'key': 'evidence.note.brave_shift', 'length': 161, 'value': 'Separate synthetic form definitions and a deterministic two-turn cooldown are project-authored. Original shift types and timing were not independently recovered.'}, {'key': 'evidence.note.crafting_job', 'length': 91, 'value': 'Job timing, inputs and outputs are remastered design; original recipe timing is unverified.'}, {'key': 'evidence.note.dual_wield', 'length': 151, 'value': 'Cached community wiki states physical/hybrid actions attack twice and LBs are unaffected; the synthetic second-hit schedule is a desktop approximation.'}, {'key': 'evidence.note.equipment_passives', 'length': 70, 'value': 'Stat passives are authored; equipment slot restrictions are synthetic.'}, {'key': 'evidence.note.esper_unlock', 'length': 110, 'value': 'Synthetic unlock costs and active Esper effects are project-authored; original unlock rules are not recovered.'}, {'key': 'evidence.note.imbue_amplification', 'length': 86, 'value': 'Fixture passive fields exist; no verified amplification cap or duration was recovered.'}, {'key': 'evidence.note.killers', 'length': 121, 'value': 'A synthetic race-tag damage modifier is modelled; exact original race tables and stacking exceptions are not implemented.'}, {'key': 'evidence.note.leader_skill', 'length': 68, 'value': 'Category-filtered additive stat bonus for synthetic categories only.'}, {'key': 'evidence.note.multicast', 'length': 105, 'value': 'Queueing multiple actions is supported; original cast-delay and per-skill unlock rules are not recovered.'}, {'key': 'evidence.note.offline_economy', 'length': 98, 'value': 'Offline accrual and claim rules are remastered design; no publisher server behaviour is recreated.'}, {'key': 'evidence.note.overdrive', 'length': 103, 'value': 'One synthetic EX-gated action per battle; original activation limits and action economy are unverified.'}, {'key': 'evidence.note.shop_stock', 'length': 91, 'value': 'Stock and prices are synthetic fixture values; original shop inventories are not recovered.'}, {'key': 'evidence.note.summon_banner', 'length': 87, 'value': 'Banner pools and rates are synthetic fixtures; no original FFBE rate table is asserted.'}, {'key': 'evidence.note.super_limit_burst', 'length': 96, 'value': 'EX-gated synthetic fixture actions; no verified GL/JP cost, gauge or timing table was recovered.'}, {'key': 'evidence.note.trust_ability', 'length': 60, 'value': 'Trust points and TMR/STMR claims are authored fixture rules.'}, {'key': 'evidence.note.unit_categories', 'length': 69, 'value': 'Synthetic category tags; original category rosters were not imported.'}, {'key': 'evidence.note.vision_card_bonuses', 'length': 51, 'value': 'Card level scaling and category gates are authored.'}, {'key': 'evidence.note.weapon_imperil', 'length': 117, 'value': 'Elemental imperil is implemented in the existing engine; weapon-specific imperil values remain a data extension only.'}, {'key': 'menu.offline_status', 'length': 59, 'value': 'Offline build · synthetic fixtures only · last unit: {unit}'}, {'key': 'summon.rates_note', 'length': 70, 'value': 'Synthetic fixture rates only; no original FFBE rate table is asserted.'}, {'key': 'viewer.atlas_load_failed', 'length': 41, 'value': 'Atlas texture could not be loaded: {path}'}, {'key': 'viewer.missing_animation', 'length': 48, 'value': 'Missing animation metadata: {animation} / {clip}'}], `ja` [{'key': 'battle.character_card', 'length': 70, 'value': 'キャラ {slot} · {name}\nHP {hp}/{max_hp} MP {mp} LB {lb}/{lb_cost}{queued}'}, {'key': 'battle.hint_abilities', 'length': 47, 'value': 'スキルを選択してください。異なるキャラクターのスキルをキューしてヒットフレームを重ねられます。'}, {'key': 'battle.hint_executing', 'length': 41, 'value': '速度 {speed}x で実行中 — 論理フレームはアニメーションに依存しません。'}, {'key': 'battle.hint_select', 'length': 66, 'value': 'キャラクター {slot} を選択しました。マウスまたは 1-5 で選択、A/S/D/F/G でコマンド、Space で実行します。'}, {'key': 'battle.hint_target', 'length': 53, 'value': 'ハイライトされた {targeting} 対象を選択するか、Backspace でキャンセルしてください。'}, {'key': 'battle.pause_detail', 'length': 53, 'value': '速度は1回の描画で進む論理60Hzフレーム数を変更します。\nダメージはアニメーションの完了に依存しません。'}, {'key': 'battle.result_detail', 'length': 61, 'value': '{name}\nターン数: {turns} · シード: {seed}\nGil: {gil} · アイテム: {items}'}, {'key': 'boot.content_failed', 'length': 41, 'value': 'データの読み込みに失敗しました（エラー {error}）。ログを確認してください。'}, {'key': 'evidence.note.brave_shift', 'length': 65, 'value': '合成フォームの個別定義と2ターン固定のクールダウンは本プロジェクトの作成です。元のシフト種別とタイミングは独立確認できていません。'}, {'key': 'evidence.note.dual_wield', 'length': 81, 'value': '保存済みコミュニティ Wiki では物理/ハイブリッド行動が2回攻撃し LB は影響しないと記載されています。合成の2 hit目は desktop 用の近似です。'}, {'key': 'evidence.note.imbue_amplification', 'length': 45, 'value': 'フィクスチャのパッシブ項目は存在します。検証済みの増幅上限や持続時間は確認できていません。'}, {'key': 'evidence.note.killers', 'length': 48, 'value': '合成レースタグによるダメージ補正をモデル化しています。元の正確なレース表と重複例外は未実装です。'}, {'key': 'evidence.note.multicast', 'length': 42, 'value': '複数アクションのキューは対応しています。元の詠唱遅延とスキル別解除規則は未確認です。'}, {'key': 'evidence.note.overdrive', 'length': 52, 'value': '1 バトルにつき EX 解放条件付き合成アクションを1回使用します。元の発動制限と行動回数は未検証です。'}, {'key': 'evidence.note.super_limit_burst', 'length': 57, 'value': 'EX 解放条件付きの合成アクションです。検証済みの GL/JP コスト、ゲージ、タイミング表は確認されていません。'}, {'key': 'evidence.note.weapon_imperil', 'length': 46, 'value': '属性インペリルは既存エンジンに実装済みです。武器固有のインペリル値はデータ拡張に留まります。'}], `vi` [{'key': 'battle.character_card', 'length': 77, 'value': 'Nhân vật {slot} · {name}\nHP {hp}/{max_hp}  MP {mp}  LB {lb}/{lb_cost}{queued}'}, {'key': 'battle.hint_abilities', 'length': 71, 'value': 'Chọn kỹ năng. Có thể xếp kỹ năng từ nhiều nhân vật để chồng khung đánh.'}, {'key': 'battle.hint_executing', 'length': 72, 'value': 'Đang thực hiện ở tốc độ {speed}x — khung logic không phụ thuộc hoạt ảnh.'}, {'key': 'battle.hint_select', 'length': 97, 'value': 'Đã chọn Nhân vật {slot}. Chuột hoặc phím 1-5 để chọn, A/S/D/F/G để chọn lệnh, Space để thực hiện.'}, {'key': 'battle.hint_target', 'length': 68, 'value': 'Chọn mục tiêu {targeting} được đánh dấu, hoặc nhấn Backspace để hủy.'}, {'key': 'battle.pause_detail', 'length': 118, 'value': 'Tốc độ thay đổi số khung logic 60 Hz được tiến hành mỗi nhịp hiển thị.\nSát thương không phụ thuộc vào độ dài hoạt ảnh.'}, {'key': 'battle.result_detail', 'length': 74, 'value': '{name}\nSố lượt: {turns} · Hạt giống: {seed}\nGil: {gil} · Vật phẩm: {items}'}, {'key': 'boot.content_failed', 'length': 49, 'value': 'Tải nội dung thất bại (lỗi {error}). Xem nhật ký.'}, {'key': 'boot.offline_summary', 'length': 50, 'value': 'Thu hoạch ngoại tuyến: {count} lần trong {seconds}'}, {'key': 'evidence.note.brave_shift', 'length': 164, 'value': 'Các định nghĩa hình thái tổng hợp riêng biệt và thời gian hồi hai lượt xác định là do dự án biên soạn. Loại chuyển đổi và thời điểm gốc chưa được khôi phục độc lập.'}, {'key': 'evidence.note.crafting_job', 'length': 84, 'value': 'Thời gian và nguyên liệu là thiết kế tái chế; thời gian công thức gốc chưa xác minh.'}, {'key': 'evidence.note.dual_wield', 'length': 145, 'value': 'Wiki cộng đồng đã lưu trữ ghi nhận hành động vật lý/hỗn hợp đánh hai lần và LB không bị ảnh hưởng; lịch đòn thứ hai là ước lượng cho bản desktop.'}, {'key': 'evidence.note.equipment_passives', 'length': 76, 'value': 'Kỹ năng bị động chỉ số do dự án biên soạn; hạn chế khe trang bị là tổng hợp.'}, {'key': 'evidence.note.esper_unlock', 'length': 82, 'value': 'Chi phí mở khóa và hiệu ứng là dữ liệu mô phỏng; quy tắc gốc không được khôi phục.'}, {'key': 'evidence.note.imbue_amplification', 'length': 110, 'value': 'Trường bị động của dữ liệu mô phỏng có tồn tại; chưa khôi phục giới hạn hoặc thời gian khuếch đại đã xác minh.'}, {'key': 'evidence.note.killers', 'length': 118, 'value': 'Mô phỏng hệ số sát thương theo nhãn chủng tộc; bảng chủng tộc gốc chính xác và ngoại lệ cộng dồn chưa được triển khai.'}, {'key': 'evidence.note.leader_skill', 'length': 70, 'value': 'Cộng chỉ số cộng dồn theo danh mục, chỉ áp dụng cho danh mục tổng hợp.'}, {'key': 'evidence.note.multicast', 'length': 106, 'value': 'Xếp nhiều hành động được hỗ trợ; độ trễ thi triển và quy tắc mở khóa từng kỹ năng gốc chưa được khôi phục.'}, {'key': 'evidence.note.offline_economy', 'length': 77, 'value': 'Tích lũy và nhận ngoại tuyến là thiết kế tái chế; không mô phỏng máy chủ gốc.'}, {'key': 'evidence.note.overdrive', 'length': 112, 'value': 'Một hành động tổng hợp bị khóa bởi EX cho mỗi trận; giới hạn kích hoạt và nhịp hành động gốc chưa được xác minh.'}, {'key': 'evidence.note.shop_stock', 'length': 71, 'value': 'Hàng tồn và giá là dữ liệu mô phỏng; kho hàng gốc không được khôi phục.'}, {'key': 'evidence.note.summon_banner', 'length': 69, 'value': 'Banner và tỷ lệ là dữ liệu mô phỏng; không khẳng định bảng tỷ lệ gốc.'}, {'key': 'evidence.note.super_limit_burst', 'length': 106, 'value': 'Hành động mô phỏng bị khóa bởi EX; chưa khôi phục bảng chi phí, thanh đo hoặc thời điểm GL/JP đã xác minh.'}, {'key': 'evidence.note.trust_ability', 'length': 76, 'value': 'Điểm tin cậy và phần thưởng TMR/STMR là quy tắc mô phỏng do dự án biên soạn.'}, {'key': 'evidence.note.unit_categories', 'length': 61, 'value': 'Thẻ danh mục tổng hợp; danh sách danh mục gốc chưa được nhập.'}, {'key': 'evidence.note.vision_card_bonuses', 'length': 58, 'value': 'Tỷ lệ theo cấp thẻ và cổng danh mục là do dự án biên soạn.'}, {'key': 'evidence.note.weapon_imperil', 'length': 117, 'value': 'Giảm kháng nguyên tố đã được triển khai trong engine hiện tại; giá trị giảm kháng theo vũ khí chỉ là mở rộng dữ liệu.'}, {'key': 'menu.offline_status', 'length': 65, 'value': 'Bản ngoại tuyến · chỉ dữ liệu mô phỏng · nhân vật gần đây: {unit}'}, {'key': 'reason.no_reward', 'length': 47, 'value': 'Không có phần thưởng tổng hợp cho hình thái này'}, {'key': 'summon.rates_note', 'length': 60, 'value': 'Chỉ tỷ lệ dữ liệu mô phỏng; không khẳng định bảng tỷ lệ gốc.'}, {'key': 'viewer.missing_animation', 'length': 49, 'value': 'Thiếu siêu dữ liệu hoạt ảnh: {animation} / {clip}'}, {'key': 'viewer.no_units', 'length': 43, 'value': 'Không tìm thấy nhân vật cho khu vực đã chọn'}]) |
 | Placeholder mismatches | 0 |
 
-The 24 Vietnamese strings without diacritics are intentional token-only values:
-`awakening.ex`, `awakening.nv`, `awakening.nv_plus`, `awakening.star`, `battle.hp`,
-`battle.limit`, `battle.overdrive`, `battle.super_limit`, `code.form.nv`,
-`code.rarity.3`, `code.rarity.5`, `code.rarity.6`, `code.rarity.7`, `code.rarity.nv`,
-`common.uid`, `details.overdrive`, `details.stmr`, `details.super_lb`, `details.tmr`,
-`field.star`, `field.uid`, `mechanic.name.nv_plus`, `mechanic.name.overdrive`, and
-`mechanic.name.super_limit_burst`. They preserve `NV`, `EX`, `LB`, `SLB`, `STMR`, `TMR`,
+The 26 Vietnamese strings without diacritics are intentional token-only values:
+`awakening.ex`, `awakening.nv`, `awakening.nv_plus`, `awakening.star`, `battle.hp`, `battle.limit`, `battle.overdrive`, `battle.super_limit`, `code.form.nv`, `code.rarity.3`, `code.rarity.5`, `code.rarity.6`, `code.rarity.7`, `code.rarity.nv`, `common.buy`, `common.pool`, `common.uid`, `details.overdrive`, `details.stmr`, `details.super_lb`, `details.tmr`, `field.star`, `field.uid`, `mechanic.name.nv_plus`, `mechanic.name.overdrive`, `mechanic.name.super_limit_burst`. They preserve `NV`, `EX`, `LB`, `SLB`, `STMR`, `TMR`,
 `UID`, `Overdrive`, `HP`, and numeric tokens as required by the glossary.
 
 Placeholder-bearing keys include `settings.path`, `settings.locale_changed`,
@@ -85,8 +80,8 @@ Placeholder-bearing keys include `settings.path`, `settings.locale_changed`,
 `battle.reward_status`. Every locale keeps the same named placeholder token in the same
 order.
 
-Long labels are flagged for layout review, not treated as translation errors. The new
-longest values are localized evidence notes such as `evidence.note.brave_shift` and
+Long labels are flagged for layout review, not treated as translation errors. The longest
+values are localized evidence notes such as `evidence.note.brave_shift` and
 `evidence.note.dual_wield`; labels use smart word wrap in the owned Phase 3 screens.
 
 ## 5. Reproduction

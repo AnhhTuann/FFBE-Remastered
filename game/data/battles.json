@@ -401,6 +401,20 @@
       "enemies": ["enemy:GL:920002@base", "enemy:GL:920003@base"],
       "boss": false,
       "reward": {"gil": 400, "items": ["item:GL:940001@base"]},
+      "reward_policy": {
+        "repeatable": true,
+        "first_clear": true,
+        "first_clear_reward": {"gil": 100, "items": ["item:GL:940001@base"]},
+        "mission_rewards": [
+          {
+            "id": "swift_skirmish",
+            "condition": {"type": "turns_lte", "value": 3},
+            "repeatable": true,
+            "reward": {"gil": 50, "items": []}
+          }
+        ],
+        "reward_revision": 1
+      },
       "provenance": {"origin": "generated", "source": "phase2-synthetic-fixture", "license": "project-authored"}
     },
     "encounter:GL:950002@boss": {
@@ -414,6 +428,20 @@
       "enemies": ["enemy:GL:920001@boss", "enemy:GL:920002@base", "enemy:GL:920003@base"],
       "boss": true,
       "reward": {"gil": 1200, "items": ["item:GL:940002@base"]},
+      "reward_policy": {
+        "repeatable": true,
+        "first_clear": true,
+        "first_clear_reward": {"gil": 200, "items": ["item:GL:940002@base"]},
+        "mission_rewards": [
+          {
+            "id": "swift_boss",
+            "condition": {"type": "turns_lte", "value": 4},
+            "repeatable": false,
+            "reward": {"gil": 100, "items": []}
+          }
+        ],
+        "reward_revision": 1
+      },
       "provenance": {"origin": "generated", "source": "phase2-synthetic-fixture", "license": "project-authored"}
     }
   }

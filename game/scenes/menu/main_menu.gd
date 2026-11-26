@@ -8,12 +8,14 @@ const VIEWER_PATH := "res://scenes/viewer/character_viewer.tscn"
 const SETTINGS_PATH := "res://scenes/settings/settings.tscn"
 const COLLECTION_PATH := "res://scenes/phase3/collection.tscn"
 const PARTY_PATH := "res://scenes/phase3/party.tscn"
+const ECONOMY_PATH := "res://scenes/phase3/economy_hub.tscn"
 
 @onready var title_label: Label = $Layout/TitleLabel
 @onready var subtitle_label: Label = $Layout/SubtitleLabel
 @onready var battle_button: Button = $Layout/BattleButton
 @onready var collection_button: Button = $Layout/CollectionButton
 @onready var party_button: Button = $Layout/PartyButton
+@onready var economy_button: Button = $Layout/EconomyButton
 @onready var viewer_button: Button = $Layout/ViewerButton
 @onready var settings_button: Button = $Layout/SettingsButton
 @onready var quit_button: Button = $Layout/QuitButton
@@ -24,6 +26,7 @@ func _ready() -> void:
 	battle_button.pressed.connect(_on_battle_pressed)
 	collection_button.pressed.connect(func() -> void: _goto(COLLECTION_PATH))
 	party_button.pressed.connect(func() -> void: _goto(PARTY_PATH))
+	economy_button.pressed.connect(func() -> void: _goto(ECONOMY_PATH))
 	viewer_button.pressed.connect(_on_viewer_pressed)
 	settings_button.pressed.connect(_on_settings_pressed)
 	quit_button.pressed.connect(_on_quit_pressed)
@@ -42,6 +45,7 @@ func _apply_locale(_locale: String = "") -> void:
 	battle_button.text = t("menu.battle")
 	collection_button.text = t("menu.collection")
 	party_button.text = t("menu.party")
+	economy_button.text = t("menu.economy")
 	viewer_button.text = t("viewer.title")
 	settings_button.text = t("settings.title")
 	quit_button.text = t("menu.quit")

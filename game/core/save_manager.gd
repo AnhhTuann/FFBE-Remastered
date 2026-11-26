@@ -13,9 +13,10 @@ const SAVE_VERSION := 2
 const SLOT_COUNT := 3
 const SETTINGS_PATH := "user://settings.json"
 const BATTLE_PROGRESS_PATH := "user://battle_progress.json"
-const BATTLE_PROGRESS_VERSION := 2
+const BATTLE_PROGRESS_VERSION := 3
 
 var _settings: Dictionary = {}
+var _fail_next_atomic_write: bool = false
 
 
 func _ready() -> void:
@@ -56,6 +57,17 @@ func load_settings() -> Dictionary:
 	return defaults
 
 
+func fail_next_atomic_write() -> void:
+	## Test-only fault injection. PlayerState reward settlement and battle
+	## progress record the same atomic_write path, so a failed write can be
+	## exercised without touching the real filesystem.
+	_fail_next_atomic_write = true
+
+
+func clear_write_failure() -> void:
+	_fail_next_atomic_write = false
+
+
 func default_battle_progress() -> Dictionary:
 	return {
 		"version": BATTLE_PROGRESS_VERSION,
@@ -65,6 +77,7 @@ func default_battle_progress() -> Dictionary:
 			"best_turns": {},
 			"total_gil": 0,
 			"item_counts": {},
+			"processed_runs": {},
 			"last_result": {}
 		}
 	}
@@ -99,7 +112,7 @@ func validate_battle_progress(data: Dictionary) -> bool:
 	if not progress_variant is Dictionary:
 		return false
 	var progress: Dictionary = progress_variant
-	for key: String in ["clears", "best_turns", "item_counts"]:
+	for key: String in ["clears", "best_turns", "item_counts", "processed_runs"]:
 		var field_variant: Variant = progress.get(key, {})
 		if not field_variant is Dictionary:
 			return false
@@ -122,6 +135,25 @@ func migrate_battle_progress(data: Dictionary) -> Dictionary:
 					continue
 				result["progress"]["clears"][encounter_id] = 1
 		return result
+	if version == 2:
+		var source: Dictionary = data.duplicate(true)
+		var source_progress_variant: Variant = source.get("progress", {})
+		var migrated_progress: Dictionary = source_progress_variant.duplicate(true) if source_progress_variant is Dictionary else {}
+		migrated_progress["processed_runs"] = {}
+		# A legacy last_result can already carry a run id from an interrupted
+		# write. Preserve it so a retry cannot double-count that attempt.
+		var last_result: Variant = migrated_progress.get("last_result", {})
+		if last_result is Dictionary:
+			var run_id: String = str((last_result as Dictionary).get("run_id", ""))
+			if not run_id.is_empty():
+				var processed: Dictionary = migrated_progress["processed_runs"]
+				processed[run_id] = {
+					"encounter_id": str((last_result as Dictionary).get("encounter_id", "")),
+					"legacy": true
+				}
+				migrated_progress["processed_runs"] = processed
+		result["progress"] = migrated_progress
+		return result
 	return data.duplicate(true)
 
 
@@ -135,14 +167,37 @@ func load_battle_progress() -> Dictionary:
 	return migrated
 
 
-func record_battle_result(result_data: Dictionary) -> Dictionary:
+func record_battle_result(result_data: Dictionary, run_id: String = "") -> Dictionary:
 	var encounter_id: String = str(result_data.get("encounter_id", ""))
 	if encounter_id.is_empty():
 		return {}
 	var progress_data: Dictionary = load_battle_progress()
-	var progress: Dictionary = progress_data["progress"]
+	var progress_variant: Variant = progress_data.get("progress", {})
+	if not progress_variant is Dictionary:
+		return {}
+	var progress: Dictionary = (progress_variant as Dictionary).duplicate(true)
+	var attempt_id: String = run_id if not run_id.is_empty() else str(result_data.get("run_id", ""))
+	if attempt_id.is_empty():
+		# Older callers have no run identity. A stable result fingerprint keeps
+		# those records idempotent without inventing a random id.
+		attempt_id = "legacy|%s|%s|%s|%s" % [
+			encounter_id, str(result_data.get("seed", 0)), str(result_data.get("turns", 0)),
+			str(bool(result_data.get("victory", false)))
+		]
+	var processed_variant: Variant = progress.get("processed_runs", {})
+	var processed: Dictionary = processed_variant if processed_variant is Dictionary else {}
+	if processed.has(attempt_id):
+		# Return the persisted snapshot unchanged; no second write or mutation.
+		return progress_data
+
 	progress["attempts"] = int(progress.get("attempts", 0)) + 1
 	progress["last_result"] = result_data.duplicate(true)
+	processed[attempt_id] = {
+		"encounter_id": encounter_id,
+		"victory": bool(result_data.get("victory", false)),
+		"turns": int(result_data.get("turns", 0))
+	}
+	progress["processed_runs"] = processed
 
 	if bool(result_data.get("victory", false)):
 		var clears: Dictionary = progress.get("clears", {})
@@ -166,13 +221,14 @@ func record_battle_result(result_data: Dictionary) -> Dictionary:
 					counts[item_id] = int(counts.get(item_id, 0)) + 1
 			progress["item_counts"] = counts
 
-	progress_data["progress"] = progress
-	var error: Error = atomic_write(BATTLE_PROGRESS_PATH, progress_data)
+	var updated: Dictionary = progress_data.duplicate(true)
+	updated["progress"] = progress
+	var error: Error = atomic_write(BATTLE_PROGRESS_PATH, updated)
 	if error != OK:
 		DebugLog.error("Battle progress write failed with error %d" % error)
 		return {}
-	battle_progress_saved.emit(progress_data.duplicate(true))
-	return progress_data
+	battle_progress_saved.emit(updated.duplicate(true))
+	return updated
 
 
 func slot_path(slot: int) -> String:
@@ -287,6 +343,9 @@ func validate_state(data: Dictionary) -> bool:
 
 
 func atomic_write(path: String, data: Dictionary) -> Error:
+	if _fail_next_atomic_write:
+		_fail_next_atomic_write = false
+		return ERR_FILE_CANT_WRITE
 	var temp_path: String = path + ".tmp"
 	var file: FileAccess = FileAccess.open(temp_path, FileAccess.WRITE)
 	if file == null:

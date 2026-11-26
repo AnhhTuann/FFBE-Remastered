@@ -1,0 +1,18 @@
+name=prompt05.1-summon-vi-1280x720
+scene=res://scenes/phase3/summon.tscn
+resolution=1280x720
+fullscreen=0
+locale=vi
+scenario=
+instance_id=
+party_id=
+encounter=
+seed=12345
+freeze_frame=
+offline_seconds=
+now_unix=1764000000
+window_id=182452231
+geometry=WINDOW=182452231 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0
+pixels=1280x720 colors=693 stddev=0.145162
+runtime_error_lines=0
+log_basename=prompt05.1-summon-vi-1280x720.log

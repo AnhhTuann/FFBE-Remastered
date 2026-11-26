@@ -177,5 +177,59 @@ class Phase3QaToolsTest(unittest.TestCase):
             self.assertEqual(output.read_text(encoding="utf-8"), initial)
 
 
+class Prompt05QaToolsTest(unittest.TestCase):
+    """Prompt 05 reuses the Phase 3 sidecar format with its own output path."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tool_path = ROOT / "tools/qa/prompt05_visual_report.py"
+        spec = importlib.util.spec_from_file_location("prompt05_visual_report", tool_path)
+        assert spec is not None and spec.loader is not None
+        cls.tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.tool)
+
+    def test_default_capture_directory(self) -> None:
+        self.assertEqual(self.tool.DEFAULT_CAPTURE_DIR, "docs/qa/screenshots/prompt05")
+
+    def test_render_summarises_prompt05_metadata(self) -> None:
+        rendered = self.tool.render(
+            [
+                {
+                    "name": "prompt05-economy-vi-1280x720",
+                    "scene": "res://scenes/phase3/economy_hub.tscn",
+                    "resolution": "1280x720",
+                    "locale": "vi",
+                    "geometry": "WINDOW=1 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0",
+                    "pixels": "1280x720 colors=210 stddev=0.06",
+                    "runtime_error_lines": "0",
+                }
+            ]
+        )
+        self.assertIn("# Prompt 05 visual review", rendered)
+        self.assertIn("Captures: 1", rendered)
+        self.assertIn("`vi`", rendered)
+        self.assertIn(
+            "docs/qa/screenshots/prompt05/prompt05-economy-vi-1280x720.png", rendered
+        )
+        self.assertIn("Runtime error lines across all captures: 0", rendered)
+
+    def test_reads_alternate_prompt05_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "docs/qa/screenshots/prompt05"
+            directory.mkdir(parents=True)
+            sidecar = Phase3QaToolsTest._capture("prompt05-a")
+            (directory / "a.txt").write_text(sidecar, encoding="utf-8")
+            captures = self.tool.read_captures(root)
+            self.assertEqual([item["name"] for item in captures], ["prompt05-a"])
+
+    def test_capture_script_passes_prompt05_economy_env(self) -> None:
+        script = (ROOT / "tools/qa/capture_phase3.sh").read_text(encoding="utf-8")
+        self.assertIn("FFBE_QA_OFFLINE_SECONDS=", script)
+        self.assertIn("FFBE_QA_NOW_UNIX=", script)
+        self.assertIn("offline_seconds=", script)
+        self.assertIn("now_unix=", script)
+
+
 if __name__ == "__main__":
     unittest.main()

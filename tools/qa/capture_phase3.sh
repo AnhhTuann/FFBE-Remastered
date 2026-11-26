@@ -9,6 +9,7 @@
 #
 # Optional environment:
 #   SCENARIO, INSTANCE_ID, PARTY_ID, ENCOUNTER, SEED, FREEZE_FRAME, WAIT_SECONDS
+#   OFFLINE_SECONDS, NOW_UNIX (deterministic Prompt 05 economy captures)
 set -euo pipefail
 
 : "${NAME:?NAME is required}"
@@ -54,6 +55,8 @@ FFBE_QA_PARTY_ID="${PARTY_ID:-}" \
 FFBE_QA_ENCOUNTER="${ENCOUNTER:-}" \
 FFBE_QA_SEED="${SEED:-}" \
 FFBE_QA_FREEZE_FRAME="${FREEZE_FRAME:-}" \
+FFBE_QA_OFFLINE_SECONDS="${OFFLINE_SECONDS:-}" \
+FFBE_QA_NOW_UNIX="${NOW_UNIX:-}" \
   godot --path "$ROOT/game" "${WINDOW_ARGS[@]}" \
   "${SCENE_ARG[@]}" >"$LOG" 2>&1 &
 PID=$!
@@ -80,7 +83,7 @@ if [[ -z "$WINDOW_ID" ]]; then
   exit 1
 fi
 
-GEOMETRY="$(xdotool getwindowgeometry --shell "$WINDOW_ID" | tr '\n' ' ')"
+GEOMETRY="$(xdotool getwindowgeometry --shell "$WINDOW_ID" | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
 import -window "$WINDOW_ID" "$IMAGE"
 
 ERROR_COUNT="$(grep -cE 'SCRIPT ERROR|Parse Error|^ERROR:' "$LOG" || true)"
@@ -105,6 +108,8 @@ fi
   echo "encounter=${ENCOUNTER:-}"
   echo "seed=${SEED:-}"
   echo "freeze_frame=${FREEZE_FRAME:-}"
+  echo "offline_seconds=${OFFLINE_SECONDS:-}"
+  echo "now_unix=${NOW_UNIX:-}"
   echo "window_id=$WINDOW_ID"
   echo "geometry=$GEOMETRY"
   echo "pixels=$PIXEL_STATS"

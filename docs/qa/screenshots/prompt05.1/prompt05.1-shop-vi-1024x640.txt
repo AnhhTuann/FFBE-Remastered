@@ -1,0 +1,18 @@
+name=prompt05.1-shop-vi-1024x640
+scene=res://scenes/phase3/shop.tscn
+resolution=1024x640
+fullscreen=0
+locale=vi
+scenario=
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=1764000000
+window_id=182452231
+geometry=WINDOW=182452231 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0
+pixels=1024x640 colors=656 stddev=0.0783723
+runtime_error_lines=0
+log_basename=prompt05.1-shop-vi-1024x640.log
