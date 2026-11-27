@@ -18,11 +18,11 @@ REPORT_PATH = ROOT / "data/validation/localization-coverage.json"
 TOOL_PATH = ROOT / "tools/localization/coverage_report.py"
 TOKEN_MANIFEST_PATH = ROOT / "game/data/phase3/localization_tokens.json"
 LOCALES = ("en", "ja", "vi")
-EXPECTED_KEY_COUNT = 919
+EXPECTED_KEY_COUNT = 940
 EXPECTED_WORLD_DATA_KEY_COUNT = 45
 EXPECTED_EVENT_DATA_KEY_COUNT = 33
-EXPECTED_DYNAMIC_MAPPING_COUNT = 305
-EXPECTED_DYNAMIC_KEY_COUNT = 280
+EXPECTED_DYNAMIC_MAPPING_COUNT = 316
+EXPECTED_DYNAMIC_KEY_COUNT = 291
 
 VI_TERMS = (
     "Nhân vật",

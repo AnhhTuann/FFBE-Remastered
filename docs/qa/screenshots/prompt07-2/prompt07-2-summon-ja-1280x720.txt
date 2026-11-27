@@ -1,0 +1,26 @@
+name=prompt07-2-summon-ja-1280x720
+scene=res://scenes/event/event_center.tscn
+resolution=1280x720
+fullscreen=0
+locale=ja
+scenario=summon
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=summon
+event_id=event:JP:980002@moonlit
+event_stage_id=
+event_region=JP
+qa_mode=
+return_scene=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0
+pixels=1280x720 colors=3177 stddev=0.0594726
+runtime_error_lines=0
+qa_ready_line=EVENT_CENTER_QA_READY view=summon
+log_basename=prompt07-2-summon-ja-1280x720.log

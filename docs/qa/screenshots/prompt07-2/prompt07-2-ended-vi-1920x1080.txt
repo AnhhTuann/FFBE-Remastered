@@ -1,0 +1,26 @@
+name=prompt07-2-ended-vi-1920x1080
+scene=res://scenes/event/event_center.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=ended
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=ended
+event_id=
+event_stage_id=
+event_region=GL
+qa_mode=
+return_scene=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=2548 stddev=0.074907
+runtime_error_lines=0
+qa_ready_line=EVENT_CENTER_QA_READY view=ended
+log_basename=prompt07-2-ended-vi-1920x1080.log

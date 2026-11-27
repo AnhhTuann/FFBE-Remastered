@@ -1,0 +1,26 @@
+name=prompt07-2-archive-en-1024x640
+scene=res://scenes/event/event_center.tscn
+resolution=1024x640
+fullscreen=0
+locale=en
+scenario=archive
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=archive
+event_id=event:GL:980004@archive
+event_stage_id=
+event_region=GL
+qa_mode=
+return_scene=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0
+pixels=1024x640 colors=3373 stddev=0.0936802
+runtime_error_lines=0
+qa_ready_line=EVENT_CENTER_QA_READY view=archive
+log_basename=prompt07-2-archive-en-1024x640.log
