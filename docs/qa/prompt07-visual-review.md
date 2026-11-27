@@ -14,8 +14,8 @@ captures by inspecting ImageMagick pixel variance. Pixel statistics are recorded
 for review but are not an art-direction threshold; subjective visual sign-off remains
 a human QA task. All card art is an explicitly labelled synthetic placeholder panel.
 
-- Captures: 156
-- Scenarios: 13
+- Captures: 180
+- Scenarios: 15
 - Resolutions: 1024x640, 1280x720, 1920x1080, 720x1280
 - Locales: vi, en, ja
 - Runtime error lines across all captures: 0
@@ -37,6 +37,8 @@ a human QA task. All card art is an explicitly labelled synthetic placeholder pa
 | Archive filter | 1024x640, 1280x720, 1920x1080, 720x1280 | vi, en, ja | 12 |
 | Replay archive | 1024x640, 1280x720, 1920x1080, 720x1280 | vi, en, ja | 12 |
 | Synthetic collaboration fixture | 1024x640, 1280x720, 1920x1080, 720x1280 | vi, en, ja | 12 |
+| Event battle | 1024x640, 1280x720, 1920x1080, 720x1280 | vi, en, ja | 12 |
+| Battle return to Event Center | 1024x640, 1280x720, 1920x1080, 720x1280 | vi, en, ja | 12 |
 
 ## Captures
 
@@ -198,6 +200,30 @@ a human QA task. All card art is an explicitly labelled synthetic placeholder pa
 | `docs/qa/screenshots/prompt07/prompt07-collaboration-vi-720x1280.png` | Synthetic collaboration fixture | `res://scenes/event/event_center.tscn` | 720x1280 | `vi` | `1740000000` | window=69206023 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=585 stddev=0.0673132` | 0 |
 | `docs/qa/screenshots/prompt07/prompt07-collaboration-en-720x1280.png` | Synthetic collaboration fixture | `res://scenes/event/event_center.tscn` | 720x1280 | `en` | `1740000000` | window=186646535 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=618 stddev=0.0656134` | 0 |
 | `docs/qa/screenshots/prompt07/prompt07-collaboration-ja-720x1280.png` | Synthetic collaboration fixture | `res://scenes/event/event_center.tscn` | 720x1280 | `ja` | `1740000000` | window=69206023 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=461 stddev=0.0501578` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-vi-1024x640.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1024x640 | `vi` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 | `1024x640 colors=2464 stddev=0.116368` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-en-1024x640.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1024x640 | `en` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 | `1024x640 colors=2470 stddev=0.116407` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-ja-1024x640.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1024x640 | `ja` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 | `1024x640 colors=2235 stddev=0.107509` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-vi-1280x720.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1280x720 | `vi` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 | `1280x720 colors=2673 stddev=0.128984` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-en-1280x720.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1280x720 | `en` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 | `1280x720 colors=2685 stddev=0.127354` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-ja-1280x720.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1280x720 | `ja` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 | `1280x720 colors=2485 stddev=0.118272` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-vi-1920x1080.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1920x1080 | `vi` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 | `1920x1080 colors=2804 stddev=0.130845` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-en-1920x1080.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1920x1080 | `en` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 | `1920x1080 colors=2754 stddev=0.128884` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-ja-1920x1080.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 1920x1080 | `ja` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 | `1920x1080 colors=2705 stddev=0.12134` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-vi-720x1280.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 720x1280 | `vi` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=2130 stddev=0.0708338` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-en-720x1280.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 720x1280 | `en` | `1740000000` | window=71303175 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=2121 stddev=0.0713116` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle-ja-720x1280.png` | Event battle | `res://scenes/battle/battle_scene.tscn` | 720x1280 | `ja` | `1740000000` | window=71303175 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=1877 stddev=0.0671615` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-vi-1024x640.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1024x640 | `vi` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 | `1024x640 colors=693 stddev=0.122208` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-en-1024x640.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1024x640 | `en` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 | `1024x640 colors=684 stddev=0.117043` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-ja-1024x640.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1024x640 | `ja` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0 | `1024x640 colors=485 stddev=0.081216` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-vi-1280x720.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1280x720 | `vi` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 | `1280x720 colors=699 stddev=0.128459` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-en-1280x720.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1280x720 | `en` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 | `1280x720 colors=692 stddev=0.123132` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-ja-1280x720.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1280x720 | `ja` | `1740000000` | window=167772167 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0 | `1280x720 colors=523 stddev=0.0866046` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-vi-1920x1080.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1920x1080 | `vi` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 | `1920x1080 colors=713 stddev=0.131417` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-en-1920x1080.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1920x1080 | `en` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 | `1920x1080 colors=702 stddev=0.125747` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-ja-1920x1080.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 1920x1080 | `ja` | `1740000000` | window=167772167 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0 | `1920x1080 colors=634 stddev=0.0899417` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-vi-720x1280.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 720x1280 | `vi` | `1740000000` | window=71303175 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=617 stddev=0.0803761` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-en-720x1280.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 720x1280 | `en` | `1740000000` | window=71303175 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=621 stddev=0.0777726` | 0 |
+| `docs/qa/screenshots/prompt07/prompt07-event_battle_return-ja-720x1280.png` | Battle return to Event Center | `res://scenes/battle/battle_scene.tscn` | 720x1280 | `ja` | `1740000000` | window=71303175 X=0 Y=0 WIDTH=720 HEIGHT=1280 SCREEN=0 | `720x1280 colors=427 stddev=0.0586622` | 0 |
 
 ## Reproduction
 
@@ -210,13 +236,16 @@ NAME=prompt07-overview-vi-1280x720 \
 python3 tools/qa/prompt07_visual_report.py
 ```
 
-Set `SCENARIO` to one of the thirteen required scenarios: `overview`, `active`,
+Set `SCENARIO` to one of the fifteen required scenarios: `overview`, `active`,
 `upcoming`, `ended`, `categories`, `detail`, `stages`, `rewards`, `shop`, `summon`,
-`archive`, `replay`, or `collaboration`. The wrapper converts it to
-`FFBE_QA_EVENT_CENTER_VIEW`, injects `FFBE_QA_EVENT_NOW_UNIX=1740000000` and selects a
-synthetic event ID where needed. `FULLSCREEN=1` and `WAIT_SECONDS` are accepted by the
-shared capture harness. `FFBE_QA_LOCALE` is a QA-only starting-locale override and
-does not write player settings.
+`archive`, `replay`, `collaboration`, `event_battle`, or `event_battle_return`. The
+wrapper converts it to `FFBE_QA_EVENT_CENTER_VIEW`, injects
+`FFBE_QA_EVENT_NOW_UNIX=1740000000` and selects a synthetic event ID where needed.
+Battle scenarios launch `res://scenes/battle/battle_scene.tscn` with QA mode and an
+event stage context; `event_battle_return` runs the real settlement and navigates back
+to the Event Center. `FULLSCREEN=1` and `WAIT_SECONDS` are accepted by the shared
+capture harness. `FFBE_QA_LOCALE` is a QA-only starting-locale override and does not
+write player settings.
 
 ## Limitations
 
@@ -232,5 +261,8 @@ does not write player settings.
   frames, but does not claim readability or art-direction approval.
 - Rewards, shop and summon captures scroll an existing rendered detail section
   into view; they do not compose or mock UI.
+- Event battle captures use a QA-only context seed when the battle scene is launched
+  directly. Normal gameplay receives the same context from Event Center through
+  `WorldContext`; no gameplay branch is activated by the QA environment.
 - No mockups or composited images are used, and no protected art, logo, music,
   dialogue or collaboration character appears in the captured scene.
