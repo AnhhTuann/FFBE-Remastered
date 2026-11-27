@@ -51,6 +51,10 @@ func _apply_return_context() -> void:
 	var context: Dictionary = WorldContext.peek()
 	if context.is_empty() or not context.has("event_id"):
 		return
+	if OS.get_environment("FFBE_QA_MODE").strip_edges() == "1":
+		print("EVENT_CENTER_QA_RETURN event=%s stage=%s" % [
+			str(context.get("event_id", "")), str(context.get("stage_id", ""))
+		])
 	WorldContext.consume()
 	_region = str(context.get("region", _region))
 	_selected_event_id = str(context.get("event_id", ""))
