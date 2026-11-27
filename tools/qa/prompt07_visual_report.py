@@ -35,7 +35,10 @@ REQUIRED_SCENARIOS = (
     "archive",
     "replay",
     "collaboration",
+    "event_battle",
+    "event_battle_return",
 )
+BATTLE_SCENARIOS = ("event_battle", "event_battle_return")
 REQUIRED_RESOLUTIONS = ("1024x640", "1280x720", "1920x1080", "720x1280")
 REQUIRED_LOCALES = ("vi", "en", "ja")
 
@@ -53,6 +56,8 @@ SCENARIO_LABELS = {
     "archive": "Archive filter",
     "replay": "Replay archive",
     "collaboration": "Synthetic collaboration fixture",
+    "event_battle": "Event battle",
+    "event_battle_return": "Battle return to Event Center",
 }
 
 
@@ -70,6 +75,15 @@ def read_captures(
             raise ValueError(f"{item['name']}: scenario/view metadata mismatch")
         if not item.get("event_now_unix"):
             raise ValueError(f"{item['name']}: missing injected clock metadata")
+        if item["scenario"] in BATTLE_SCENARIOS:
+            if "battle_scene.tscn" not in item.get("scene", ""):
+                raise ValueError(f"{item['name']}: event battle must use the battle scene")
+            if item.get("qa_mode") != "1":
+                raise ValueError(f"{item['name']}: missing QA mode metadata")
+            if not item.get("event_stage_id"):
+                raise ValueError(f"{item['name']}: missing event stage metadata")
+            if "event_center.tscn" not in item.get("return_scene", ""):
+                raise ValueError(f"{item['name']}: battle must return to Event Center")
     return captures
 
 
@@ -197,13 +211,16 @@ def render(captures: list[dict[str, str]], image_dir: str = DEFAULT_CAPTURE_DIR)
             "python3 tools/qa/prompt07_visual_report.py",
             "```",
             "",
-            "Set `SCENARIO` to one of the thirteen required scenarios: `overview`, `active`,",
+            "Set `SCENARIO` to one of the fifteen required scenarios: `overview`, `active`,",
             "`upcoming`, `ended`, `categories`, `detail`, `stages`, `rewards`, `shop`, `summon`,",
-            "`archive`, `replay`, or `collaboration`. The wrapper converts it to",
-            "`FFBE_QA_EVENT_CENTER_VIEW`, injects `FFBE_QA_EVENT_NOW_UNIX=1740000000` and selects a",
-            "synthetic event ID where needed. `FULLSCREEN=1` and `WAIT_SECONDS` are accepted by the",
-            "shared capture harness. `FFBE_QA_LOCALE` is a QA-only starting-locale override and",
-            "does not write player settings.",
+            "`archive`, `replay`, `collaboration`, `event_battle`, or `event_battle_return`. The",
+            "wrapper converts it to `FFBE_QA_EVENT_CENTER_VIEW`, injects",
+            "`FFBE_QA_EVENT_NOW_UNIX=1740000000` and selects a synthetic event ID where needed.",
+            "Battle scenarios launch `res://scenes/battle/battle_scene.tscn` with QA mode and an",
+            "event stage context; `event_battle_return` runs the real settlement and navigates back",
+            "to the Event Center. `FULLSCREEN=1` and `WAIT_SECONDS` are accepted by the shared",
+            "capture harness. `FFBE_QA_LOCALE` is a QA-only starting-locale override and does not",
+            "write player settings.",
             "",
             "## Limitations",
             "",
@@ -219,6 +236,9 @@ def render(captures: list[dict[str, str]], image_dir: str = DEFAULT_CAPTURE_DIR)
             "  frames, but does not claim readability or art-direction approval.",
             "- Rewards, shop and summon captures scroll an existing rendered detail section",
             "  into view; they do not compose or mock UI.",
+            "- Event battle captures use a QA-only context seed when the battle scene is launched",
+            "  directly. Normal gameplay receives the same context from Event Center through",
+            "  `WorldContext`; no gameplay branch is activated by the QA environment.",
             "- No mockups or composited images are used, and no protected art, logo, music,",
             "  dialogue or collaboration character appears in the captured scene.",
             "",

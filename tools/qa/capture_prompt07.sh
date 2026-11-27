@@ -12,6 +12,10 @@
 #
 # Optional environment:
 #   SCENARIO, WAIT_SECONDS, FULLSCREEN, QA_PROFILE_ROOT, QA_SHOT_DIR, QA_LOG_DIR
+#   EVENT_STAGE_ID, QA_MODE, RETURN_SCENE, BATTLE_SCENARIO_OVERRIDE
+# The event_battle and event_battle_return scenarios exercise the real battle
+# scene with an event context and an Event Center return path; they use QA mode
+# only in the launched capture process and never touch an owner save.
 set -euo pipefail
 
 : "${NAME:?NAME is required}"
@@ -20,7 +24,7 @@ set -euo pipefail
 : "${LOCALE:?LOCALE is required}"
 
 case "${SCENARIO:-}" in
-  overview|active|upcoming|ended|categories|detail|stages|rewards|shop|summon|archive|replay|collaboration) ;;
+  overview|active|upcoming|ended|categories|detail|stages|rewards|shop|summon|archive|replay|collaboration|event_battle|event_battle_return) ;;
   *) echo "Invalid SCENARIO for Prompt 07: ${SCENARIO:-}" >&2; exit 2 ;;
 esac
 
@@ -28,6 +32,10 @@ export SCENARIO
 export EVENT_CENTER_VIEW="${SCENARIO}"
 export EVENT_NOW_UNIX="${EVENT_NOW_UNIX:-1740000000}"
 export REGION="${REGION:-GL}"
+export EVENT_STAGE_ID="${EVENT_STAGE_ID:-}"
+export QA_MODE="${QA_MODE:-}"
+export RETURN_SCENE="${RETURN_SCENE:-}"
+export BATTLE_SCENARIO_OVERRIDE="${BATTLE_SCENARIO_OVERRIDE:-}"
 case "$SCENARIO" in
   detail|stages|rewards|shop|summon)
     export EVENT_ID="${EVENT_ID:-event:GL:980001@stargarden}"
@@ -37,6 +45,15 @@ case "$SCENARIO" in
     ;;
   collaboration)
     export EVENT_ID="${EVENT_ID:-event:GL:980003@lumenguest}"
+    ;;
+  event_battle|event_battle_return)
+    export EVENT_ID="${EVENT_ID:-event:GL:980001@stargarden}"
+    export EVENT_STAGE_ID="${EVENT_STAGE_ID:-stage:GL:980101@gate}"
+    export QA_MODE=1
+    export RETURN_SCENE="${RETURN_SCENE:-res://scenes/event/event_center.tscn}"
+    if [[ "$SCENARIO" == "event_battle_return" ]]; then
+      export BATTLE_SCENARIO_OVERRIDE="${BATTLE_SCENARIO_OVERRIDE:-battle_return}"
+    fi
     ;;
   *)
     export EVENT_ID="${EVENT_ID:-}"

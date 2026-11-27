@@ -333,14 +333,23 @@ class Prompt07QaToolsTest(unittest.TestCase):
 
     @staticmethod
     def _capture(scenario: str, resolution: str, locale: str, errors: str = "0") -> dict[str, str]:
+        in_battle = scenario in ("event_battle", "event_battle_return")
         return {
             "name": f"prompt07-{scenario}-{locale}-{resolution}",
-            "scene": "res://scenes/event/event_center.tscn",
+            "scene": (
+                "res://scenes/battle/battle_scene.tscn" if in_battle
+                else "res://scenes/event/event_center.tscn"
+            ),
             "resolution": resolution,
             "locale": locale,
             "scenario": scenario,
             "event_center_view": scenario,
             "event_now_unix": "1740000000",
+            "event_stage_id": "stage:GL:980101@gate" if in_battle else "",
+            "qa_mode": "1" if in_battle else "",
+            "return_scene": (
+                "res://scenes/event/event_center.tscn" if in_battle else ""
+            ),
             "geometry": "WINDOW=1 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0",
             "pixels": "1280x720 colors=210 stddev=0.06",
             "runtime_error_lines": errors,
@@ -359,7 +368,7 @@ class Prompt07QaToolsTest(unittest.TestCase):
         self.assertEqual(self.tool.DEFAULT_OUTPUT, "docs/qa/prompt07-visual-review.md")
         self.assertEqual(self.tool.REQUIRED_RESOLUTIONS,
                          ("1024x640", "1280x720", "1920x1080", "720x1280"))
-        self.assertEqual(len(self._full_matrix()), 156)
+        self.assertEqual(len(self._full_matrix()), 180)
 
     def test_validate_matrix_accepts_complete_clean_matrix(self) -> None:
         self.tool.validate_matrix(self._full_matrix())
@@ -411,16 +420,36 @@ class Prompt07QaToolsTest(unittest.TestCase):
     def test_render_summarises_prompt07_metadata(self) -> None:
         rendered = self.tool.render(self._full_matrix())
         self.assertIn("# Prompt 07 Event Center visual review", rendered)
-        self.assertIn("Captures: 156", rendered)
+        self.assertIn("Captures: 180", rendered)
+        self.assertIn("Battle return to Event Center", rendered)
         self.assertIn("First-clear and repeat rewards", rendered)
         self.assertIn("720x1280", rendered)
         self.assertIn("Runtime error lines across all captures: 0", rendered)
         self.assertIn("subjective visual sign-off", rendered)
 
+    def test_render_rejects_battle_capture_without_event_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "docs/qa/screenshots/prompt07"
+            directory.mkdir(parents=True)
+            item = self._capture("event_battle", "1280x720", "vi")
+            del item["event_stage_id"]
+            (directory / "broken-battle.txt").write_text(
+                "\n".join(f"{key}={value}" for key, value in item.items()) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "missing event stage metadata"):
+                self.tool.read_captures(root)
+
     def test_capture_wrapper_allow_lists_scenarios_and_isolates_profile(self) -> None:
         script = (ROOT / "tools/qa/capture_prompt07.sh").read_text(encoding="utf-8")
         for scenario in self.tool.REQUIRED_SCENARIOS:
             self.assertIn(scenario, script)
+        for token in (
+            "EVENT_STAGE_ID=", "QA_MODE=1", "event_center.tscn",
+            "BATTLE_SCENARIO_OVERRIDE=battle_return",
+        ):
+            self.assertIn(token, script)
         self.assertIn("QA_PROFILE_ROOT", script)
         self.assertIn("1740000000", script)
         self.assertIn("rm -rf -- \"$PROFILE\"", script)
@@ -429,8 +458,11 @@ class Prompt07QaToolsTest(unittest.TestCase):
         script = (ROOT / "tools/qa/capture_phase3.sh").read_text(encoding="utf-8")
         for token in (
             "FFBE_QA_EVENT_NOW_UNIX=", "FFBE_QA_EVENT_CENTER_VIEW=",
-            "FFBE_QA_EVENT_ID=", "FFBE_QA_REGION=", "event_now_unix=",
-            "event_center_view=", "event_id=", "event_region=",
+            "FFBE_QA_EVENT_ID=", "FFBE_QA_EVENT_STAGE_ID=", "FFBE_QA_REGION=",
+            "FFBE_QA_MODE=", "FFBE_QA_RETURN_SCENE=",
+            "BATTLE_SCENARIO_OVERRIDE", "event_now_unix=",
+            "event_center_view=", "event_id=", "event_stage_id=", "event_region=",
+            "qa_mode=", "return_scene=",
         ):
             self.assertIn(token, script)
 
