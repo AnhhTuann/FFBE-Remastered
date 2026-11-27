@@ -474,7 +474,7 @@ func _qa_seed_world_context() -> void:
 	if not event_id.is_empty() and not stage_id.is_empty():
 		var return_scene: String = OS.get_environment("FFBE_QA_RETURN_SCENE").strip_edges()
 		if return_scene.is_empty():
-			return_scene = "res://scenes/event/event_center.tscn"
+			return_scene = EVENT_CENTER_PATH
 		_world_context = qa_event_context(event_id, stage_id, return_scene)
 		return
 	var trigger_id: String = OS.get_environment("FFBE_QA_WORLD_TRIGGER").strip_edges()

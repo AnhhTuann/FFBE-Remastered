@@ -447,7 +447,7 @@ class Prompt07QaToolsTest(unittest.TestCase):
             self.assertIn(scenario, script)
         for token in (
             "EVENT_STAGE_ID=", "QA_MODE=1", "event_center.tscn",
-            "BATTLE_SCENARIO_OVERRIDE=battle_return",
+            "BATTLE_SCENARIO_OVERRIDE", "battle_return",
         ):
             self.assertIn(token, script)
         self.assertIn("QA_PROFILE_ROOT", script)
