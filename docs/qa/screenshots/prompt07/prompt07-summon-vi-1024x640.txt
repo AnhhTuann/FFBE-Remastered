@@ -1,0 +1,22 @@
+name=prompt07-summon-vi-1024x640
+scene=res://scenes/event/event_center.tscn
+resolution=1024x640
+fullscreen=0
+locale=vi
+scenario=summon
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=summon
+event_id=event:GL:980001@stargarden
+event_region=GL
+window_id=188743687
+geometry=WINDOW=188743687 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0
+pixels=1024x640 colors=693 stddev=0.116405
+runtime_error_lines=0
+log_basename=prompt07-summon-vi-1024x640.log

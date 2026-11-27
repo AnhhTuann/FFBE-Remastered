@@ -10,6 +10,8 @@
 # Optional environment:
 #   SCENARIO, INSTANCE_ID, PARTY_ID, ENCOUNTER, SEED, FREEZE_FRAME, WAIT_SECONDS
 #   OFFLINE_SECONDS, NOW_UNIX (deterministic Prompt 05 economy captures)
+#   EVENT_STAGE_ID, QA_MODE, RETURN_SCENE, BATTLE_SCENARIO_OVERRIDE
+#   (deterministic Prompt 07 event battle captures)
 set -euo pipefail
 
 : "${NAME:?NAME is required}"
@@ -49,7 +51,7 @@ if [[ "${FULLSCREEN:-0}" == "1" ]]; then
 fi
 
 FFBE_QA_LOCALE="$LOCALE" \
-FFBE_QA_SCENARIO="${SCENARIO:-}" \
+FFBE_QA_SCENARIO="${BATTLE_SCENARIO_OVERRIDE:-${SCENARIO:-}}" \
 FFBE_QA_INSTANCE_ID="${INSTANCE_ID:-}" \
 FFBE_QA_PARTY_ID="${PARTY_ID:-}" \
 FFBE_QA_ENCOUNTER="${ENCOUNTER:-}" \
@@ -57,6 +59,13 @@ FFBE_QA_SEED="${SEED:-}" \
 FFBE_QA_FREEZE_FRAME="${FREEZE_FRAME:-}" \
 FFBE_QA_OFFLINE_SECONDS="${OFFLINE_SECONDS:-}" \
 FFBE_QA_NOW_UNIX="${NOW_UNIX:-}" \
+FFBE_QA_EVENT_NOW_UNIX="${EVENT_NOW_UNIX:-}" \
+FFBE_QA_EVENT_CENTER_VIEW="${EVENT_CENTER_VIEW:-}" \
+FFBE_QA_EVENT_ID="${EVENT_ID:-}" \
+FFBE_QA_EVENT_STAGE_ID="${EVENT_STAGE_ID:-}" \
+FFBE_QA_REGION="${REGION:-}" \
+FFBE_QA_MODE="${QA_MODE:-}" \
+FFBE_QA_RETURN_SCENE="${RETURN_SCENE:-}" \
   godot --path "$ROOT/game" "${WINDOW_ARGS[@]}" \
   "${SCENE_ARG[@]}" >"$LOG" 2>&1 &
 PID=$!
@@ -110,6 +119,13 @@ fi
   echo "freeze_frame=${FREEZE_FRAME:-}"
   echo "offline_seconds=${OFFLINE_SECONDS:-}"
   echo "now_unix=${NOW_UNIX:-}"
+  echo "event_now_unix=${EVENT_NOW_UNIX:-}"
+  echo "event_center_view=${EVENT_CENTER_VIEW:-}"
+  echo "event_id=${EVENT_ID:-}"
+  echo "event_stage_id=${EVENT_STAGE_ID:-}"
+  echo "event_region=${REGION:-}"
+  echo "qa_mode=${QA_MODE:-}"
+  echo "return_scene=${RETURN_SCENE:-}"
   echo "window_id=$WINDOW_ID"
   echo "geometry=$GEOMETRY"
   echo "pixels=$PIXEL_STATS"

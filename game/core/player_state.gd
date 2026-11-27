@@ -99,6 +99,8 @@ func retry_pending_battle_settlement() -> Dictionary:
 	var outcome: Dictionary
 	if _pending_battle_kind == "world":
 		outcome = settle_world_battle(_pending_battle_result, _pending_battle_context)
+	elif _pending_battle_kind == "event":
+		outcome = settle_event_battle(_pending_battle_result, _pending_battle_context)
 	else:
 		outcome = claim_battle_reward(_pending_battle_result)
 	# A duplicate receipt means the preserved settlement is already committed.
@@ -120,7 +122,9 @@ func recover_from_load_failure() -> Error:
 	var result: Dictionary = SaveManager.call("_read_json_with_fallback", PLAYER_STATE_PATH)
 	if bool(result.get("ok", false)) and result.get("data") is Dictionary:
 		var stored: Dictionary = result["data"]
-		if int(stored.get("version", 1)) > PLAYER_STATE_VERSION:
+		var stored_events_variant: Variant = stored.get("events", {})
+		if int(stored.get("version", 1)) > PLAYER_STATE_VERSION \
+				or (stored_events_variant is Dictionary and int((stored_events_variant as Dictionary).get("version", 1)) > 1):
 			last_error = "save.error.newer"
 			return ERR_FILE_NO_PERMISSION
 	set_save_status(SAVE_STATUS_NORMAL, "")
@@ -209,7 +213,24 @@ func default_state(now_unix: int = -1) -> Dictionary:
 		"shops": {},
 		"crafting": {},
 		"world": default_world_state(),
+		"events": default_event_state(),
 		"legacy": {}
+	}
+
+
+## Prompt 07 event state is additive inside format v4. Older saves are
+## backfilled without touching battle, world, inventory or summon records.
+func default_event_state() -> Dictionary:
+	return {
+		"version": 1,
+		"progress": {},
+		"first_clears": {},
+		"completions": {},
+		"currency": {},
+		"mission_progress": {},
+		"processed_runs": {},
+		"claims": {},
+		"last_result": {}
 	}
 
 
@@ -316,8 +337,10 @@ func load_state(now_unix: int = -1) -> Dictionary:
 			# Check before any backup or normalization: a future save must stay
 			# byte-identical, including its .mig.bak and .tmp companions.
 			var raw_world_variant: Variant = raw_state.get("world", {})
+			var raw_events_variant: Variant = raw_state.get("events", {})
 			if int(raw_state.get("version", 1)) > PLAYER_STATE_VERSION \
-					or (raw_world_variant is Dictionary and int((raw_world_variant as Dictionary).get("version", 1)) > 1):
+					or (raw_world_variant is Dictionary and int((raw_world_variant as Dictionary).get("version", 1)) > 1) \
+					or (raw_events_variant is Dictionary and int((raw_events_variant as Dictionary).get("version", 1)) > 1):
 				last_error = "save.error.newer"
 				set_save_status(SAVE_STATUS_READ_ONLY_FUTURE_VERSION, last_error)
 				load_failed.emit(last_error)
@@ -378,16 +401,40 @@ func migrate_state(raw: Dictionary, now_unix: int = -1) -> Dictionary:
 	if future_world_variant is Dictionary and int((future_world_variant as Dictionary).get("version", 1)) > 1:
 		last_error = "save.error.newer"
 		return {}
+	var future_events_variant: Variant = working.get("events", {})
+	if future_events_variant is Dictionary and int((future_events_variant as Dictionary).get("version", 1)) > 1:
+		last_error = "save.error.newer"
+		return {}
 	if not working.has("claimed_rewards"):
 		working["claimed_rewards"] = {}
-	return _ensure_economy_anchor(_ensure_world_state(working), anchor)
+	return _ensure_economy_anchor(_ensure_events_state(_ensure_world_state(working)), anchor)
 
 
 ## Version 4 remains the file format. Older v1-v4 saves are normalized in memory
-## and a `.mig.bak` copy is written before the first committed world mutation.
+## and a `.mig.bak` copy is written before the first committed additive-section
+## mutation.
 func _needs_migration_backup(raw: Dictionary) -> bool:
 	var version: int = int(raw.get("version", 1))
-	return version <= PLAYER_STATE_VERSION and (version < PLAYER_STATE_VERSION or not raw.has("world"))
+	return version <= PLAYER_STATE_VERSION and (
+		version < PLAYER_STATE_VERSION or not raw.has("world") or not raw.has("events")
+	)
+
+
+func _ensure_events_state(target: Dictionary) -> Dictionary:
+	var defaults: Dictionary = default_event_state()
+	var section_variant: Variant = target.get("events", null)
+	var section: Dictionary = section_variant if section_variant is Dictionary else {}
+	for key: String in defaults.keys():
+		if not section.has(key) or section[key] == null:
+			section[key] = defaults[key].duplicate(true) if defaults[key] is Dictionary else defaults[key]
+	for key: String in [
+		"progress", "first_clears", "completions", "currency",
+		"mission_progress", "processed_runs", "claims", "last_result"
+	]:
+		if not section[key] is Dictionary:
+			section[key] = {}
+	target["events"] = section
+	return target
 
 
 func _ensure_world_state(target: Dictionary) -> Dictionary:
@@ -552,7 +599,7 @@ func validate_state(state: Dictionary) -> bool:
 		return false
 	for section: String in [
 		"claimed_rewards", "reward_claims", "mission_progress", "battle_runs",
-		"espers", "summon", "economy", "shops", "crafting", "world"
+		"espers", "summon", "economy", "shops", "crafting", "world", "events"
 	]:
 		if not (state.get(section, {}) is Dictionary):
 			return false
@@ -570,6 +617,15 @@ func validate_state(state: Dictionary) -> bool:
 		"processed_battle_runs", "last_battle_result"
 	]:
 		if not (world_variant as Dictionary).get(world_key, {}) is Dictionary:
+			return false
+	var events_variant: Variant = state.get("events", {})
+	if not events_variant is Dictionary or int((events_variant as Dictionary).get("version", 0)) != 1:
+		return false
+	for event_key: String in [
+		"progress", "first_clears", "completions", "currency",
+		"mission_progress", "processed_runs", "claims", "last_result"
+	]:
+		if not (events_variant as Dictionary).get(event_key, {}) is Dictionary:
 			return false
 	var profile_variant_check: Variant = state.get("profile", {})
 	if not profile_variant_check is Dictionary:
@@ -1128,6 +1184,28 @@ func settle_world_battle(
 	if not outcome.has("key"):
 		outcome["key"] = str(((outcome.get("reward", {}) as Dictionary).get("key", "")))
 	return outcome
+
+
+## Prompt 07 event battles reuse the existing battle engine and reward ledger.
+## The service owns event-specific progression; this method only provides a
+## narrow, discoverable entry point for BattleScene and retries.
+func settle_event_battle(
+	result: Dictionary, context: Dictionary = {}, repository: RefCounted = null
+) -> Dictionary:
+	var service_script: Script = load("res://events/event_state_service.gd") as Script
+	if service_script == null:
+		return {"ok": false, "reason": "invalid_service", "message": "event.invalid_service"}
+	var service: RefCounted = service_script.new(self, repository)
+	return service.call("settle_battle", result, context)
+
+
+func get_event_state() -> Dictionary:
+	var value: Variant = data.get("events", {})
+	return (value as Dictionary).duplicate(true) if value is Dictionary else default_event_state()
+
+
+func transact_event(section: String, mutation: Callable) -> Dictionary:
+	return transaction(section, mutation)
 
 
 func _stage_world_battle(result: Dictionary, context: Dictionary) -> Dictionary:

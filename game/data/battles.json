@@ -443,6 +443,46 @@
         "reward_revision": 1
       },
       "provenance": {"origin": "generated", "source": "phase2-synthetic-fixture", "license": "project-authored"}
+    },
+    "encounter:JP:950011@skirmish": {
+      "id": "encounter:JP:950011@skirmish",
+      "name": "Synthetic Moonlit Skirmish",
+      "fixture_marker": "SYNTHETIC_FIXTURE",
+      "party": [
+        "unit:GL:910101@base", "unit:GL:910102@base", "unit:GL:910103@base",
+        "unit:JP:910104@base", "unit:GL:910105@base"
+      ],
+      "enemies": ["enemy:GL:920002@base", "enemy:GL:920003@base"],
+      "boss": false,
+      "reward": {"gil": 420, "items": ["item:GL:940001@base"]},
+      "reward_policy": {
+        "repeatable": true,
+        "first_clear": true,
+        "first_clear_reward": {"gil": 110, "items": []},
+        "mission_rewards": [],
+        "reward_revision": 1
+      },
+      "provenance": {"origin": "generated", "source": "prompt07-synthetic-event-fixture", "license": "project-authored"}
+    },
+    "encounter:JP:950012@boss": {
+      "id": "encounter:JP:950012@boss",
+      "name": "Synthetic Moonlit Warden",
+      "fixture_marker": "SYNTHETIC_FIXTURE",
+      "party": [
+        "unit:GL:910101@base", "unit:GL:910102@base", "unit:GL:910103@base",
+        "unit:JP:910104@base", "unit:GL:910105@base"
+      ],
+      "enemies": ["enemy:GL:920001@boss", "enemy:GL:920002@base", "enemy:GL:920003@base"],
+      "boss": true,
+      "reward": {"gil": 1250, "items": ["item:GL:940002@base"]},
+      "reward_policy": {
+        "repeatable": true,
+        "first_clear": true,
+        "first_clear_reward": {"gil": 220, "items": []},
+        "mission_rewards": [],
+        "reward_revision": 1
+      },
+      "provenance": {"origin": "generated", "source": "prompt07-synthetic-event-fixture", "license": "project-authored"}
     }
   }
 }

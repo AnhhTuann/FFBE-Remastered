@@ -38,6 +38,8 @@ var _world_connections: Dictionary = {}
 var _world_interactables: Dictionary = {}
 var _world_dialogues: Dictionary = {}
 var _world_quests: Dictionary = {}
+var _events: Dictionary = {}
+var _event_stages: Dictionary = {}
 
 const FIXTURE_MARKER := "SYNTHETIC_FIXTURE"
 const ALLOWED_EVIDENCE: Array[String] = ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"]
@@ -84,6 +86,7 @@ func load_content() -> Error:
 	var world_interactables_data: Dictionary = _read_json(str(files.get("world_interactables", "")))
 	var world_dialogues_data: Dictionary = _read_json(str(files.get("world_dialogues", "")))
 	var world_quests_data: Dictionary = _read_json(str(files.get("world_quests", "")))
+	var events_data: Dictionary = _read_json(str(files.get("events", "")))
 	if units_data.is_empty() or animations_data.is_empty() or settings_data.is_empty() or battles_data.is_empty():
 		return ERR_FILE_NOT_FOUND
 	if unit_definitions_data.is_empty() or progression_rules_data.is_empty() or equipment_data.is_empty():
@@ -98,11 +101,13 @@ func load_content() -> Error:
 		return ERR_FILE_NOT_FOUND
 	if world_interactables_data.is_empty() or world_dialogues_data.is_empty() or world_quests_data.is_empty():
 		return ERR_FILE_NOT_FOUND
+	if events_data.is_empty():
+		return ERR_FILE_NOT_FOUND
 	for pack: Dictionary in [
 		espers_data, summon_banners_data, offline_rules_data, shops_data,
 		crafting_recipes_data, world_regions_data, world_locations_data,
 		world_connections_data, world_interactables_data, world_dialogues_data,
-		world_quests_data
+		world_quests_data, events_data
 	]:
 		if not _fixture_gate(pack):
 			return ERR_INVALID_DATA
@@ -226,6 +231,15 @@ func load_content() -> Error:
 		return ERR_INVALID_DATA
 	if not _validate_world_data():
 		return ERR_INVALID_DATA
+
+	var parsed_events: Dictionary = _validated_records(events_data, "events", "event")
+	var parsed_event_stages: Dictionary = _validated_records(events_data, "stages", "event_stage")
+	if parsed_events.is_empty() or parsed_event_stages.is_empty():
+		return ERR_INVALID_DATA
+	if not _validate_event_data(parsed_events, parsed_event_stages):
+		return ERR_INVALID_DATA
+	_events = parsed_events
+	_event_stages = parsed_event_stages
 
 	loaded = true
 	DebugLog.info("Loaded %d synthetic unit records" % _units.size())
@@ -483,6 +497,31 @@ func get_world_quests() -> Dictionary:
 	return _world_quests.duplicate(true)
 
 
+## Prompt 07 event data is read-only. Repositories and services own mutable
+## participation state; callers never edit these definitions in place.
+func get_event(id: String) -> Dictionary:
+	return _lookup_definition(_events, id)
+
+
+func get_events() -> Dictionary:
+	return _events.duplicate(true)
+
+
+func get_event_stage(id: String) -> Dictionary:
+	return _lookup_definition(_event_stages, id)
+
+
+func get_event_stages() -> Dictionary:
+	return _event_stages.duplicate(true)
+
+
+func get_event_pack() -> Dictionary:
+	return {
+		"events": _events.duplicate(true),
+		"stages": _event_stages.duplicate(true)
+	}
+
+
 func summary() -> Dictionary:
 	var policy_variant: Variant = _catalog.get("policy", {})
 	var policy: Dictionary = policy_variant if policy_variant is Dictionary else {}
@@ -509,6 +548,8 @@ func summary() -> Dictionary:
 		"world_interactable_count": _world_interactables.size(),
 		"world_dialogue_count": _world_dialogues.size(),
 		"world_quest_count": _world_quests.size(),
+		"event_count": _events.size(),
+		"event_stage_count": _event_stages.size(),
 		"rights_gate": str(policy.get("rights_gate", "not_passed")),
 		"regions": ["GL", "JP"]
 	}
@@ -574,7 +615,13 @@ func _fixture_gate(pack: Dictionary) -> bool:
 ## `kind` stays readable as `location`. Normalize only this documented alias;
 ## every other record must match its ID prefix exactly.
 func _canonical_kind(parsed_kind: String) -> String:
-	return "location" if parsed_kind == "loc" else parsed_kind
+	# World locations keep the compact `loc:` prefix while Prompt 07 stages
+	# keep the compact `stage:` prefix; their record kinds stay readable.
+	if parsed_kind == "loc":
+		return "location"
+	if parsed_kind == "stage":
+		return "event_stage"
+	return parsed_kind
 
 
 func _validated_records(pack: Dictionary, section_key: String, expected_kind: String) -> Dictionary:
@@ -792,6 +839,124 @@ func _validate_world_data() -> bool:
 			return false
 		for unlock_variant: Variant in (entry.get("unlocks", []) as Array):
 			if not _world_locations.has(str(unlock_variant)):
+				return false
+	return true
+
+
+## Prompt 07 events fail closed on broken stage, schedule, reward or reference
+## data. All event content remains synthetic and region-aware.
+func _validate_event_data(events: Dictionary, stages: Dictionary) -> bool:
+	var encounters_variant: Variant = _battles.get("encounters", {})
+	var encounters: Dictionary = encounters_variant if encounters_variant is Dictionary else {}
+	for id: String in events.keys():
+		var event: Dictionary = events[id]
+		if not ["story", "limited", "permanent", "collaboration", "seasonal", "challenge"].has(
+			str(event.get("category", ""))
+		):
+			return false
+		if str(event.get("name_key", "")).is_empty() or str(event.get("description_key", "")).is_empty():
+			return false
+		if not ["scheduled", "permanent"].has(str((event.get("availability", {}) as Dictionary).get("mode", ""))):
+			return false
+		var regions_variant: Variant = event.get("regions", {})
+		if not regions_variant is Dictionary or (regions_variant as Dictionary).is_empty():
+			return false
+		for region_variant: Variant in (regions_variant as Dictionary).keys():
+			var region: String = str(region_variant)
+			if region != "GL" and region != "JP":
+				return false
+			var config_variant: Variant = (regions_variant as Dictionary)[region_variant]
+			if not config_variant is Dictionary:
+				return false
+			var config: Dictionary = config_variant
+			var start_unix: int = int(config.get("start_unix", -1))
+			var end_unix: int = int(config.get("end_unix", -1))
+			if str((event.get("availability", {}) as Dictionary).get("mode", "")) == "permanent":
+				if start_unix != 0 or end_unix != 0:
+					return false
+			elif start_unix < 0 or end_unix <= start_unix:
+				return false
+			var banner_ref: String = str(config.get("banner_ref", ""))
+			if not banner_ref.is_empty() and not _summon_banners.has(banner_ref):
+				return false
+		var banner_ref: String = str(event.get("banner_ref", ""))
+		if not banner_ref.is_empty() and not _summon_banners.has(banner_ref):
+			return false
+		var shop_ref: String = str(event.get("shop_ref", ""))
+		if not shop_ref.is_empty() and not _shops.has(shop_ref):
+			return false
+		var boss_encounter: String = str(event.get("boss_encounter", ""))
+		if not boss_encounter.is_empty() and not encounters.has(boss_encounter):
+			return false
+		if str(event.get("event_currency", "")).is_empty():
+			return false
+		var stage_ids_variant: Variant = event.get("stage_ids", [])
+		if not stage_ids_variant is Array or (stage_ids_variant as Array).is_empty():
+			return false
+		for stage_id_variant: Variant in stage_ids_variant:
+			var stage_id: String = str(stage_id_variant)
+			if not stages.has(stage_id):
+				return false
+			var stage: Dictionary = stages[stage_id]
+			if str(stage.get("event_id", "")) != id or str(stage.get("region", "")) != str(event.get("region", "")):
+				return false
+			var config_variant: Variant = (event.get("regions", {}) as Dictionary).get(str(stage.get("region", "")), null)
+			if config_variant is Dictionary:
+				var override_ids: Variant = (config_variant as Dictionary).get("stage_ids", [])
+				if override_ids is Array and not (override_ids as Array).is_empty() and not (override_ids as Array).has(stage_id):
+					return false
+		var missions_variant: Variant = event.get("missions", [])
+		if not missions_variant is Array:
+			return false
+		var mission_ids: Dictionary = {}
+		for mission_variant: Variant in missions_variant:
+			if not mission_variant is Dictionary:
+				return false
+			var mission: Dictionary = mission_variant
+			var mission_id: String = str(mission.get("id", ""))
+			if mission_id.is_empty() or mission_ids.has(mission_id):
+				return false
+			mission_ids[mission_id] = true
+			if str(mission.get("key", "")).is_empty() or int(mission.get("target", 0)) <= 0:
+				return false
+			if not _is_world_reward(mission.get("reward", null)):
+				return false
+		var shop_variant: Variant = event.get("shop", {})
+		if not shop_variant is Dictionary:
+			return false
+		var shop_items_variant: Variant = (shop_variant as Dictionary).get("items", [])
+		if not shop_items_variant is Array:
+			return false
+		var shop_item_ids: Dictionary = {}
+		for item_variant: Variant in shop_items_variant:
+			if not item_variant is Dictionary:
+				return false
+			var item: Dictionary = item_variant
+			var item_id: String = str(item.get("id", ""))
+			if item_id.is_empty() or shop_item_ids.has(item_id):
+				return false
+			shop_item_ids[item_id] = true
+			if str(item.get("currency", "")) != str(event.get("event_currency", "")):
+				return false
+			if int(item.get("cost", 0)) <= 0 or not _is_world_reward(item.get("reward", null)):
+				return false
+	for id: String in stages.keys():
+		var stage: Dictionary = stages[id]
+		if not events.has(str(stage.get("event_id", ""))):
+			return false
+		if not encounters.has(str(stage.get("encounter_id", ""))):
+			return false
+		if str(stage.get("name_key", "")).is_empty():
+			return false
+		if int(stage.get("order", -1)) < 0 or int(stage.get("completion_target", 0)) <= 0:
+			return false
+		if not _is_world_reward(stage.get("first_clear_reward", null)) or not _is_world_reward(stage.get("repeat_reward", null)):
+			return false
+		var currency_variant: Variant = stage.get("currency", null)
+		if not currency_variant is Dictionary or int((currency_variant as Dictionary).get("amount", 0)) <= 0:
+			return false
+		for prereq_variant: Variant in (stage.get("unlock_after", []) as Array):
+			if not stages.has(str(prereq_variant)):
 				return false
 	return true
 

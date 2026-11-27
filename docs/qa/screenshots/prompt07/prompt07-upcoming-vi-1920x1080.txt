@@ -1,0 +1,22 @@
+name=prompt07-upcoming-vi-1920x1080
+scene=res://scenes/event/event_center.tscn
+resolution=1920x1080
+fullscreen=1
+locale=vi
+scenario=upcoming
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=upcoming
+event_id=
+event_region=GL
+window_id=195035143
+geometry=WINDOW=195035143 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=225 stddev=0.0752838
+runtime_error_lines=0
+log_basename=prompt07-upcoming-vi-1920x1080.log

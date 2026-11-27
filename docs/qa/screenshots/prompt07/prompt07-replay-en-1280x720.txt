@@ -1,0 +1,22 @@
+name=prompt07-replay-en-1280x720
+scene=res://scenes/event/event_center.tscn
+resolution=1280x720
+fullscreen=0
+locale=en
+scenario=replay
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=replay
+event_id=event:GL:980004@archive
+event_region=GL
+window_id=190840839
+geometry=WINDOW=190840839 X=0 Y=70 WIDTH=1280 HEIGHT=720 SCREEN=0
+pixels=1280x720 colors=696 stddev=0.109134
+runtime_error_lines=0
+log_basename=prompt07-replay-en-1280x720.log

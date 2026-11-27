@@ -24,6 +24,7 @@
     "world_connections": "res://data/world/location_connections.json",
     "world_interactables": "res://data/world/interactables.json",
     "world_dialogues": "res://data/world/dialogues.json",
-    "world_quests": "res://data/world/quests.json"
+    "world_quests": "res://data/world/quests.json",
+    "events": "res://data/events/events.json"
   }
 }

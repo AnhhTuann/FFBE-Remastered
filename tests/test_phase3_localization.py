@@ -18,8 +18,9 @@ REPORT_PATH = ROOT / "data/validation/localization-coverage.json"
 TOOL_PATH = ROOT / "tools/localization/coverage_report.py"
 TOKEN_MANIFEST_PATH = ROOT / "game/data/phase3/localization_tokens.json"
 LOCALES = ("en", "ja", "vi")
-EXPECTED_KEY_COUNT = 831
+EXPECTED_KEY_COUNT = 917
 EXPECTED_WORLD_DATA_KEY_COUNT = 45
+EXPECTED_EVENT_DATA_KEY_COUNT = 33
 EXPECTED_DYNAMIC_MAPPING_COUNT = 305
 EXPECTED_DYNAMIC_KEY_COUNT = 280
 
@@ -305,6 +306,26 @@ class Phase3LocalizationTest(unittest.TestCase):
             "quest.oath.title",
             "world.location.haven.name",
             "world.prompt.open",
+        ):
+            self.assertIn(key, scan["literal_keys"])
+        for locale in LOCALES:
+            missing = [key for key in scan["literal_keys"] if key not in self.dictionaries[locale]]
+            self.assertEqual(missing, [], locale)
+            self.assertEqual(self.report["per_locale"][locale]["missing_keys"], [])
+
+    def test_event_data_key_scan(self) -> None:
+        scan = self.report["event_data_scan"]
+        self.assertEqual(scan["data_files_scanned"], 1)
+        self.assertEqual(scan["data_files"], ["game/data/events/events.json"])
+        self.assertEqual(len(scan["literal_keys"]), EXPECTED_EVENT_DATA_KEY_COUNT)
+        self.assertEqual(scan["literal_keys"], sorted(scan["literal_keys"]))
+        for key in (
+            "event.stargarden.name",
+            "event.mission.clear_gate",
+            "event.stage.gate",
+            "event.art.stargarden",
+            "event.guest.lumen.name",
+            "event.stage.training",
         ):
             self.assertIn(key, scan["literal_keys"])
         for locale in LOCALES:

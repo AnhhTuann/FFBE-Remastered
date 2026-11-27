@@ -28,6 +28,15 @@ var _status_suffix: String = ""
 var _system_cache: Dictionary = {}
 
 
+## Resolve a return path carried by an Event Center banner. The context is
+## consumed once so a later direct visit still returns to the economy hub.
+func _return_destination() -> String:
+	var context: Dictionary = WorldContext.peek()
+	if context.has("event_id") and context.has("return_scene"):
+		return str(context.get("return_scene", HUB_PATH))
+	return HUB_PATH
+
+
 func _ready() -> void:
 	theme = _make_theme()
 	_build_background()
@@ -44,7 +53,10 @@ func _ready() -> void:
 	var layout := VBoxContainer.new()
 	layout.add_theme_constant_override("separation", 10)
 	margin.add_child(layout)
-	layout.add_child(_header("summon.title", HUB_PATH))
+	var return_path: String = _return_destination()
+	if return_path != HUB_PATH:
+		WorldContext.consume()
+	layout.add_child(_header("summon.title", return_path))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL

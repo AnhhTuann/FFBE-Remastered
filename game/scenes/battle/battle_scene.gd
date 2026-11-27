@@ -7,6 +7,7 @@ extends Control
 const BATTLE_MANAGER_SCRIPT := "res://battle/battle_manager.gd"
 const BATTLE_SPRITE_SCRIPT := "res://battle/battle_sprite.gd"
 const MAIN_MENU_PATH := "res://scenes/menu/main_menu.tscn"
+const EVENT_CENTER_PATH := "res://scenes/event/event_center.tscn"
 const DEFAULT_ENCOUNTER := "encounter:GL:950001@skirmish"
 const SPEEDS: Array[int] = [1, 2, 4]
 ## Layout budgets are deliberately small enough to fit the 1280x720 baseline
@@ -465,6 +466,17 @@ func _qa_mode() -> bool:
 func _qa_seed_world_context() -> void:
 	if not _qa_mode() or not _world_context.is_empty():
 		return
+	# Prompt 07 captures launch the battle scene directly with an event context.
+	# This writes the same contract event_center.stage_context() supplies, so
+	# event settlement and Battle return are exercised by the real scene.
+	var event_id: String = OS.get_environment("FFBE_QA_EVENT_ID").strip_edges()
+	var stage_id: String = OS.get_environment("FFBE_QA_EVENT_STAGE_ID").strip_edges()
+	if not event_id.is_empty() and not stage_id.is_empty():
+		var return_scene: String = OS.get_environment("FFBE_QA_RETURN_SCENE").strip_edges()
+		if return_scene.is_empty():
+			return_scene = EVENT_CENTER_PATH
+		_world_context = qa_event_context(event_id, stage_id, return_scene)
+		return
 	var trigger_id: String = OS.get_environment("FFBE_QA_WORLD_TRIGGER").strip_edges()
 	if trigger_id.is_empty():
 		return
@@ -475,6 +487,22 @@ func _qa_seed_world_context() -> void:
 		"trigger_id": trigger_id,
 		"location_id": OS.get_environment("FFBE_QA_WORLD_LOCATION").strip_edges(),
 		"encounter_id": OS.get_environment("FFBE_QA_ENCOUNTER").strip_edges(),
+		"return_scene": return_scene
+	}
+
+
+## Build the event battle context used by QA captures. This is presentation-only
+## plumbing: normal play receives the same dictionary from Event Center's
+## stage_context() through WorldContext, and no environment variable is read by
+## gameplay when QA mode is off.
+func qa_event_context(event_id: String, stage_id: String, return_scene: String) -> Dictionary:
+	var stage: Dictionary = ContentRepository.call("get_event_stage", stage_id)
+	var event: Dictionary = ContentRepository.call("get_event", event_id)
+	return {
+		"event_id": event_id,
+		"stage_id": stage_id,
+		"region": str(event.get("region", "")),
+		"encounter_id": str(stage.get("encounter_id", "")),
 		"return_scene": return_scene
 	}
 
@@ -1307,7 +1335,14 @@ func _record_result(state: RefCounted) -> void:
 			player_state = (loop as SceneTree).root.get_node_or_null("PlayerState")
 		var claim: Dictionary = {}
 		if player_state != null:
-			if not _world_context.is_empty() and player_state.has_method("settle_world_battle"):
+			if _world_context.has("event_id") and player_state.has_method("settle_event_battle"):
+				var event_settlement: Dictionary = player_state.call(
+					"settle_event_battle", result_dict, _world_context
+				)
+				claim = event_settlement.get("reward", {})
+				if not bool(event_settlement.get("ok", false)):
+					claim = {"ok": false, "reason": str(event_settlement.get("reason", "save_failed"))}
+			elif not _world_context.is_empty() and player_state.has_method("settle_world_battle"):
 				var settlement: Dictionary = player_state.call("settle_world_battle", result_dict, _world_context)
 				claim = settlement.get("reward", {})
 				if not bool(settlement.get("ok", false)):
