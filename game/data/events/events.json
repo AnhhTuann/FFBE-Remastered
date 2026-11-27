@@ -48,6 +48,10 @@
         {
           "id": "clear_gate",
           "key": "event.mission.clear_gate",
+          "objective": {
+            "type": "stage_clear",
+            "ref": "stage:GL:980101@gate"
+          },
           "target": 1,
           "repeatable": false,
           "reward": {
@@ -58,8 +62,12 @@
         {
           "id": "farm_gate",
           "key": "event.mission.farm_gate",
+          "objective": {
+            "type": "stage_clear",
+            "ref": "stage:GL:980101@gate"
+          },
           "target": 3,
-          "repeatable": false,
+          "repeatable": true,
           "reward": {
             "gil": 300,
             "items": [
@@ -151,6 +159,10 @@
         {
           "id": "moonlit_boss",
           "key": "event.mission.moonlit_boss",
+          "objective": {
+            "type": "boss_clear",
+            "ref": "stage:JP:980112@boss"
+          },
           "target": 1,
           "repeatable": false,
           "reward": {
@@ -216,6 +228,10 @@
         {
           "id": "guest_bond",
           "key": "event.mission.guest_bond",
+          "objective": {
+            "type": "stage_clear",
+            "ref": "stage:GL:980121@guest"
+          },
           "target": 1,
           "repeatable": false,
           "reward": {
@@ -410,6 +426,10 @@
         {
           "id": "training",
           "key": "event.mission.training",
+          "objective": {
+            "type": "stage_clear",
+            "ref": "stage:GL:980151@training"
+          },
           "target": 2,
           "repeatable": false,
           "reward": {

@@ -335,14 +335,17 @@ func _populate_event_list() -> void:
 			continue
 		if _category_filter != "all" and str(event.get("category", "")) != _category_filter:
 			continue
-		var current_state: String = _schedule.state(event, _region, true, now_unix)
+		var event_id: String = str(event.get("id", ""))
+		var unlocked: bool = _service != null and _service.is_event_unlocked(event_id, _region)
+		var current_state: String = _schedule.state(event, _region, unlocked, now_unix)
 		if not _matches_status_filter(current_state, str(event.get("category", ""))):
 			continue
+		var state_text: String = t(_schedule.state_key(current_state)) if unlocked else t("event.center.locked")
 		var card := Button.new()
 		card.custom_minimum_size = Vector2(0, 72 if _portrait else 64)
 		card.text = "%s\n%s · %s" % [
 			t(str(event.get("name_key", ""))),
-			t(_schedule.state_key(current_state)),
+			state_text,
 			t("event.center.category.%s" % str(event.get("category", "")))
 		]
 		card.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -383,12 +386,15 @@ func _populate_detail() -> void:
 		_detail_box.add_child(empty)
 		return
 	var now_unix: int = _schedule.now()
-	var current_state: String = _schedule.state(event, _region, true, now_unix)
+	var event_id: String = str(event.get("id", ""))
+	var unlocked: bool = _service != null and _service.is_event_unlocked(event_id, _region)
+	var current_state: String = _schedule.state(event, _region, unlocked, now_unix)
 	_add_heading(t(str(event.get("name_key", ""))), 21)
 	var art_variant: Variant = event.get("art", {})
 	var art: Dictionary = art_variant if art_variant is Dictionary else {}
 	_add_art_panel(str(art.get("label_key", "event.center.art.placeholder")))
-	_add_line("%s: %s" % [t("event.center.status"), t(_schedule.state_key(current_state))])
+	var status_text: String = t(_schedule.state_key(current_state)) if unlocked else t("event.center.locked")
+	_add_line("%s: %s" % [t("event.center.status"), status_text])
 	_add_line("%s: %s" % [t("event.center.region"), _region])
 	var config: Dictionary = _repository.region_config(str(event.get("id", "")), _region)
 	var start_unix: int = int(config.get("start_unix", 0))
@@ -474,8 +480,10 @@ func _add_stage_button(event: Dictionary, stage: Dictionary, current_state: Stri
 		int(progress.get("runs", 0)), maxi(1, int(stage.get("completion_target", 1)))
 	]
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	var unlocked: bool = _service.is_stage_unlocked(event_id, stage_id)
-	var enterable: bool = _schedule.can_enter(event, _region, true, _schedule.now())
+	var event_unlocked: bool = _service.is_event_unlocked(event_id, _region)
+	var launch: Dictionary = _service.can_launch_stage(event_id, stage_id, _region)
+	var unlocked: bool = bool(launch.get("ok", false))
+	var enterable: bool = _schedule.can_enter(event, _region, event_unlocked, _schedule.now())
 	button.disabled = not unlocked or not enterable or current_state == EventSchedule.STATE_ARCHIVED
 	button.pressed.connect(_launch_stage.bind(event_id, stage_id))
 	_detail_box.add_child(button)
@@ -507,16 +515,31 @@ func _add_mission_button(event_id: String, mission: Dictionary) -> void:
 	var mission_id: String = str(mission.get("id", ""))
 	var status: Dictionary = _service.mission_status(event_id, mission_id)
 	var button := Button.new()
-	if bool(status.get("claimed", false)):
-		button.text = "%s · %s" % [t(str(mission.get("key", ""))), t("event.center.claimed")]
+	var label: String = t(str(mission.get("key", "")))
+	var claimable: bool = bool(status.get("claimable", false))
+	var repeatable: bool = bool(status.get("repeatable", false))
+	# A repeatable mission is never globally "claimed"; it always exposes the
+	# next cycle, even when that cycle is incomplete and the button is disabled.
+	if not repeatable and bool(status.get("claimed", false)) and not claimable:
+		button.text = "%s · %s" % [label, t("event.center.claimed")]
 		button.disabled = true
 	else:
-		button.text = "%s · %d/%d · %s" % [
-			t(str(mission.get("key", ""))), int(status.get("count", 0)),
-			int(status.get("target", 1)), t("event.center.claim")
+		var cycle_text: String = ""
+		if repeatable:
+			var cycle: int = int(status.get("next_claimable_cycle", 0))
+			if cycle > 0 and claimable:
+				cycle_text = " · %s" % t("event.center.cycle", {"cycle": cycle})
+			else:
+				if cycle <= 0:
+					cycle = int(status.get("completed_cycles", 0)) + 1
+				cycle_text = " · %s" % t("event.center.next_cycle", {"cycle": cycle})
+		button.text = "%s%s · %d/%d · %s" % [
+			label, cycle_text, int(status.get("count", 0)),
+			maxi(1, int(status.get("target", 1))), t("event.center.claim")
 		]
-		button.disabled = not bool(status.get("complete", false))
-		button.pressed.connect(_claim_mission.bind(event_id, mission_id))
+		button.disabled = not claimable
+		if claimable:
+			button.pressed.connect(_claim_mission.bind(event_id, mission_id))
 	_detail_box.add_child(button)
 
 
@@ -583,8 +606,9 @@ func _launch_stage(event_id: String, stage_id: String) -> void:
 	if event.is_empty() or stage.is_empty():
 		_set_status(t("event.center.locked"))
 		return
-	if not _schedule.can_enter(event, _region, true, _schedule.now()) \
-			or not _service.is_stage_unlocked(event_id, stage_id):
+	var unlocked: bool = _service.is_event_unlocked(event_id, _region)
+	if not _schedule.can_enter(event, _region, unlocked, _schedule.now()) \
+			or not bool(_service.can_launch_stage(event_id, stage_id, _region).get("ok", false)):
 		_set_status(t("event.center.locked"))
 		return
 	WorldContext.write(stage_context(event_id, stage_id))
