@@ -83,6 +83,7 @@ func run() -> bool:
 	_run("test_mission_claims")
 	_run("test_collaboration_fixture")
 	_run("test_battle_context_and_return")
+	_run("test_battle_qa_event_context")
 	_run("test_summon_navigation")
 	_run("test_save_reload_and_migration")
 	_run("test_fault_injection_rollback")
@@ -140,7 +141,8 @@ func _snapshot_environment() -> Dictionary:
 	var result: Dictionary = {}
 	for key: String in [
 		"FFBE_QA_MODE", "FFBE_QA_EVENT_CENTER_VIEW", "FFBE_QA_EVENT_ID",
-		"FFBE_QA_REGION", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_SCENARIO"
+		"FFBE_QA_EVENT_STAGE_ID", "FFBE_QA_REGION", "FFBE_QA_EVENT_NOW_UNIX",
+		"FFBE_QA_SCENARIO", "FFBE_QA_RETURN_SCENE"
 	]:
 		result[key] = OS.get_environment(key)
 		OS.set_environment(key, "")
@@ -434,6 +436,27 @@ func test_battle_context_and_return() -> bool:
 	_ok(bool(_progress(EVENT_STORY, STAGE_GATE).get("cleared", false)), "battle scene routed to event settlement")
 	battle.free()
 	WorldContext.clear()
+	return true
+
+
+func test_battle_qa_event_context() -> bool:
+	# QA captures launch the battle scene directly. The seeded context must be
+	# the same event contract Event Center writes, without a world trigger.
+	var packed: PackedScene = load("res://scenes/battle/battle_scene.tscn") as PackedScene
+	_ok(packed != null, "battle scene loads for QA context test")
+	if packed == null:
+		return true
+	var battle: Control = packed.instantiate() as Control
+	var context: Dictionary = battle.call(
+		"qa_event_context", EVENT_STORY, STAGE_GATE, EVENT_CENTER_SCENE
+	)
+	_eq(str(context.get("event_id", "")), EVENT_STORY, "QA context carries event id")
+	_eq(str(context.get("stage_id", "")), STAGE_GATE, "QA context carries stage id")
+	_eq(str(context.get("encounter_id", "")), ENCOUNTER_GATE, "QA context carries encounter")
+	_eq(str(context.get("region", "")), "GL", "QA context carries region")
+	_eq(str(context.get("return_scene", "")), EVENT_CENTER_SCENE, "QA context returns to Event Center")
+	_no(context.has("trigger_id"), "QA event context omits world trigger")
+	battle.free()
 	return true
 
 
