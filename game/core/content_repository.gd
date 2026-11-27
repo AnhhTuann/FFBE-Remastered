@@ -44,6 +44,8 @@ var _event_stages: Dictionary = {}
 const FIXTURE_MARKER := "SYNTHETIC_FIXTURE"
 const ALLOWED_EVIDENCE: Array[String] = ["SYNTHETIC_FIXTURE", "REMASTERED_DESIGN"]
 const CURRENCY_KEYS: Array[String] = ["gil", "lapis", "trust_moogles"]
+const EVENT_OBJECTIVE_TYPES: Array[String] = ["stage_clear", "boss_clear"]
+const EVENT_UNLOCK_KINDS: Array[String] = ["none", "event", "stage", "quest"]
 
 
 func _ready() -> void:
@@ -858,6 +860,19 @@ func _validate_event_data(events: Dictionary, stages: Dictionary) -> bool:
 			return false
 		if not ["scheduled", "permanent"].has(str((event.get("availability", {}) as Dictionary).get("mode", ""))):
 			return false
+		var unlock_variant: Variant = event.get("unlock", null)
+		if not unlock_variant is Dictionary:
+			return false
+		var unlock: Dictionary = unlock_variant
+		var unlock_kind: String = str(unlock.get("kind", ""))
+		if not EVENT_UNLOCK_KINDS.has(unlock_kind):
+			return false
+		var unlock_id: String = str(unlock.get("id", ""))
+		if unlock_kind == "none":
+			if not unlock_id.is_empty():
+				return false
+		elif unlock_id.is_empty() or not _event_unlock_reference_valid(event, unlock_kind, unlock_id, events, stages):
+			return false
 		var regions_variant: Variant = event.get("regions", {})
 		if not regions_variant is Dictionary or (regions_variant as Dictionary).is_empty():
 			return false
@@ -921,6 +936,21 @@ func _validate_event_data(events: Dictionary, stages: Dictionary) -> bool:
 				return false
 			if not _is_world_reward(mission.get("reward", null)):
 				return false
+			var objective_variant: Variant = mission.get("objective", null)
+			if not objective_variant is Dictionary:
+				return false
+			var objective: Dictionary = objective_variant
+			var objective_type: String = str(objective.get("type", ""))
+			if not EVENT_OBJECTIVE_TYPES.has(objective_type):
+				return false
+			var objective_ref: String = str(objective.get("ref", ""))
+			if not stages.has(objective_ref):
+				return false
+			var objective_stage: Dictionary = stages[objective_ref]
+			if str(objective_stage.get("event_id", "")) != id:
+				return false
+			if objective_type == "boss_clear" and str(objective_stage.get("encounter_id", "")) != boss_encounter:
+				return false
 		var shop_variant: Variant = event.get("shop", {})
 		if not shop_variant is Dictionary:
 			return false
@@ -959,6 +989,48 @@ func _validate_event_data(events: Dictionary, stages: Dictionary) -> bool:
 			if not stages.has(str(prereq_variant)):
 				return false
 	return true
+
+
+## Event unlock references are validated against already-loaded definitions.
+## A prerequisite from another region, an unknown quest or a missing stage is
+## rejected at load time so runtime evaluation never has to guess.
+func _event_unlock_reference_valid(
+	event: Dictionary, kind: String, reference: String,
+	events: Dictionary, stages: Dictionary
+) -> bool:
+	var regions_variant: Variant = event.get("regions", {})
+	if not regions_variant is Dictionary:
+		return false
+	var regions: Dictionary = regions_variant
+	match kind:
+		"event":
+			if not events.has(reference) or reference == str(event.get("id", "")):
+				return false
+			var prerequisite: Dictionary = events[reference]
+			var prerequisite_regions_variant: Variant = prerequisite.get("regions", {})
+			if not prerequisite_regions_variant is Dictionary:
+				return false
+			for region_variant: Variant in regions.keys():
+				if not (prerequisite_regions_variant as Dictionary).has(str(region_variant)):
+					return false
+			return true
+		"stage":
+			if not stages.has(reference):
+				return false
+			var prerequisite_stage: Dictionary = stages[reference]
+			var stage_region: String = str(prerequisite_stage.get("region", ""))
+			if not regions.has(stage_region):
+				return false
+			return events.has(str(prerequisite_stage.get("event_id", "")))
+		"quest":
+			if not _world_quests.has(reference):
+				return false
+			for region_variant: Variant in regions.keys():
+				if reference.begins_with("quest:%s:" % str(region_variant)):
+					return true
+			return false
+		_:
+			return false
 
 
 func _is_world_point(value: Variant) -> bool:

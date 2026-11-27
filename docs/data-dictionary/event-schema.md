@@ -1,7 +1,9 @@
 # Event data dictionary
 
-**Scope:** Prompt 07 synthetic event fixtures. All records are `SYNTHETIC_FIXTURE` with `verification_status: REMASTERED_DESIGN`, `rights_gate: not_passed` and `source_data_imported: false`. No FFBE event history is represented.
+**Scope:** Prompt 07 synthetic event fixtures, extended and hardened in Prompt 07.1. All records are `SYNTHETIC_FIXTURE` with `verification_status: REMASTERED_DESIGN`, `rights_gate: not_passed` and `source_data_imported: false`. No FFBE event history is represented.
 **Pack:** `game/data/events/events.json`, registered as `events` in `game/data/content_catalog.json`.
+
+Prompt 07.1 objective, cycle, claim-key and unlock details are specified in [event-mission-schema.md](event-mission-schema.md). This document remains the pack-level dictionary with the affected fields updated below.
 
 ## Pack header
 
@@ -29,14 +31,14 @@
 | `name_key` / `description_key` | string | Locale keys in all three dictionaries. |
 | `regions` | object | `GL` and/or `JP` region config (see below). |
 | `availability.mode` | string | `scheduled` or `permanent`. |
-| `unlock` | object | `{ "kind": "none"\|"event"\|"stage", "id": string }`. |
+| `unlock` | object | `{ "kind": "none"\|"event"\|"stage"\|"quest", "id": string }`; validated at load and evaluated read-only in Prompt 07.1. `availability.mode` remains independent of unlock status. |
 | `stage_ids` | array[string] | Ordered stage IDs owned by this event. |
 | `event_currency` | string | Currency item ID, or empty string. |
 | `shop_ref` | string | Event shop definition ID, or empty string. |
 | `banner_ref` | string | Synthetic summon banner ID, or empty string. |
 | `boss_encounter` | string | Encounter ID shown as the event boss, or empty string. |
 | `replay_policy` | object | `archive_after_end`, `replay_enabled`, `keep_rewards_on_replay`. |
-| `missions` | array[object] | `{ id, key, target, repeatable, reward }` foundations; reward is an existing gil/items bundle. |
+| `missions` | array[object] | `{ id, key, objective: { type, ref }, target, repeatable, reward }`; reward is an existing gil/items bundle. Prompt 07.1 requires the objective and uses it to qualify settlement progress. |
 | `shop` | object | `{ id, items: [{ id, currency, cost, reward, shop_id }] }`; no purchase or real-money flow is implemented. |
 | `guests` | array[object] | Synthetic collaboration references `{ id, name_key, role_key, source, rights_gate }`; no protected character identity. |
 | `art` | object | `{ "panel": "synthetic_placeholder", "label_key": string }`; rendered as a labelled colour panel, not an empty dot. |
@@ -85,7 +87,8 @@ Reward objects use the existing bundle shape (`gil`, `item:<region>:<id>@<form>`
 | `first_clears` | object | `event_id|stage_id -> true`. |
 | `completions` | object | `event_id|stage_id -> true` when the completion target is reached. |
 | `currency` | object | Event currency ID -> amount. |
-| `mission_progress` | object | `event_id|mission_id -> count`. |
+| `mission_progress` | object | `event_id|mission_id -> int`; remainder toward the next cycle in Prompt 07.1. |
+| `mission_cycles` | object | `event_id|mission_id -> { completed, claimed }`; added in Prompt 07.1 and backfilled on load without a save-version bump. |
 | `processed_runs` | object | `run_id -> receipt` (idempotency boundary). |
 | `claims` | object | Claim key -> receipt; mirrors canonical `world|event|...` ledger entries. |
 | `last_result` | object | Latest presentation snapshot; never authority for rewards. |
@@ -94,7 +97,8 @@ Reward objects use the existing bundle shape (`gil`, `item:<region>:<id>@<form>`
 
 - First clear: `world|event|first|<event_id>|<stage_id>` — one per event/stage.
 - Repeat run: `world|event|run|<run_id>` — one per unique successful run.
-- Mission: `world|event|mission|<event_id>|<mission_id>` — one per mission, or per run when the mission is repeatable.
+- Mission, non-repeatable: `world|event|mission|<event_id>|<mission_id>` — one per mission.
+- Mission, repeatable cycle N: `world|event|mission|<event_id>|<mission_id>|cycle:N` — one per numbered completed cycle.
 - Shop purchase: `world|event|shop|<purchase_id>` — one per synthesized purchase identity.
 
-All claims go through `_stage_world_claim()` inside a single `PlayerState.transaction("events", ...)`, so they share the existing ledger, resource grant and rollback path.
+All claims go through `_stage_world_claim()` inside a single event-specific `PlayerState.transaction(...)` (`events`, `event_settlement` or `event_mission`), so they share the existing ledger, resource grant and rollback path.

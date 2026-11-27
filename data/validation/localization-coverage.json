@@ -373,8 +373,8 @@
     "keys_without_japanese_glyphs": [],
     "locale": "ja",
     "note": "Japanese values must contain kana or kanji, not romaji placeholders.",
-    "strings_checked": 917,
-    "strings_with_japanese_glyphs": 917
+    "strings_checked": 919,
+    "strings_with_japanese_glyphs": 919
   },
   "locales": [
     "en",
@@ -1012,7 +1012,7 @@
     "en": {
       "dictionary_file": "game/data/localization/en.json",
       "empty_value_keys": [],
-      "key_count": 917,
+      "key_count": 919,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1273,6 +1273,7 @@
         "event.center.claim",
         "event.center.claimed",
         "event.center.currency",
+        "event.center.cycle",
         "event.center.detail.empty",
         "event.center.detail.title",
         "event.center.enter",
@@ -1286,6 +1287,7 @@
         "event.center.locked",
         "event.center.missions",
         "event.center.nav",
+        "event.center.next_cycle",
         "event.center.no_currency",
         "event.center.region",
         "event.center.repeat",
@@ -1518,7 +1520,7 @@
     "ja": {
       "dictionary_file": "game/data/localization/ja.json",
       "empty_value_keys": [],
-      "key_count": 917,
+      "key_count": 919,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -1779,6 +1781,7 @@
         "event.center.claim",
         "event.center.claimed",
         "event.center.currency",
+        "event.center.cycle",
         "event.center.detail.empty",
         "event.center.detail.title",
         "event.center.enter",
@@ -1792,6 +1795,7 @@
         "event.center.locked",
         "event.center.missions",
         "event.center.nav",
+        "event.center.next_cycle",
         "event.center.no_currency",
         "event.center.region",
         "event.center.repeat",
@@ -2024,7 +2028,7 @@
     "vi": {
       "dictionary_file": "game/data/localization/vi.json",
       "empty_value_keys": [],
-      "key_count": 917,
+      "key_count": 919,
       "missing_keys": [],
       "unused_keys": [
         "ability.arcane_cascade.name",
@@ -2285,6 +2289,7 @@
         "event.center.claim",
         "event.center.claimed",
         "event.center.currency",
+        "event.center.cycle",
         "event.center.detail.empty",
         "event.center.detail.title",
         "event.center.enter",
@@ -2298,6 +2303,7 @@
         "event.center.locked",
         "event.center.missions",
         "event.center.nav",
+        "event.center.next_cycle",
         "event.center.no_currency",
         "event.center.region",
         "event.center.repeat",
@@ -2564,6 +2570,7 @@
       "game/events/event_repository.gd",
       "game/events/event_schedule.gd",
       "game/events/event_state_service.gd",
+      "game/events/event_unlock_evaluator.gd",
       "game/progression/build_resolver.gd",
       "game/progression/inventory_system.gd",
       "game/progression/progression_system.gd",
@@ -2615,7 +2622,7 @@
       "game/world/world_map_marker_area.gd",
       "game/world/world_state_service.gd"
     ],
-    "gd_files_scanned": 82,
+    "gd_files_scanned": 83,
     "literal_call_sites": 109,
     "literal_keys": [
       "battle.ability_button",
@@ -2692,9 +2699,9 @@
   },
   "status": "pass",
   "tool_version": "1.2.0",
-  "union_key_count": 917,
+  "union_key_count": 919,
   "vietnamese_diacritics": {
-    "coverage": 0.9662,
+    "coverage": 0.9663,
     "keys_without_diacritics": [
       "awakening.ex",
       "awakening.nv",
@@ -2730,8 +2737,8 @@
     ],
     "locale": "vi",
     "note": "Brand tokens such as NV, EX, TMR, STMR, LB, SLB, gil, UID and digits are expected without diacritics.",
-    "strings_checked": 917,
-    "strings_with_diacritics": 886
+    "strings_checked": 919,
+    "strings_with_diacritics": 888
   },
   "world_data_scan": {
     "data_files": [

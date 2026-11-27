@@ -22,7 +22,12 @@ SHOPS_PATH = GAME / "data" / "phase3" / "shops.json"
 SUMMON_PATH = GAME / "data" / "phase3" / "summon_banners.json"
 DICT_DIR = GAME / "data" / "localization"
 PLAYER_STATE_PATH = GAME / "core" / "player_state.gd"
+UNLOCK_EVALUATOR_PATH = GAME / "events" / "event_unlock_evaluator.gd"
+EVENT_REPOSITORY_PATH = GAME / "events" / "event_repository.gd"
+EVENT_STATE_SERVICE_PATH = GAME / "events" / "event_state_service.gd"
 LOCALES = ("vi", "en", "ja")
+OBJECTIVE_TYPES = {"stage_clear", "boss_clear"}
+UNLOCK_KINDS = {"none", "event", "stage", "quest"}
 
 ID_RE = re.compile(r"^(?P<kind>[a-z_]+):(?P<region>GL|JP):(?P<native>\d+)@(?P<form>[a-z0-9_]+)$")
 PROTECTED_TERMS = (
@@ -238,12 +243,80 @@ class Prompt07EventDataTest(unittest.TestCase):
         self.assertEqual(collab["provenance"]["rights_gate"], "not_passed")
         self.assertIn("synthetic", self.dictionaries["en"][collab["guests"][0]["role_key"]].lower())
 
+    def test_mission_objectives_are_explicit_and_finish_valid(self) -> None:
+        for event in self.events:
+            seen_missions: set[str] = set()
+            for mission in event["missions"]:
+                mission_id = mission["id"]
+                self.assertNotIn(mission_id, seen_missions, f"{event['id']}: {mission_id}")
+                seen_missions.add(mission_id)
+                for field in ("id", "key", "objective", "target", "repeatable", "reward"):
+                    self.assertIn(field, mission, f"{event['id']}:{mission_id}: {field}")
+                objective = mission["objective"]
+                self.assertIsInstance(objective, dict)
+                self.assertIn(objective["type"], OBJECTIVE_TYPES, f"{event['id']}:{mission_id}")
+                reference = objective["ref"]
+                self.assertIn(reference, self.stage_by_id, f"{event['id']}:{mission_id}")
+                stage = self.stage_by_id[reference]
+                self.assertEqual(stage["event_id"], event["id"], f"{event['id']}:{mission_id}")
+                if objective["type"] == "boss_clear":
+                    self.assertEqual(stage["encounter_id"], event["boss_encounter"])
+                self.assertGreaterEqual(int(mission["target"]), 1)
+                self.assertIsInstance(mission["repeatable"], bool)
+                self.assertTrue(mission["key"])
+
+    def test_repeatable_cycle_contract(self) -> None:
+        source = EVENT_STATE_SERVICE_PATH.read_text(encoding="utf-8")
+        for token in (
+            "claimable", "claimed_cycles", "completed_cycles", "next_claimable_cycle",
+            "repeatable", "cycle:%d", "world|event|mission|", "_mission_claim_key",
+        ):
+            self.assertIn(token, source, token)
+        story = self.event_by_id["event:GL:980001@stargarden"]
+        missions = {mission["id"]: mission for mission in story["missions"]}
+        self.assertFalse(missions["clear_gate"]["repeatable"])
+        self.assertEqual(int(missions["clear_gate"]["target"]), 1)
+        self.assertTrue(missions["farm_gate"]["repeatable"])
+        self.assertEqual(int(missions["farm_gate"]["target"]), 3)
+
+    def test_unlock_contract_and_region_references(self) -> None:
+        evaluator = UNLOCK_EVALUATOR_PATH.read_text(encoding="utf-8")
+        repository = EVENT_REPOSITORY_PATH.read_text(encoding="utf-8")
+        for kind in sorted(UNLOCK_KINDS):
+            # The evaluator may compare the literal or the repository constant;
+            # the repository owns the literal strings that define the contract.
+            self.assertTrue(
+                f'"{kind}"' in evaluator
+                or f"EventRepository.UNLOCK_{kind.upper()}" in evaluator,
+                kind,
+            )
+            self.assertIn(f'const UNLOCK_{kind.upper()} := "{kind}"', repository, kind)
+        for token in ("region_mismatch", "invalid_prerequisite", "unknown_unlock", "prerequisite_unmet"):
+            self.assertIn(token, evaluator, token)
+        for event in self.events:
+            unlock = event["unlock"]
+            self.assertIn(unlock["kind"], UNLOCK_KINDS)
+            self.assertIsInstance(unlock["id"], str)
+            regions = set(event["regions"])
+            if unlock["kind"] == "none":
+                self.assertEqual(unlock["id"], "", event["id"])
+            elif unlock["kind"] == "event":
+                self.assertIn(unlock["id"], self.event_by_id, event["id"])
+                self.assertTrue(regions.intersection(self.event_by_id[unlock["id"]]["regions"]))
+            elif unlock["kind"] == "stage":
+                self.assertIn(unlock["id"], self.stage_by_id, event["id"])
+                self.assertIn(self.stage_by_id[unlock["id"]]["region"], regions)
+            elif unlock["kind"] == "quest":
+                self.assertTrue(any(
+                    unlock["id"].startswith(f"quest:{region}:") for region in regions
+                ), event["id"])
+
     def test_save_section_is_additive_without_version_bump(self) -> None:
         source = PLAYER_STATE_PATH.read_text(encoding="utf-8")
         self.assertIn('const PLAYER_STATE_VERSION := 4', source)
         for field in (
             "processed_runs", "first_clears", "completions", "currency",
-            "mission_progress", "claims", "last_result",
+            "mission_progress", "mission_cycles", "claims", "last_result",
         ):
             self.assertIn(f'"{field}"', source)
         self.assertIn("settle_event_battle", source)

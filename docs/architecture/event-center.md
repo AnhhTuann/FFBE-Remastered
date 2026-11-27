@@ -1,9 +1,11 @@
 # Event Center architecture
 
-**Status:** Prompt 07 foundation — implemented architecture and verification record. All runtime event content is project-authored `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN`.
+**Status:** Prompt 07 foundation, hardened in Prompt 07.1 — implemented architecture and verification record. All runtime event content is project-authored `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN`.
 **Rights gate:** `not_passed`. No FFBE/Elvlin story, character, art, music, banner rate, guarantee, pool or dialogue is used or claimed.
 **Engine:** Godot 4.7.2 stable; Godot project root `game/`.
-**Save format:** additive `events` section inside the existing v4 `user://player_state_v3.json`.
+**Save format:** additive `events` section inside the existing v4 `user://player_state_v3.json`. Prompt 07.1 adds `mission_cycles` without changing `PLAYER_STATE_VERSION`.
+
+Prompt 07.1 objective-qualified progression, repeatable cycles, claim identity and unlock evaluation are specified in [event-progression-integrity.md](event-progression-integrity.md) and [event-mission-schema.md](../data-dictionary/event-mission-schema.md). This document remains the historical Prompt 07 architecture record plus the integration points updated below.
 
 ## 1. Scope and non-goals
 
@@ -22,7 +24,7 @@ The following existing systems were inspected and will be reused rather than dup
 | Navigation context | `game/world/world_context.gd::META_KEYS` | Whitelist gains `event_id`, `stage_id`, `region`. `BattleScene._world_return_context()` copies the context, so the Event Center return path survives battle. Event contexts omit `trigger_id` so world settlement validation cannot be triggered. |
 | Content loading | `game/core/content_repository.gd` (55–233), `game/data/content_catalog.json` | Register one new `events` pack; apply the same fail-closed fixture gate and `_validated_records()` checks as world packs; expose `get_event(s)` / `get_event_stage(s)` getters and a `summary()` count. |
 | Summon | `game/systems/summon_system.gd`, `game/data/phase3/summon_banners.json` | Events hold banner reference IDs only. The Event Center navigates to the existing summon screen; no new rates, guarantees, pools or purchase code. |
-| Quests / missions | `game/world/quest_manager.gd`, `quest_settlement.gd` | Event missions are a separate, minimal counter model in `events`; they do not modify world quest definitions or objectives. |
+| Quests / missions | `game/world/quest_manager.gd`, `quest_settlement.gd` | Event missions are a separate, minimal counter model in `events`; they do not modify world quest definitions or objectives. Prompt 07.1 adds objective-qualified counters, repeatable cycles and unlock evaluation through the new `EventUnlockEvaluator`, which reads existing world quest completion read-only. |
 | Locale | `game/core/locale_manager.gd::t()` (80–91), `data/localization/{en,vi,ja}.json` | Every visible string is a stable `event.*` or existing key; live switching and persisted locale stay unchanged. |
 | UI | `docs/decisions/0006-ui-scaling.md`, `game/scenes/world/world_map.tscn` | Full-rect `Control`, `VBoxContainer`/`HBoxContainer`, anchors, autowrap, scroll containers; 1280×720 design baseline with portrait adaptation via `_apply_layout_profile()`. |
 | Navigation entry | `game/scenes/menu/main_menu.gd/.tscn`, `game/scenes/phase3/economy_hub.gd` | Event Center buttons were added to both the main menu and economy hub. Summon consumes an Event Center `WorldContext` and restores that return path once. |
@@ -37,7 +39,7 @@ No event-system skill exists in `.agents/skills/`; the loaded skills were `ffbe-
 Main Menu / Economy Hub
         |
         v
-Event Center (event_center.gd) -- EventRepository, EventSchedule, EventStateService
+Event Center (event_center.gd) -- EventRepository, EventSchedule, EventStateService, EventUnlockEvaluator
         |  stage selection + WorldContext.write(event_id, stage_id, encounter_id, return_scene)
         v
 BattleScene (existing engine) -- EventRepository + PlayerState.settle_event_battle
@@ -46,11 +48,11 @@ BattleScene (existing engine) -- EventRepository + PlayerState.settle_event_batt
 Event Center (stage status, rewards, currency, archive, replay)
 ```
 
-`WorldContext` remains the transit contract. `EventRepository` is read-only over the validated content pack; `EventSchedule` owns the injectable clock and availability states; `EventStateService` owns staged progression and idempotent claims inside `PlayerState.transaction`. Presentation never mutates definitions or the save directly.
+`WorldContext` remains the transit contract. `EventRepository` is read-only over the validated content pack; `EventSchedule` owns the injectable clock and availability states; `EventUnlockEvaluator` evaluates authored event prerequisites read-only; `EventStateService` owns staged progression and idempotent claims inside `PlayerState.transaction`. Presentation never mutates definitions or the save directly.
 
 ## 4. Event definition shape
 
-One pack `game/data/events/events.json` holds `events` and `stages` arrays. Each event carries a stable region-aware ID (`event:GL:980001@stargarden`), category, type, name/description keys, `regions` config with GL/JP schedules, unlock requirements, stage references, event currency, shop and banner references, boss encounter, replay/archive policy, missions, and provenance metadata. Stages carry stable `stage:GL:980101@gate` IDs, ordering, unlock rules, encounter ID, first-clear reward, repeatable reward and completion requirements. All timestamps are synthetic integers; GL and JP schedules are different but neither is claimed as history. Details are in `docs/data-dictionary/event-schema.md`.
+One pack `game/data/events/events.json` holds `events` and `stages` arrays. Each event carries a stable region-aware ID (`event:GL:980001@stargarden`), category, type, name/description keys, `regions` config with GL/JP schedules, unlock requirements, stage references, event currency, shop and banner references, boss encounter, replay/archive policy, missions, and provenance metadata. Stages carry stable `stage:GL:980101@gate` IDs, ordering, unlock rules, encounter ID, first-clear reward, repeatable reward and completion requirements. Prompt 07.1 adds a mission `objective` object and makes `unlock` a validated, evaluated prerequisite; see `docs/data-dictionary/event-schema.md` and `docs/data-dictionary/event-mission-schema.md`. All timestamps are synthetic integers; GL and JP schedules are different but neither is claimed as history.
 
 ## 5. Availability and injectable clock
 
@@ -66,13 +68,17 @@ Region selection is explicit: `region` is `GL` or `JP`, and a missing region con
 
 ## 6. Progression, rewards, idempotence
 
-`events` state contains `version`, `progress` (per event), `first_clears`, `completions`, `currency`, `mission_progress`, `processed_runs`, `claims`, `last_result`. `EventStateService` computes unlocks from stage order plus authored prerequisites. `settle_event_battle()` checks `processed_runs[run_id]` before any mutation, then one transaction records the receipt, first-clear or repeatable reward, currency and mission counters. Defeat records no reward. Duplicate run or duplicate claim returns a no-op result; a failed atomic write preserves the pending result for the existing Retry Save path.
+`events` state contains `version`, `progress` (per event), `first_clears`, `completions`, `currency`, `mission_progress`, `mission_cycles`, `processed_runs`, `claims`, `last_result`. `EventSchedule` still owns schedule availability; `EventUnlockEvaluator` evaluates authored `unlock` prerequisites; `EventStateService.can_launch_stage()` is the single gameplay guard used by both the UI and `settle_event_battle()`. Prompt 07.1 mission counters are objective-qualified: only a successful victory on the mission's `objective.ref` (and, for `boss_clear`, the event boss encounter) advances that mission. `settle_event_battle()` checks `processed_runs[run_id]` before any mutation, then one transaction records the receipt, first-clear or repeatable reward, currency and mission counters. Defeat records no reward. Duplicate run or duplicate claim returns a no-op result; a failed atomic write preserves the pending result for the existing Retry Save path.
 
 Claim receipts use the existing canonical reward ledger with keys
 `world|event|<kind>|<identity>` — for example
-`world|event|mission|event:GL:980001@stargarden|clear_gate`. No reward kind prefix is
-duplicated, and no separate event claim table was introduced. The pending-event retry
-branch remains in-memory only; no crash/process-termination recovery is claimed.
+`world|event|mission|event:GL:980001@stargarden|clear_gate`. Repeatable cycle N uses
+`world|event|mission|<event>|<mission>|cycle:N`; no reward kind prefix is duplicated,
+and no separate event claim table was introduced. `mission_cycles` is additive and legacy
+flat v4 counters are interpreted at read time, so `PLAYER_STATE_VERSION` stays `4`. The
+pending-event retry branch remains in-memory only; no crash/process-termination recovery
+is claimed. The full transaction and save-compatibility contract is in
+[event-progression-integrity.md](event-progression-integrity.md).
 
 ## 7. Collaboration and summon framework
 
@@ -84,4 +90,4 @@ The Event Center scene has an overview (category tabs, active/upcoming/ended/arc
 
 ## 9. Verification
 
-Verification uses: Godot import, focused Prompt 07 suite, full Godot suite, negative control, Python discovery, importer security, world/QA tools, localization coverage, Linux/Windows export, Linux exported binary smoke, `git diff --check`, and staged-file/security audit. Visual QA captures real Godot windows at the four required resolutions in three locales and records zero runtime error lines. Evidence, commands, counts and logs are recorded in `docs/qa/prompt07-final-report.md` and `docs/qa/prompt07-visual-review.md`.
+Verification uses: Godot import, focused Prompt 07 suite, full Godot suite, negative control, Python discovery, importer security, world/QA tools, localization coverage, Linux/Windows export, Linux exported binary smoke, `git diff --check`, and staged-file/security audit. Visual QA captures real Godot windows at the four required resolutions in three locales and records zero runtime error lines. Prompt 07 evidence remains in `docs/qa/prompt07-final-report.md` and `docs/qa/prompt07-visual-review.md`; fresh Prompt 07.1 evidence is in `docs/qa/prompt07-1-final-report.md`.

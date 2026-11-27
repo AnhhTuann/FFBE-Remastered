@@ -3,19 +3,31 @@ extends RefCounted
 
 ## Read-only projection of the validated Prompt 07 event pack. Definitions are
 ## immutable; all mutable participation state stays in PlayerState.events.
+## A raw synthetic pack may be injected for focused integrity tests; normal
+## gameplay always reads the validated ContentRepository pack.
+
+const OBJECTIVE_STAGE_CLEAR := "stage_clear"
+const OBJECTIVE_BOSS_CLEAR := "boss_clear"
+const UNLOCK_NONE := "none"
+const UNLOCK_EVENT := "event"
+const UNLOCK_STAGE := "stage"
+const UNLOCK_QUEST := "quest"
 
 var _content: Node = null
 var _events: Dictionary = {}
 var _stages: Dictionary = {}
 
 
-func _init(content: Node = null) -> void:
+func _init(content: Node = null, pack: Dictionary = {}) -> void:
 	if content == null:
 		var loop: Variant = Engine.get_main_loop()
 		if loop is SceneTree:
 			content = (loop as SceneTree).root.get_node_or_null("ContentRepository")
 	_content = content
-	reload()
+	if pack.is_empty():
+		reload()
+	else:
+		_load_pack(pack)
 
 
 func reload() -> bool:
@@ -24,8 +36,12 @@ func reload() -> bool:
 	var pack: Variant = _content.call("get_event_pack")
 	if not pack is Dictionary:
 		return false
-	var source_events: Variant = (pack as Dictionary).get("events", {})
-	var source_stages: Variant = (pack as Dictionary).get("stages", {})
+	return _load_pack(pack as Dictionary)
+
+
+func _load_pack(pack: Dictionary) -> bool:
+	var source_events: Variant = pack.get("events", {})
+	var source_stages: Variant = pack.get("stages", {})
 	_events = source_events.duplicate(true) if source_events is Dictionary else {}
 	_stages = source_stages.duplicate(true) if source_stages is Dictionary else {}
 	return not _events.is_empty()
@@ -105,6 +121,26 @@ func event_mission(event_id: String, mission_id: String) -> Dictionary:
 		if mission_variant is Dictionary and str((mission_variant as Dictionary).get("id", "")) == mission_id:
 			return (mission_variant as Dictionary).duplicate(true)
 	return {}
+
+
+func mission_objective(event_id: String, mission_id: String) -> Dictionary:
+	var mission: Dictionary = event_mission(event_id, mission_id)
+	if mission.is_empty():
+		return {}
+	var objective_variant: Variant = mission.get("objective", {})
+	return objective_variant.duplicate(true) if objective_variant is Dictionary else {}
+
+
+func event_unlock(event_id: String) -> Dictionary:
+	var unlock_variant: Variant = get_event(event_id).get("unlock", {})
+	return unlock_variant.duplicate(true) if unlock_variant is Dictionary else {}
+
+
+func has_world_quest(quest_id: String) -> bool:
+	if _content == null or not _content.has_method("get_world_quest"):
+		return false
+	var quest: Variant = _content.call("get_world_quest", quest_id)
+	return quest is Dictionary and not (quest as Dictionary).is_empty()
 
 
 func shop_item(event_id: String, item_id: String) -> Dictionary:

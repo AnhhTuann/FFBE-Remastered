@@ -228,6 +228,7 @@ func default_event_state() -> Dictionary:
 		"completions": {},
 		"currency": {},
 		"mission_progress": {},
+		"mission_cycles": {},
 		"processed_runs": {},
 		"claims": {},
 		"last_result": {}
@@ -429,7 +430,7 @@ func _ensure_events_state(target: Dictionary) -> Dictionary:
 			section[key] = defaults[key].duplicate(true) if defaults[key] is Dictionary else defaults[key]
 	for key: String in [
 		"progress", "first_clears", "completions", "currency",
-		"mission_progress", "processed_runs", "claims", "last_result"
+		"mission_progress", "mission_cycles", "processed_runs", "claims", "last_result"
 	]:
 		if not section[key] is Dictionary:
 			section[key] = {}
@@ -623,7 +624,7 @@ func validate_state(state: Dictionary) -> bool:
 		return false
 	for event_key: String in [
 		"progress", "first_clears", "completions", "currency",
-		"mission_progress", "processed_runs", "claims", "last_result"
+		"mission_progress", "mission_cycles", "processed_runs", "claims", "last_result"
 	]:
 		if not (events_variant as Dictionary).get(event_key, {}) is Dictionary:
 			return false

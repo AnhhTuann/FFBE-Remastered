@@ -7,6 +7,7 @@ extends RefCounted
 
 var _state: Node = null
 var _repository: EventRepository = null
+var _unlocks: EventUnlockEvaluator = null
 
 
 func _init(state_node: Node, repository: Variant = null) -> void:
@@ -17,6 +18,7 @@ func _init(state_node: Node, repository: Variant = null) -> void:
 		_repository = EventRepository.new(repository as Node)
 	else:
 		_repository = EventRepository.new()
+	_unlocks = EventUnlockEvaluator.new(_state, _repository)
 
 
 func repository() -> EventRepository:
@@ -60,21 +62,63 @@ func is_stage_unlocked(event_id: String, stage_id: String) -> bool:
 	return true
 
 
+func is_event_unlocked(event_id: String, region: String) -> bool:
+	return bool(event_unlock_status(event_id, region).get("ok", false))
+
+
+func event_unlock_status(event_id: String, region: String) -> Dictionary:
+	return _unlocks.status(event_id, region)
+
+
+## Single gameplay guard for both UI launch and battle settlement. Availability
+## is checked separately by EventSchedule; this method only enforces authored
+## prerequisites and stage gating.
+func can_launch_stage(event_id: String, stage_id: String, region: String) -> Dictionary:
+	var event: Dictionary = _repository.get_event(event_id)
+	var stage: Dictionary = _repository.get_event_stage(stage_id)
+	if event.is_empty() or stage.is_empty() or str(stage.get("event_id", "")) != event_id:
+		return {"ok": false, "reason": "invalid_context", "message": "event.invalid_context"}
+	if _repository.region_config(event_id, region).is_empty():
+		return {"ok": false, "reason": "region_mismatch", "message": "event.invalid_context"}
+	var unlocked: Dictionary = event_unlock_status(event_id, region)
+	if not bool(unlocked.get("ok", false)):
+		return unlocked
+	if not is_stage_unlocked(event_id, stage_id):
+		return {"ok": false, "reason": "stage_locked", "message": "event.center.locked"}
+	return {"ok": true, "reason": "", "message": ""}
+
+
 func mission_status(event_id: String, mission_id: String) -> Dictionary:
 	var mission: Dictionary = _repository.event_mission(event_id, mission_id)
 	if mission.is_empty():
-		return {"ok": false, "reason": "invalid_mission"}
+		return {"ok": false, "reason": "invalid_mission", "message": "event.invalid_mission"}
+	var objective: Dictionary = _repository.mission_objective(event_id, mission_id)
+	if not _objective_valid(objective, event_id):
+		return {"ok": false, "reason": "invalid_objective", "message": "event.invalid_mission"}
 	var key: String = "%s|%s" % [event_id, mission_id]
-	var progress_variant: Variant = section().get("mission_progress", {})
-	var progress: Dictionary = progress_variant if progress_variant is Dictionary else {}
-	var count: int = int(progress.get(key, 0))
-	var target: int = int(mission.get("target", 1))
-	var claim_key: String = "world|event|mission|%s" % key
-	var claims_variant: Variant = _state.data.get("reward_claims", {})
-	var claims: Dictionary = claims_variant if claims_variant is Dictionary else {}
+	var target: int = maxi(1, int(mission.get("target", 1)))
+	var repeatable: bool = bool(mission.get("repeatable", false))
+	var record: Dictionary = _mission_record(section(), key, mission)
+	var completed_cycles: int = int(record.get("completed", 0))
+	var claimed_cycles: int = int(record.get("claimed", 0))
+	var next_cycle: int = 0
+	if repeatable:
+		if claimed_cycles < completed_cycles:
+			next_cycle = claimed_cycles + 1
+	elif completed_cycles > 0 and claimed_cycles <= 0:
+		next_cycle = 1
+	var count: int = target if next_cycle > 0 else mini(int(record.get("progress", 0)), target)
+	var claim_cycle: int = next_cycle if next_cycle > 0 else claimed_cycles
 	return {
-		"ok": true, "reason": "", "count": mini(count, target), "target": target,
-		"complete": count >= target, "claimed": claims.has(claim_key)
+		"ok": true, "reason": "", "count": count, "target": target,
+		"complete": completed_cycles > 0 or int(record.get("progress", 0)) >= target,
+		"claimable": next_cycle > 0,
+		"claimed": claimed_cycles > 0 and next_cycle <= 0,
+		"claimed_cycles": claimed_cycles,
+		"completed_cycles": completed_cycles,
+		"next_claimable_cycle": next_cycle,
+		"repeatable": repeatable,
+		"claim_key": _mission_claim_key(key, repeatable, claim_cycle)
 	}
 
 
@@ -108,6 +152,12 @@ func settle_battle(result: Dictionary, context: Dictionary = {}) -> Dictionary:
 	var region: String = str(context.get("region", stage.get("region", "")))
 	if region.is_empty() or not (event.get("regions", {}) as Dictionary).has(region):
 		return {"ok": false, "reason": "invalid_context", "message": "event.invalid_context"}
+	var launch: Dictionary = can_launch_stage(event_id, stage_id, region)
+	if not bool(launch.get("ok", false)):
+		return {
+			"ok": false, "reason": str(launch.get("reason", "locked")),
+			"message": str(launch.get("message", "event.center.locked"))
+		}
 
 	var current: Dictionary = section()
 	var processed_variant: Variant = current.get("processed_runs", {})
@@ -195,14 +245,25 @@ func settle_battle(result: Dictionary, context: Dictionary = {}) -> Dictionary:
 		working["progress"] = progress
 		working["completions"] = completed
 
-		var mission_progress: Dictionary = working["mission_progress"]
 		for mission_variant: Variant in (event.get("missions", []) as Array):
 			if not mission_variant is Dictionary:
 				continue
 			var mission: Dictionary = mission_variant
-			var mission_key: String = "%s|%s" % [event_id, str(mission.get("id", ""))]
-			mission_progress[mission_key] = int(mission_progress.get(mission_key, 0)) + 1
-		working["mission_progress"] = mission_progress
+			var mission_id: String = str(mission.get("id", ""))
+			if mission_id.is_empty():
+				continue
+			var mission_key: String = "%s|%s" % [event_id, mission_id]
+			if not _objective_qualifies(event_id, stage_id, mission):
+				continue
+			var record: Dictionary = _mission_record(working, mission_key, mission)
+			var repeatable: bool = bool(mission.get("repeatable", false))
+			if not repeatable and (int(record.get("completed", 0)) > 0 or int(record.get("claimed", 0)) > 0):
+				continue
+			record["progress"] = int(record.get("progress", 0)) + 1
+			if int(record["progress"]) >= maxi(1, int(mission.get("target", 1))):
+				record["progress"] = 0
+				record["completed"] = int(record.get("completed", 0)) + 1
+			_write_mission_record(working, mission_key, mission, record)
 		_state.data["events"] = working
 
 		var claim_error: Dictionary = {}
@@ -238,18 +299,49 @@ func claim_mission(event_id: String, mission_id: String) -> Dictionary:
 	var mission: Dictionary = _repository.event_mission(event_id, mission_id)
 	if mission.is_empty():
 		return {"ok": false, "reason": "invalid_mission", "message": "event.invalid_mission"}
+	var objective: Dictionary = _repository.mission_objective(event_id, mission_id)
+	if not _objective_valid(objective, event_id):
+		return {"ok": false, "reason": "invalid_objective", "message": "event.invalid_mission"}
 	var status: Dictionary = mission_status(event_id, mission_id)
-	if bool(status.get("claimed", false)):
-		return {"ok": false, "reason": "already_claimed", "key": "world|event|mission|%s|%s" % [event_id, mission_id], "message": "reward.already_claimed"}
-	if not bool(status.get("complete", false)):
+	if not bool(status.get("ok", false)):
+		return status
+	var key: String = "%s|%s" % [event_id, mission_id]
+	var repeatable: bool = bool(mission.get("repeatable", false))
+	if not bool(status.get("claimable", false)):
+		if bool(status.get("claimed", false)):
+			return {
+				"ok": false, "reason": "already_claimed",
+				"key": str(status.get("claim_key", _mission_claim_key(key, repeatable, 0))),
+				"message": "reward.already_claimed"
+			}
 		return {"ok": false, "reason": "mission_incomplete", "message": "event.mission_incomplete"}
 	if not bool(_state.call("is_write_allowed")):
 		return {"ok": false, "reason": "read_only", "message": "save.error.read_only"}
+	var reward_variant: Variant = mission.get("reward", {})
+	var reward: Dictionary = reward_variant.duplicate(true) if reward_variant is Dictionary else {}
 	return _state.call("transaction", "event_mission", func() -> Dictionary:
-		return _claim_event(
-			"mission", "%s|%s" % [event_id, mission_id],
-			(mission.get("reward", {}) as Dictionary).duplicate(true)
-		)
+		var working: Dictionary = _mutable_section()
+		var record: Dictionary = _mission_record(working, key, mission)
+		var completed_cycles: int = int(record.get("completed", 0))
+		var claimed_cycles: int = int(record.get("claimed", 0))
+		if claimed_cycles >= completed_cycles:
+			return {
+				"ok": false, "reason": "already_claimed",
+				"key": _mission_claim_key(key, repeatable, claimed_cycles),
+				"message": "reward.already_claimed"
+			}
+		var cycle: int = 0
+		if repeatable:
+			cycle = claimed_cycles + 1
+		var identity: String = _mission_identity(key, repeatable, cycle)
+		var claim_result: Dictionary = _claim_event("mission", identity, reward.duplicate(true))
+		if not bool(claim_result.get("ok", false)):
+			return claim_result
+		record["claimed"] = cycle if repeatable else 1
+		_write_mission_record(working, key, mission, record)
+		_state.data["events"] = working
+		claim_result["cycle"] = cycle
+		return claim_result
 	)
 
 
@@ -289,7 +381,7 @@ func purchase_shop_item(event_id: String, item_id: String) -> Dictionary:
 func _mutable_section() -> Dictionary:
 	var value: Variant = _state.data.get("events", null)
 	var section: Dictionary = value if value is Dictionary else _state.call("default_event_state")
-	for key: String in ["progress", "first_clears", "completions", "currency", "mission_progress", "processed_runs", "claims", "last_result"]:
+	for key: String in ["progress", "first_clears", "completions", "currency", "mission_progress", "mission_cycles", "processed_runs", "claims", "last_result"]:
 		if not section.has(key) or section[key] == null:
 			section[key] = {} if key != "last_result" else {}
 		elif not (section[key] is Dictionary):
@@ -315,6 +407,105 @@ func _claim_event(kind: String, identity: String, reward: Dictionary) -> Diction
 	section["claims"] = event_claims
 	_state.data["events"] = section
 	return result
+
+
+func _objective_valid(objective: Dictionary, event_id: String) -> bool:
+	if objective.is_empty():
+		return false
+	var objective_type: String = str(objective.get("type", ""))
+	if objective_type != EventRepository.OBJECTIVE_STAGE_CLEAR \
+			and objective_type != EventRepository.OBJECTIVE_BOSS_CLEAR:
+		return false
+	var stage: Dictionary = _repository.get_event_stage(str(objective.get("ref", "")))
+	if stage.is_empty() or str(stage.get("event_id", "")) != event_id:
+		return false
+	if objective_type == EventRepository.OBJECTIVE_BOSS_CLEAR:
+		var event: Dictionary = _repository.get_event(event_id)
+		var boss_encounter: String = str(event.get("boss_encounter", ""))
+		if boss_encounter.is_empty() or str(stage.get("encounter_id", "")) != boss_encounter:
+			return false
+	return true
+
+
+func _objective_qualifies(event_id: String, stage_id: String, mission: Dictionary) -> bool:
+	var objective: Dictionary = _repository.mission_objective(event_id, str(mission.get("id", "")))
+	if not _objective_valid(objective, event_id):
+		return false
+	return str(objective.get("ref", "")) == stage_id
+
+
+## Derives the current cycle from saved progress. Legacy v4 saves have a flat
+## counter and no mission_cycles; those counts are split into completed cycles
+## plus a remainder without rewriting the save format version.
+func _mission_record(section: Dictionary, key: String, mission: Dictionary) -> Dictionary:
+	var target: int = maxi(1, int(mission.get("target", 1)))
+	var repeatable: bool = bool(mission.get("repeatable", false))
+	var progress_variant: Variant = section.get("mission_progress", {})
+	var progress_map: Dictionary = progress_variant if progress_variant is Dictionary else {}
+	var progress: int = maxi(0, int(progress_map.get(key, 0)))
+	var cycles_variant: Variant = section.get("mission_cycles", {})
+	var cycles_map: Dictionary = cycles_variant if cycles_variant is Dictionary else {}
+	var entry_variant: Variant = cycles_map.get(key, {})
+	var entry: Dictionary = entry_variant if entry_variant is Dictionary else {}
+	var completed: int = maxi(0, int(entry.get("completed", 0)))
+	var claimed: int = maxi(0, int(entry.get("claimed", 0)))
+	if entry.is_empty():
+		if repeatable:
+			completed = progress / target
+			progress = progress % target
+		else:
+			completed = 1 if progress >= target else 0
+	var ledger_claims: int = _claimed_cycle_count(key, repeatable)
+	claimed = maxi(claimed, ledger_claims)
+	if not repeatable and ledger_claims > 0:
+		completed = maxi(completed, 1)
+	return {"progress": progress, "completed": completed, "claimed": claimed}
+
+
+func _write_mission_record(section: Dictionary, key: String, mission: Dictionary, record: Dictionary) -> void:
+	var progress_variant: Variant = section.get("mission_progress", {})
+	var progress_map: Dictionary = progress_variant if progress_variant is Dictionary else {}
+	progress_map[key] = maxi(0, int(record.get("progress", 0)))
+	section["mission_progress"] = progress_map
+	var cycles_variant: Variant = section.get("mission_cycles", {})
+	var cycles_map: Dictionary = cycles_variant if cycles_variant is Dictionary else {}
+	cycles_map[key] = {
+		"completed": maxi(0, int(record.get("completed", 0))),
+		"claimed": maxi(0, int(record.get("claimed", 0)))
+	}
+	section["mission_cycles"] = cycles_map
+
+
+func _claimed_cycle_count(key: String, repeatable: bool) -> int:
+	var claims_variant: Variant = _state.data.get("reward_claims", {})
+	if not claims_variant is Dictionary:
+		return 0
+	var claims: Dictionary = claims_variant
+	var base_key: String = "world|event|mission|%s" % key
+	if not repeatable:
+		return 1 if claims.has(base_key) else 0
+	var cycles: Dictionary = {}
+	if claims.has(base_key):
+		cycles[1] = true
+	var prefix: String = base_key + "|cycle:"
+	for claim_variant: Variant in claims.keys():
+		var claim_key: String = str(claim_variant)
+		if not claim_key.begins_with(prefix):
+			continue
+		var suffix: String = claim_key.substr(prefix.length())
+		if suffix.is_valid_int() and suffix.to_int() > 0:
+			cycles[suffix.to_int()] = true
+	return cycles.size()
+
+
+func _mission_identity(key: String, repeatable: bool, cycle: int) -> String:
+	if repeatable and cycle > 0:
+		return "%s|cycle:%d" % [key, cycle]
+	return key
+
+
+func _mission_claim_key(key: String, repeatable: bool, cycle: int) -> String:
+	return "world|event|mission|%s" % _mission_identity(key, repeatable, cycle)
 
 
 func _merged_rewards(outcomes: Array[Dictionary]) -> Dictionary:
