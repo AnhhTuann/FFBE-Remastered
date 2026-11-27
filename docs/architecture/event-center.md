@@ -1,11 +1,11 @@
 # Event Center architecture
 
-**Status:** Prompt 07 foundation, hardened in Prompt 07.1 — implemented architecture and verification record. All runtime event content is project-authored `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN`.
+**Status:** Prompt 07 foundation, hardened in Prompt 07.1; presentation redesigned in Prompt 07.2 — implemented architecture and verification record. All runtime event content is project-authored `SYNTHETIC_FIXTURE` / `REMASTERED_DESIGN`.
 **Rights gate:** `not_passed`. No FFBE/Elvlin story, character, art, music, banner rate, guarantee, pool or dialogue is used or claimed.
 **Engine:** Godot 4.7.2 stable; Godot project root `game/`.
 **Save format:** additive `events` section inside the existing v4 `user://player_state_v3.json`. Prompt 07.1 adds `mission_cycles` without changing `PLAYER_STATE_VERSION`.
 
-Prompt 07.1 objective-qualified progression, repeatable cycles, claim identity and unlock evaluation are specified in [event-progression-integrity.md](event-progression-integrity.md) and [event-mission-schema.md](../data-dictionary/event-mission-schema.md). This document remains the historical Prompt 07 architecture record plus the integration points updated below.
+Prompt 07.1 objective-qualified progression, repeatable cycles, claim identity and unlock evaluation are specified in [event-progression-integrity.md](event-progression-integrity.md) and [event-mission-schema.md](../data-dictionary/event-mission-schema.md). The presentation-only Prompt 07.2 redesign is specified in [event-center-visual-design.md](event-center-visual-design.md). This document remains the historical Prompt 07 architecture record plus the integration points updated below.
 
 ## 1. Scope and non-goals
 

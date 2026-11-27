@@ -114,6 +114,14 @@ func run() -> bool:
 	_run("test_summon_navigation")
 	_run("test_save_reload_and_migration")
 	_run("test_fault_injection_rollback")
+	_run("test_visual_theme_and_reduced_motion")
+	_run("test_visual_card_signal")
+	_run("test_visual_shop_localization")
+	_run("test_visual_filter_and_focus")
+	_run("test_visual_scroll_and_focus_structure")
+	_run("test_visual_progress_widget_uniqueness")
+	_run("test_visual_qa_focus_distinct")
+	_run("test_visual_qa_replay_stage_selection")
 	_run("test_localization")
 	_run("test_responsive_geometry")
 	_run("test_scene_smoke")
@@ -419,6 +427,18 @@ func _find_button_containing(node: Node, needle: String) -> Button:
 		return node as Button
 	for child: Node in node.get_children():
 		var found: Button = _find_button_containing(child, needle)
+		if found != null:
+			return found
+	return null
+
+
+func _find_label_text(node: Node, needle: String) -> Label:
+	if needle.is_empty():
+		return null
+	if node is Label and str((node as Label).text) == needle:
+		return node as Label
+	for child: Node in node.get_children():
+		var found: Label = _find_label_text(child, needle)
 		if found != null:
 			return found
 	return null
@@ -996,6 +1016,302 @@ func test_fault_injection_rollback() -> bool:
 	_ok(bool(retry.get("ok", false)), "retry succeeds after fault cleared")
 	_eq(int(_progress(EVENT_STORY, STAGE_GATE).get("runs", 0)), 1, "retry records progress once")
 	return true
+
+
+func test_visual_theme_and_reduced_motion() -> bool:
+	_ok(EventTheme.BG == Color("#081321"), "visual palette background token")
+	_ok(EventTheme.PANEL == Color("#13263B"), "visual palette panel token")
+	_ok(EventTheme.GOLD == Color("#D7B36A"), "visual palette gold token")
+	_ok(EventTheme.CYAN == Color("#55C7CF"), "visual palette cyan token")
+	var original: String = OS.get_environment("FFBE_REDUCED_MOTION")
+	OS.set_environment("FFBE_REDUCED_MOTION", "1")
+	_no(EventTheme.motion_enabled(), "reduced motion disables visual tweens")
+	var node := Control.new()
+	tree.root.add_child(node)
+	var tween: Tween = EventTheme.tween_property(
+		node, "modulate", Color(0.5, 0.5, 0.5, 1.0), 0.1
+	)
+	_ok(tween == null, "reduced motion sets properties immediately")
+	_ok(is_equal_approx(node.modulate.r, 0.5), "reduced motion applies final value")
+	tree.root.remove_child(node)
+	node.free()
+	OS.set_environment("FFBE_REDUCED_MOTION", original)
+	return true
+
+
+func test_visual_card_signal() -> bool:
+	var card := EventCard.new()
+	tree.root.add_child(card)
+	card.configure({
+		"kind": "shop",
+		"title": "Synthetic item",
+		"state": "Purchase",
+		"payload": {"item_id": "synthetic_item"},
+		"minimum_size": Vector2(280, 100)
+	})
+	var received: Array[Dictionary] = []
+	card.activated.connect(func(payload: Dictionary) -> void: received.append(payload.duplicate(true)))
+	card.pressed.emit()
+	_ok(received.size() > 0, "card activation emits a payload")
+	if received.size() > 0:
+		_eq(str(received[0].get("item_id", "")), "synthetic_item", "card activation emits payload")
+	_ok(card.text.find("Synthetic item") >= 0, "card mirrors visible copy for accessibility")
+	card.set_selected(true)
+	_ok(card.is_selected(), "card selected state is visible to tests")
+	card.configure({
+		"kind": "shop", "title": "Synthetic item", "disabled": true,
+		"payload": {"item_id": "synthetic_item"}
+	})
+	_ok(card.disabled, "card disabled state blocks interaction")
+	tree.root.remove_child(card)
+	card.free()
+	return true
+
+
+func test_visual_shop_localization() -> bool:
+	var locale_node: Node = tree.root.get_node_or_null("LocaleManager")
+	if locale_node == null:
+		_ok(false, "locale manager available for visual localization")
+		return true
+	var shop_name: String = str(locale_node.call("token", "event_shop", "stargarden_potion", ""))
+	_ok(not shop_name.is_empty() and shop_name != "stargarden_potion", "shop item has a localized display name")
+	WorldContext.clear()
+	OS.set_environment("FFBE_QA_MODE", "1")
+	OS.set_environment("FFBE_QA_EVENT_NOW_UNIX", str(NOW_FIXED))
+	OS.set_environment("FFBE_QA_EVENT_CENTER_VIEW", "shop")
+	OS.set_environment("FFBE_QA_EVENT_ID", EVENT_STORY)
+	OS.set_environment("FFBE_QA_REGION", "GL")
+	var packed: PackedScene = load(EVENT_CENTER_SCENE) as PackedScene
+	var center: Control = packed.instantiate() as Control
+	tree.root.add_child(center)
+	_no(_has_text(center, "stargarden_potion"), "shop UI hides raw item IDs")
+	_no(_has_text(center, "event_currency:GL:980901@stardust"), "shop UI hides raw currency IDs")
+	_no(_has_text(center, "summon:GL:970001@base"), "summon UI hides raw banner IDs")
+	_ok(_has_text(center, shop_name), "shop UI shows localized item name")
+	tree.root.remove_child(center)
+	center.free()
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	return true
+
+
+func test_visual_filter_and_focus() -> bool:
+	var locale_node: Node = tree.root.get_node_or_null("LocaleManager")
+	if locale_node == null:
+		_ok(false, "locale manager available for visual filters")
+		return true
+	WorldContext.clear()
+	OS.set_environment("FFBE_QA_MODE", "1")
+	OS.set_environment("FFBE_QA_EVENT_NOW_UNIX", str(NOW_FIXED))
+	OS.set_environment("FFBE_QA_EVENT_CENTER_VIEW", "shop")
+	OS.set_environment("FFBE_QA_EVENT_ID", EVENT_STORY)
+	OS.set_environment("FFBE_QA_REGION", "GL")
+	var packed: PackedScene = load(EVENT_CENTER_SCENE) as PackedScene
+	var center: Control = packed.instantiate() as Control
+	tree.root.add_child(center)
+	var all_text: String = str(locale_node.call("t", "event.center.filter.all"))
+	var all_button: Button = _find_button_containing(center, all_text)
+	_ok(all_button != null and all_button.button_pressed, "all filter is selected")
+	var shop_text: String = str(locale_node.call("t", "event.center.shop"))
+	_ok(_find_label_text(center, shop_text) != null, "shop section heading is present")
+	center.call("_apply_qa_focus")
+	_ok(true, "visual focus pass completed")
+	tree.root.remove_child(center)
+	center.free()
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	return true
+
+
+func test_visual_scroll_and_focus_structure() -> bool:
+	WorldContext.clear()
+	OS.set_environment("FFBE_QA_MODE", "1")
+	OS.set_environment("FFBE_QA_EVENT_NOW_UNIX", str(NOW_FIXED))
+	OS.set_environment("FFBE_QA_EVENT_CENTER_VIEW", "shop")
+	OS.set_environment("FFBE_QA_EVENT_ID", EVENT_STORY)
+	OS.set_environment("FFBE_QA_REGION", "GL")
+	var packed: PackedScene = load(EVENT_CENTER_SCENE) as PackedScene
+	var center: Control = packed.instantiate() as Control
+	tree.root.add_child(center)
+	var counts: Dictionary = {"horizontal": 0, "vertical": 0, "focusable": 0}
+	_count_visual_scrolls(center, counts)
+	_ok(int(counts.get("horizontal", 0)) >= 2, "status and category filters are horizontally scrollable")
+	_ok(int(counts.get("vertical", 0)) >= 2, "event list and detail are vertically scrollable")
+	_ok(int(counts.get("focusable", 0)) >= 2, "designed cards are keyboard focusable")
+	tree.root.remove_child(center)
+	center.free()
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	return true
+
+
+func _count_visual_scrolls(node: Node, counts: Dictionary) -> void:
+	if node is ScrollContainer:
+		var scroll: ScrollContainer = node as ScrollContainer
+		if scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO:
+			counts["horizontal"] = int(counts.get("horizontal", 0)) + 1
+		if scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO:
+			counts["vertical"] = int(counts.get("vertical", 0)) + 1
+	if node is EventCard and (node as EventCard).focus_mode == Control.FOCUS_ALL:
+		counts["focusable"] = int(counts.get("focusable", 0)) + 1
+	for child: Node in node.get_children():
+		_count_visual_scrolls(child, counts)
+
+
+func test_visual_progress_widget_uniqueness() -> bool:
+	WorldContext.clear()
+	OS.set_environment("FFBE_QA_MODE", "1")
+	OS.set_environment("FFBE_QA_EVENT_NOW_UNIX", str(NOW_FIXED))
+	OS.set_environment("FFBE_QA_EVENT_CENTER_VIEW", "shop")
+	OS.set_environment("FFBE_QA_EVENT_ID", EVENT_STORY)
+	OS.set_environment("FFBE_QA_REGION", "GL")
+	var packed: PackedScene = load(EVENT_CENTER_SCENE) as PackedScene
+	var center: Control = packed.instantiate() as Control
+	tree.root.add_child(center)
+	var progress_nodes: Array[EventProgress] = []
+	_collect_progress_nodes(center, progress_nodes)
+	var visible_count: int = 0
+	var bad_bars: int = 0
+	var bad_labels: int = 0
+	var bad_maximum: int = 0
+	for progress: EventProgress in progress_nodes:
+		if not progress.visible:
+			continue
+		visible_count += 1
+		var counts: Dictionary = {"bars": 0, "labels": 0}
+		_count_direct_children(progress, counts)
+		if int(counts.get("bars", 0)) != 1:
+			bad_bars += 1
+		if int(counts.get("labels", 0)) != 1:
+			bad_labels += 1
+		if progress.bar == null \
+				or absf(progress.bar.max_value - float(progress.target_value)) > 0.01:
+			bad_maximum += 1
+	_ok(visible_count > 0, "visible mission progress cards exist")
+	_eq(bad_bars, 0, "each progress card has exactly one bar")
+	_eq(bad_labels, 0, "each progress card has exactly one value label")
+	_eq(bad_maximum, 0, "each progress card uses the configured target")
+	tree.root.remove_child(center)
+	center.free()
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	return true
+
+
+func _collect_progress_nodes(node: Node, output: Array[EventProgress]) -> void:
+	if node is EventProgress:
+		output.append(node as EventProgress)
+	for child: Node in node.get_children():
+		_collect_progress_nodes(child, output)
+
+
+func _count_direct_children(node: Node, counts: Dictionary) -> void:
+	for child: Node in node.get_children():
+		if child is ProgressBar:
+			counts["bars"] = int(counts.get("bars", 0)) + 1
+		if child is Label:
+			counts["labels"] = int(counts.get("labels", 0)) + 1
+
+
+func test_visual_qa_focus_distinct() -> bool:
+	var locale_node: Node = tree.root.get_node_or_null("LocaleManager")
+	if locale_node == null:
+		_ok(false, "locale manager available for QA focus")
+		return true
+	WorldContext.clear()
+	var scenarios: Array[String] = ["stages", "rewards", "shop", "summon"]
+	var keys: Dictionary = {
+		"stages": "event.center.stages",
+		"rewards": "event.center.rewards",
+		"shop": "event.center.shop",
+		"summon": "event.center.summon_nav",
+	}
+	var packed: PackedScene = load(EVENT_CENTER_SCENE) as PackedScene
+	var offsets: Dictionary = {}
+	for scenario: String in scenarios:
+		OS.set_environment("FFBE_QA_MODE", "1")
+		OS.set_environment("FFBE_QA_EVENT_NOW_UNIX", str(NOW_FIXED))
+		OS.set_environment("FFBE_QA_EVENT_CENTER_VIEW", scenario)
+		OS.set_environment("FFBE_QA_EVENT_ID", EVENT_STORY)
+		OS.set_environment("FFBE_QA_REGION", "GL")
+		var center: Control = packed.instantiate() as Control
+		tree.root.add_child(center)
+		center.call("_apply_qa_focus")
+		var target: String = str(locale_node.call("t", str(keys.get(scenario, ""))))
+		var label: Label = _find_label_text(center, target)
+		var scroll: ScrollContainer = _scroll_ancestor(label)
+		offsets[scenario] = scroll.scroll_vertical if scroll != null else -1
+		tree.root.remove_child(center)
+		center.free()
+	for scenario: String in scenarios:
+		_ok(int(offsets.get(scenario, -1)) > 0, "%s QA focus scrolls into view" % scenario)
+	var unique: Dictionary = {}
+	for scenario: String in scenarios:
+		unique[str(offsets.get(scenario, -1))] = true
+	_ok(unique.size() >= 3, "QA focus produces distinct section views")
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	return true
+
+
+func test_visual_qa_replay_stage_selection() -> bool:
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_EVENT_STAGE_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	OS.set_environment("FFBE_QA_MODE", "1")
+	OS.set_environment("FFBE_QA_EVENT_NOW_UNIX", str(NOW_FIXED))
+	OS.set_environment("FFBE_QA_EVENT_CENTER_VIEW", "replay")
+	OS.set_environment("FFBE_QA_EVENT_ID", "event:GL:980003@lumenguest")
+	OS.set_environment("FFBE_QA_EVENT_STAGE_ID", "stage:GL:980121@guest")
+	OS.set_environment("FFBE_QA_REGION", "GL")
+	var packed: PackedScene = load(EVENT_CENTER_SCENE) as PackedScene
+	var center: Control = packed.instantiate() as Control
+	tree.root.add_child(center)
+	_eq(
+		str(center.get("_selected_stage_id")), "stage:GL:980121@guest",
+		"replay QA view highlights the archive stage"
+	)
+	tree.root.remove_child(center)
+	center.free()
+	WorldContext.clear()
+	for key: String in [
+		"FFBE_QA_MODE", "FFBE_QA_EVENT_NOW_UNIX", "FFBE_QA_EVENT_CENTER_VIEW",
+		"FFBE_QA_EVENT_ID", "FFBE_QA_EVENT_STAGE_ID", "FFBE_QA_REGION"
+	]:
+		OS.set_environment(key, "")
+	return true
+
+
+func _scroll_ancestor(node: Node) -> ScrollContainer:
+	var cursor: Node = node
+	while cursor != null:
+		if cursor is ScrollContainer:
+			return cursor as ScrollContainer
+		cursor = cursor.get_parent()
+	return null
 
 
 func test_localization() -> bool:

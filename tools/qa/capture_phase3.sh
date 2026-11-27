@@ -72,6 +72,32 @@ PID=$!
 
 sleep "${WAIT_SECONDS:-5}"
 
+# Optional readiness handshake for scenes that emit a deterministic log marker
+# after their first laid-out frames. This rejects transient pre-layout captures
+# without changing the harness for scenes that do not provide a marker.
+if [[ -n "${QA_READY_LINE:-}" ]]; then
+  READY_WAIT_SECONDS="${QA_READY_WAIT_SECONDS:-30}"
+  READY_ELAPSED=0
+  until grep -Fq -- "$QA_READY_LINE" "$LOG"; do
+    if ! kill -0 "$PID" 2>/dev/null; then
+      echo "Godot exited before QA readiness marker for $NAME" >&2
+      cat "$LOG" >&2
+      exit 1
+    fi
+    if (( READY_ELAPSED >= READY_WAIT_SECONDS )); then
+      kill "$PID" 2>/dev/null || true
+      wait "$PID" 2>/dev/null || true
+      echo "Timed out waiting for QA readiness marker for $NAME" >&2
+      cat "$LOG" >&2
+      exit 1
+    fi
+    sleep 1
+    READY_ELAPSED=$((READY_ELAPSED + 1))
+  done
+  # Allow one compositor frame after the marker before grabbing the window.
+  sleep 1
+fi
+
 EXPECTED_W="${RES%x*}"
 EXPECTED_H="${RES#*x}"
 WINDOW_ID=""
@@ -130,6 +156,7 @@ fi
   echo "geometry=$GEOMETRY"
   echo "pixels=$PIXEL_STATS"
   echo "runtime_error_lines=$ERROR_COUNT"
+  echo "qa_ready_line=${QA_READY_LINE:-}"
   echo "log_basename=$(basename "$LOG")"
 } >"$META"
 

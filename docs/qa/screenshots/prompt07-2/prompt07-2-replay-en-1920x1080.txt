@@ -1,0 +1,26 @@
+name=prompt07-2-replay-en-1920x1080
+scene=res://scenes/event/event_center.tscn
+resolution=1920x1080
+fullscreen=1
+locale=en
+scenario=replay
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=replay
+event_id=event:GL:980003@lumenguest
+event_stage_id=stage:GL:980121@guest
+event_region=GL
+qa_mode=
+return_scene=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=2476 stddev=0.0703656
+runtime_error_lines=0
+qa_ready_line=EVENT_CENTER_QA_READY view=replay
+log_basename=prompt07-2-replay-en-1920x1080.log

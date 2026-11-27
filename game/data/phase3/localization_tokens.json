@@ -63,6 +63,11 @@
       "active": "mechanic.name.esper_active",
       "unlock": "mechanic.name.esper_unlock"
     },
+    "event_shop": {
+      "lumen_potion": "event.shop.lumen_potion",
+      "stargarden_ether": "event.shop.stargarden_ether",
+      "stargarden_potion": "event.shop.stargarden_potion"
+    },
     "field": {
       "ability": "field.ability",
       "categories": "field.categories",
@@ -261,6 +266,12 @@
       "equip:GL:500001@blade": "equip.synthetic_blade.name",
       "equip:GL:500003@shield": "equip.synthetic_shield.name",
       "esper_shard": "resource.esper_shard",
+      "event_currency:GL:980901@stardust": "resource.event_stardust",
+      "event_currency:GL:980903@lumen": "resource.event_lumen_mark",
+      "event_currency:GL:980904@archive_token": "resource.event_archive_token",
+      "event_currency:GL:980906@training_sigil": "resource.event_training_sigil",
+      "event_currency:JP:980902@moonlight": "resource.event_moonlight",
+      "event_currency:JP:980905@trial_mark": "resource.event_trial_mark",
       "fragment:GL:910101@base": "resource.fragment.vanguard",
       "fragment:GL:910102@base": "resource.fragment.arcanist",
       "fragment:GL:910103@base": "resource.fragment.mender",
@@ -273,6 +284,8 @@
       "item:GL:810003@base": "resource.pot.def",
       "item:GL:810004@base": "resource.pot.mag",
       "item:GL:810005@base": "resource.pot.spr",
+      "item:GL:940001@base": "resource.event_starlit_tonic",
+      "item:GL:940002@base": "resource.event_moonlit_ether",
       "materia:GL:600001@base": "materia.attack_up.name",
       "materia:GL:600002@base": "materia.magic_up.name",
       "materia:GL:600003@base": "materia.spr_up.name",

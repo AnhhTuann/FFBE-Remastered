@@ -1,0 +1,26 @@
+name=prompt07-2-event_battle_return-en-1024x640
+scene=res://scenes/battle/battle_scene.tscn
+resolution=1024x640
+fullscreen=0
+locale=en
+scenario=event_battle_return
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=event_battle_return
+event_id=event:GL:980001@stargarden
+event_stage_id=stage:GL:980101@gate
+event_region=GL
+qa_mode=1
+return_scene=res://scenes/event/event_center.tscn
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0
+pixels=1024x640 colors=3646 stddev=0.095313
+runtime_error_lines=0
+qa_ready_line=
+log_basename=prompt07-2-event_battle_return-en-1024x640.log

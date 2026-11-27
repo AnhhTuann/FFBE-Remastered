@@ -1,0 +1,26 @@
+name=prompt07-2-stages-en-1024x640
+scene=res://scenes/event/event_center.tscn
+resolution=1024x640
+fullscreen=0
+locale=en
+scenario=stages
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=stages
+event_id=event:GL:980001@stargarden
+event_stage_id=
+event_region=GL
+qa_mode=
+return_scene=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0
+pixels=1024x640 colors=2731 stddev=0.0739429
+runtime_error_lines=0
+qa_ready_line=EVENT_CENTER_QA_READY view=stages
+log_basename=prompt07-2-stages-en-1024x640.log

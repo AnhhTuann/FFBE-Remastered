@@ -1,0 +1,26 @@
+name=prompt07-2-rewards-vi-1024x640
+scene=res://scenes/event/event_center.tscn
+resolution=1024x640
+fullscreen=0
+locale=vi
+scenario=rewards
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=rewards
+event_id=event:GL:980001@stargarden
+event_stage_id=
+event_region=GL
+qa_mode=
+return_scene=
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=70 WIDTH=1024 HEIGHT=640 SCREEN=0
+pixels=1024x640 colors=2493 stddev=0.0808542
+runtime_error_lines=0
+qa_ready_line=EVENT_CENTER_QA_READY view=rewards
+log_basename=prompt07-2-rewards-vi-1024x640.log

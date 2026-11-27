@@ -1,0 +1,26 @@
+name=prompt07-2-event_battle-ja-1920x1080
+scene=res://scenes/battle/battle_scene.tscn
+resolution=1920x1080
+fullscreen=1
+locale=ja
+scenario=event_battle
+instance_id=
+party_id=
+encounter=
+seed=
+freeze_frame=
+offline_seconds=
+now_unix=
+event_now_unix=1740000000
+event_center_view=event_battle
+event_id=event:GL:980001@stargarden
+event_stage_id=stage:GL:980101@gate
+event_region=GL
+qa_mode=1
+return_scene=res://scenes/event/event_center.tscn
+window_id=150994951
+geometry=WINDOW=150994951 X=0 Y=0 WIDTH=1920 HEIGHT=1080 SCREEN=0
+pixels=1920x1080 colors=2705 stddev=0.122076
+runtime_error_lines=0
+qa_ready_line=
+log_basename=prompt07-2-event_battle-ja-1920x1080.log
